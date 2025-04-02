@@ -16,20 +16,20 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/getAllUsers")
+    @GetMapping
     public ResponseEntity<List<UserEntity>> getAllUsers() {
         List<UserEntity> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    @GetMapping("/getUserById/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<UserEntity> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/")
+    @PostMapping
     public UserEntity createUser(@RequestBody UserEntity user) {
         return userService.createUser(user);
     }
