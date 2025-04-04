@@ -145,7 +145,7 @@ const SignupPage = () => {
             Join Readle Today
           </h2>
           <div className="flex justify-center items-center">
-            <img src={mascot} alt="Readle Mascot" className="w-64 h-auto" />
+            <img src={mascot} alt="Readle Mascot" className="w-96 h-auto" />
           </div>
         </div>
       </div>

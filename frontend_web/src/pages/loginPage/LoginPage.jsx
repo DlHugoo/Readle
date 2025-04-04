@@ -74,17 +74,18 @@ const LoginPage = () => {
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">
       <div className="flex flex-col md:flex-row max-w-4xl w-full bg-white rounded-xl shadow-xl overflow-hidden">
         {/* Left Side */}
-        <div className="w-full md:w-1/2 bg-blue-500 p-10 flex flex-col justify-center items-center text-white">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
+        <div className="w-full md:w-1/2 bg-blue-box p-10 flex flex-col justify-center items-center text-white">
+          <h2 className="text-3xl md:text-3xl font-bold mb-6 text-center">
             Adventure starts with every page
           </h2>
-          <img src={mascot} alt="Readle Mascot" className="w-64 h-auto" />
+          <img src={mascot} alt="Readle Mascot" className="w-96 h-auto" />
         </div>
 
         {/* Right Side */}
         <div className="w-full md:w-1/2 p-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
-            Welcome Back, Reader!
+          <h2 className="text-2xl text-center md:text-3xl font-bold text-gray-800 mb-6">
+            Welcome Back,
+            <br /> Reader!
           </h2>
 
           <form onSubmit={handleSubmit}>

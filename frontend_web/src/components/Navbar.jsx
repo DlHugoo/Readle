@@ -19,7 +19,7 @@ function Navbar() {
           </a>
           <a
             onClick={() => navigate("/login")}
-            className="text-gray-700 font-medium"
+            className="text-gray-700 font-medium cursor-pointer"
           >
             LOG IN
           </a>
