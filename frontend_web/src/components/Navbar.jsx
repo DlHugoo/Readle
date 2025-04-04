@@ -17,7 +17,10 @@ function Navbar() {
           <a href="#about" className="text-gray-700 font-medium">
             ABOUT US
           </a>
-          <a href="#login" className="text-gray-700 font-medium">
+          <a
+            onClick={() => navigate("/login")}
+            className="text-gray-700 font-medium"
+          >
             LOG IN
           </a>
           <button

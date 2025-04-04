@@ -17,12 +17,46 @@ const SignupPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Get the previously selected role
     const role = localStorage.getItem("userRole");
-    console.log("Submitting form with data:", { ...formData, role });
-    // Here you would handle the actual registration
+
+    if (!role) {
+      alert("Please select a role before signing up.");
+      return;
+    }
+
+    const generatedUsername = formData.email.split("@")[0] + "_" + Date.now();
+
+    const payload = {
+      ...formData,
+      username: generatedUsername,
+      role: role.toUpperCase(), // Expecting "STUDENT" or "TEACHER"
+    };
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Registration successful! Token:", data.token);
+        localStorage.setItem("token", data.token);
+        window.location.href = "/dashboard"; // Change as needed
+      } else {
+        console.error("Registration failed:", data);
+        alert(data.message || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error during registration:", error);
+      alert("Server error. Please try again later.");
+    }
   };
 
   return (
