@@ -2,7 +2,6 @@ package com.edu.readle.controller;
 
 import com.edu.readle.entity.PageEntity;
 import com.edu.readle.service.PageService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,29 +13,44 @@ public class PageController {
 
     private final PageService pageService;
 
-    @Autowired
     public PageController(PageService pageService) {
         this.pageService = pageService;
     }
 
     // Add a page to a specific book
     @PostMapping("/{bookId}")
-    public PageEntity addPageToBook(@PathVariable String bookId, @RequestBody PageEntity page) {
+    public PageEntity addPageToBook(@PathVariable Long bookId, @RequestBody PageEntity page) {
         return pageService.addPageToBook(bookId, page);
     }
 
-    // Get all pages for a book
+    // Get all pages for a specific book
     @GetMapping("/{bookId}")
-    public List<PageEntity> getPagesByBookId(@PathVariable String bookId) {
+    public List<PageEntity> getPagesByBookId(@PathVariable Long bookId) {
         return pageService.getPagesByBookId(bookId);
     }
 
-    // Get a specific page in a book
+    // Get a specific page by page number for a book
     @GetMapping("/{bookId}/page/{pageNumber}")
     public Optional<PageEntity> getPageByBookAndNumber(
-            @PathVariable String bookId,
+            @PathVariable Long bookId,
             @PathVariable int pageNumber
     ) {
         return pageService.getPageByBookAndNumber(bookId, pageNumber);
+    }
+
+    // Update a page for a specific book
+    @PutMapping("/{bookId}/page/{pageId}")
+    public PageEntity updatePage(
+            @PathVariable Long bookId,
+            @PathVariable Long pageId,
+            @RequestBody PageEntity updatedPage
+    ) {
+        return pageService.updatePage(bookId, pageId, updatedPage);
+    }
+
+    // Delete a page from a specific book
+    @DeleteMapping("/{bookId}/page/{pageId}")
+    public void deletePage(@PathVariable Long bookId, @PathVariable Long pageId) {
+        pageService.deletePage(bookId, pageId);
     }
 }

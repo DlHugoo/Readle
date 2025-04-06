@@ -1,8 +1,6 @@
 package com.edu.readle.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import jakarta.persistence.*;
 
 @Entity
@@ -17,6 +15,8 @@ public class PageEntity {
     @Lob
     private String content;
 
+    private String imageURL;
+
     @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "book_id")
@@ -25,9 +25,10 @@ public class PageEntity {
     // Constructors
     public PageEntity() {}
 
-    public PageEntity(int pageNumber, String content, BookEntity book) {
+    public PageEntity(int pageNumber, String content, String imageURL, BookEntity book) {
         this.pageNumber = pageNumber;
         this.content = content;
+        this.imageURL = imageURL;
         this.book = book;
     }
 
@@ -55,6 +56,14 @@ public class PageEntity {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getImageURL() {
+        return imageURL;
+    }
+
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
     }
 
     public BookEntity getBook() {
