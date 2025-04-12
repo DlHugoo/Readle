@@ -17,7 +17,6 @@ import com.edu.readle.service.CustomUserDetailsService;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
@@ -32,8 +31,12 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeHttpRequests()
+            // Allow public access to authentication and error endpoints
             .requestMatchers("/api/auth/**", "/error").permitAll()
-            .anyRequest().authenticated() // protect everything else
+            // Allow public access to books and pages endpoint
+            .requestMatchers("/api/books/**", "/api/pages/**").permitAll()  // This line allows all access to /api/pages
+            // Protect all other requests
+            .anyRequest().authenticated()
             .and()
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
