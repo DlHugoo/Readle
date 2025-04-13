@@ -2,6 +2,7 @@ package com.edu.readle.controller;
 
 import com.edu.readle.dto.ClassroomDTO;
 import com.edu.readle.entity.Classroom;
+import com.edu.readle.repository.ClassroomRepository;
 import com.edu.readle.service.ClassroomService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +15,7 @@ import java.util.List;
 public class ClassroomController {
 
     private final ClassroomService classroomService;
+    ClassroomRepository classroomRepository;
 
     public ClassroomController(ClassroomService classroomService) {
         this.classroomService = classroomService;
@@ -69,10 +71,10 @@ public class ClassroomController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/teacher/{teacherId}")
+    @GetMapping("/teacher/{email}")
     @PreAuthorize("hasAuthority('TEACHER') or hasAuthority('ADMIN')")
-    public ResponseEntity<List<Classroom>> getClassroomsByTeacher(@PathVariable Long teacherId) {
-        return ResponseEntity.ok(classroomService.getClassroomsByTeacher(teacherId));
+    public ResponseEntity<List<Classroom>> getClassroomsByTeacher(@PathVariable String email) {
+        return ResponseEntity.ok(classroomService.getClassroomsByTeacher(email));
     }
 
     @GetMapping("/student/{studentId}")
