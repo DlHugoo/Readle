@@ -5,6 +5,7 @@ import com.edu.readle.entity.Classroom;
 import com.edu.readle.entity.UserEntity;
 import com.edu.readle.repository.ClassroomRepository;
 import com.edu.readle.repository.UserRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,7 @@ public class ClassroomService {
 
     @Transactional
     public Classroom createClassroom(ClassroomDTO classroomDTO) {
-        UserEntity teacher = userRepository.findById(classroomDTO.getTeacherId())
+        UserEntity teacher = userRepository.findByEmail(classroomDTO.getTeacherId())
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
 
         Classroom classroom = new Classroom();
@@ -40,9 +41,20 @@ public class ClassroomService {
         classroom.setDescription(classroomDTO.getDescription());
         classroom.setTeacher(teacher);
         classroom.setMaxStudents(classroomDTO.getMaxStudents());
+        String code = generateUniqueClassroomCode();
+        classroom.setClassroomCode(code);
 
         return classroomRepository.save(classroom);
     }
+
+    private String generateUniqueClassroomCode() {
+        String code;
+        do {
+            code = "CLS" + (int)(Math.random() * 9000 + 1000);
+        } while (classroomRepository.existsByClassroomCode(code));
+        return code;
+    }
+
 
     @Transactional
     public Optional<Classroom> updateClassroom(Long id, ClassroomDTO classroomDTO) {
@@ -51,7 +63,7 @@ public class ClassroomService {
             classroom.setDescription(classroomDTO.getDescription());
 
             if (classroomDTO.getTeacherId() != null) {
-                UserEntity teacher = userRepository.findById(classroomDTO.getTeacherId())
+                UserEntity teacher = userRepository.findByEmail(classroomDTO.getTeacherId())
                         .orElseThrow(() -> new RuntimeException("Teacher not found"));
                 classroom.setTeacher(teacher);
             }
@@ -94,11 +106,14 @@ public class ClassroomService {
         classroomRepository.save(classroom);
     }
 
-    public List<Classroom> getClassroomsByTeacher(Long teacherId) {
-        return classroomRepository.findByTeacherUserId(teacherId);
+    public List<Classroom> getClassroomsByTeacher(String email) {
+        UserEntity teacher = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Teacher not found with email: " + email));
+        return classroomRepository.findByTeacher(teacher);
     }
 
     public List<Classroom> getClassroomsByStudent(Long studentId) {
         return classroomRepository.findByStudentId(studentId);
     }
+
 }

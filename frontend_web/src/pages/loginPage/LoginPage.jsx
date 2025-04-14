@@ -36,9 +36,9 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!validateForm()) return;
-
+  
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -47,12 +47,21 @@ const LoginPage = () => {
         },
         body: JSON.stringify(formData),
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         localStorage.setItem("token", data.token);
-        window.location.href = "/dashboard";
+  
+        // Save role if needed later
+        localStorage.setItem("role", data.role);
+  
+        // Redirect based on role
+        if (data.role === "TEACHER") {
+          window.location.href = "/classroom";
+        } else {
+          window.location.href = "/dashboard";
+        }
       } else {
         if (response.status === 401) {
           setErrorMessage("Incorrect email or password. Please try again.");
@@ -69,6 +78,7 @@ const LoginPage = () => {
       );
     }
   };
+  
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">

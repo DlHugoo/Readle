@@ -3,7 +3,7 @@ package com.edu.readle.dto;
 public class ClassroomDTO {
     private String name;
     private String description;
-    private Long teacherId;
+    private String teacherId;
     private Integer maxStudents;
 
     // Getters and Setters
@@ -23,11 +23,11 @@ public class ClassroomDTO {
         this.description = description;
     }
 
-    public Long getTeacherId() {
+    public String getTeacherId() {
         return teacherId;
     }
 
-    public void setTeacherId(Long teacherId) {
+    public void setTeacherId(String teacherId) {
         this.teacherId = teacherId;
     }
 

@@ -18,6 +18,9 @@ public class Classroom {
     @Column
     private String description;
 
+    @Column(unique = true)
+    private String classroomCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
     private UserEntity teacher;
@@ -89,5 +92,13 @@ public class Classroom {
 
     public int getStudentCount() {
         return students.size();
+    }
+
+    public String getClassroomCode() {
+        return classroomCode;
+    }
+
+    public void setClassroomCode(String classroomCode) {
+        this.classroomCode = classroomCode;
     }
 }
