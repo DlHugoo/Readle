@@ -57,7 +57,7 @@ public class ClassroomService {
 
 
     @Transactional
-    public Optional<Classroom> updateClassroom(Long id, ClassroomDTO classroomDTO) {
+    public Optional<ClassroomDTO> updateClassroom(Long id, ClassroomDTO classroomDTO) {
         return classroomRepository.findById(id).map(classroom -> {
             classroom.setName(classroomDTO.getName());
             classroom.setDescription(classroomDTO.getDescription());
@@ -69,9 +69,20 @@ public class ClassroomService {
             }
 
             classroom.setMaxStudents(classroomDTO.getMaxStudents());
+            Classroom updatedClassroom = classroomRepository.save(classroom);
 
-            return classroomRepository.save(classroom);
+            // Map the updated entity to a DTO
+            return mapToDTO(updatedClassroom);
         });
+    }
+
+    private ClassroomDTO mapToDTO(Classroom classroom) {
+        ClassroomDTO dto = new ClassroomDTO();
+        dto.setName(classroom.getName());
+        dto.setDescription(classroom.getDescription());
+        dto.setTeacherId(classroom.getTeacher() != null ? classroom.getTeacher().getEmail() : null);
+        dto.setMaxStudents(classroom.getMaxStudents());
+        return dto;
     }
 
     public void deleteClassroom(Long id) {

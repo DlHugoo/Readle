@@ -16,6 +16,12 @@ const ClassroomManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [menuOpenIndex, setMenuOpenIndex] = useState(null);
 
+  const [createName, setCreateName] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createMaxStudents, setCreateMaxStudents] = useState('');
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const token = localStorage.getItem('token');
 
@@ -58,16 +64,16 @@ const ClassroomManagement = () => {
   }, [teacherId]);
 
   const handleCreateClassroom = async () => {
-    if (!classroomName || !description || !maxStudents || !teacherId) {
+    if (!createName || !createDescription || !createMaxStudents || !teacherId) {
       alert('Please fill in all fields.');
       return;
     }
   
     const classroomDTO = {
-      name: classroomName,
-      description,
+      name: createName,
+      description: createDescription,
       teacherId: teacherId,
-      maxStudents: parseInt(maxStudents),
+      maxStudents: parseInt(createMaxStudents),
     };
   
     try {
@@ -82,16 +88,13 @@ const ClassroomManagement = () => {
   
       if (response.ok) {
         const data = await response.json();
-  
-        // ✅ Use the actual classroomCode returned by backend
         setClassroomCode(data.classroomCode);
-  
-        alert(`Classroom created successfully!\nClassroom Code: ${data.classroomCode}`);
+        setSuccessMessage("Classroom created successfully! 🎉");
         setShowModal(false);
-        setClassroomName('');
-        setDescription('');
-        setMaxStudents('');
-        fetchClassrooms(); // Refresh classroom list
+        setCreateName('');
+        setCreateDescription('');
+        setCreateMaxStudents('');
+        fetchClassrooms();
       } else {
         const err = await response.json();
         alert('Failed to create classroom: ' + err.message);
@@ -101,6 +104,14 @@ const ClassroomManagement = () => {
       alert('An error occurred while creating the classroom.');
     }
   };
+  
+  const openCreateModal = () => {
+    setCreateName('');
+    setCreateDescription('');
+    setCreateMaxStudents('');
+    setShowModal(true);
+  };
+  
   
   const handleEditClick = (classroom) => {
     setSelectedClassroom(classroom);
@@ -125,7 +136,8 @@ const ClassroomManagement = () => {
       });
   
       if (response.ok) {
-        alert("Classroom deleted successfully.");
+        setSuccessMessage("Classroom deleted successfully! 🗑️");
+        setShowSuccessModal(true);
         fetchClassrooms();
       } else {
         alert("Failed to delete classroom.");
@@ -156,11 +168,10 @@ const ClassroomManagement = () => {
         },
         body: JSON.stringify(updatedDTO),
       });
-      
-      
   
       if (response.ok) {
-        alert("Classroom updated successfully.");
+        setSuccessMessage("Classroom updated successfully! ✏️");
+        setShowSuccessModal(true);
         fetchClassrooms();
       } else {
         alert("Failed to update classroom.");
@@ -188,10 +199,11 @@ const ClassroomManagement = () => {
 
       <button
         className="mb-4 bg-yellow-400 text-white px-4 py-2 rounded hover:bg-yellow-500"
-        onClick={() => setShowModal(true)}
+        onClick={openCreateModal}
       >
         + Create Classroom
       </button>
+
 
       {/* Modal Form */}
       {showModal && (
@@ -202,15 +214,15 @@ const ClassroomManagement = () => {
             <input
               type="text"
               placeholder="Classroom Name"
-              value={classroomName}
-              onChange={(e) => setClassroomName(e.target.value)}
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
               className="w-full mb-3 p-2 border border-gray-300 rounded"
             />
 
             <textarea
               placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={createDescription}
+              onChange={(e) => setCreateDescription(e.target.value)}
               className="w-full mb-3 p-2 border border-gray-300 rounded"
             />
 
@@ -221,8 +233,8 @@ const ClassroomManagement = () => {
             <input
               type="number"
               placeholder="Max Students"
-              value={maxStudents}
-              onChange={(e) => setMaxStudents(e.target.value)}
+              value={createMaxStudents}
+              onChange={(e) => setCreateMaxStudents(e.target.value)}
               className="w-full mb-3 p-2 border border-gray-300 rounded"
             />
 
@@ -383,6 +395,22 @@ const ClassroomManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md text-center">
+            <h2 className="text-lg font-bold mb-4 text-green-600">{successMessage}</h2>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="px-4 py-2 rounded bg-green-100 hover:bg-green-300 text-green-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   </div>
 

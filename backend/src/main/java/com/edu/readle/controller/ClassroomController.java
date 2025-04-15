@@ -43,7 +43,7 @@ public class ClassroomController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('TEACHER') or hasAuthority('ADMIN')")
-    public ResponseEntity<Classroom> updateClassroom(@PathVariable Long id, @RequestBody ClassroomDTO classroomDTO) {
+    public ResponseEntity<ClassroomDTO> updateClassroom(@PathVariable Long id, @RequestBody ClassroomDTO classroomDTO) {
         return classroomService.updateClassroom(id, classroomDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
