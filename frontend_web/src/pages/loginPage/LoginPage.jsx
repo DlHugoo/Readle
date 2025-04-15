@@ -60,7 +60,7 @@ const LoginPage = () => {
         if (data.role === "TEACHER") {
           window.location.href = "/classroom";
         } else {
-          window.location.href = "/student";
+          window.location.href = "/library";
         }
       } else {
         if (response.status === 401) {
