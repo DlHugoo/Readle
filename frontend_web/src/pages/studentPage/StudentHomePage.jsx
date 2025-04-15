@@ -1,13 +1,14 @@
 import React from "react";
-import Navbar from "../../components/Navbar";
+import StudentNavbar from "../../components/StudentNavbar";
+import BookCard from "../../components/BookCard";
 
 const StudentHomePage = () => {
   return (
     <div>
-      <Navbar />
-      <h1 className="text-4xl font-bold text-center mt-10">
-        Welcome to the Student Home Page{" "}
-      </h1>
+      <StudentNavbar />
+      <div className="max-w-7xl mx-auto">
+        <BookLibrary />
+      </div>
     </div>
   );
 };
