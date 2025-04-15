@@ -1,6 +1,6 @@
 import React from "react";
 import StudentNavbar from "../../components/StudentNavbar";
-import BookCard from "../../components/BookCard";
+import BookLibrary from "./BookLibrary";
 
 const StudentHomePage = () => {
   return (
