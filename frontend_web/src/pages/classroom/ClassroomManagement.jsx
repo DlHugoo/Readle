@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from "../../components/TeacherNav"
 import { jwtDecode } from "jwt-decode";
+import TeahcerNav from '../../components/TeacherNav';
 
 const ClassroomManagement = () => {
   const [classroomName, setClassroomName] = useState('');
@@ -154,17 +156,12 @@ const ClassroomManagement = () => {
         },
         body: JSON.stringify(updatedDTO),
       });
+      
+      
   
       if (response.ok) {
-        // Update classroom in the frontend state
-        const updated = classrooms.map((c) =>
-          c.id === selectedClassroom.id
-            ? { ...c, name: classroomName, description, maxStudents }
-            : c
-        );
-        setClassrooms(updated);
-  
         alert("Classroom updated successfully.");
+        fetchClassrooms();
       } else {
         alert("Failed to update classroom.");
       }
@@ -177,14 +174,20 @@ const ClassroomManagement = () => {
     }
   };
   
-  
 
   return (
+  <div className="w-full">
+    {/* Navigation Bar - Full Width */}
+    <div className="w-full">
+      <TeahcerNav />
+    </div>
+
+    {/* Main Content - Centered and Constrained */}
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold text-blue-600 mb-6">📘 Classroom Management</h1>
 
       <button
-        className="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        className="mb-4 bg-yellow-400 text-white px-4 py-2 rounded hover:bg-yellow-500"
         onClick={() => setShowModal(true)}
       >
         + Create Classroom
@@ -259,45 +262,44 @@ const ClassroomManagement = () => {
         ) : (
           <ul className="space-y-3">
             {classrooms.map((classroom, index) => (
-             <li key={index} className="border p-4 rounded shadow-sm relative">
-             <h3 className="text-lg font-bold text-blue-700">{classroom.name}</h3>
-             <p className="text-gray-600">
-               Code: <span className="font-mono">{classroom.classroomCode}</span>
-             </p>
-             <p className="text-gray-500 text-sm">{classroom.description}</p>
-           
-             {/* 3-dot Menu */}
-             <button
-               className="absolute top-2 right-2 text-gray-500 hover:text-black"
-               onClick={() => setMenuOpenIndex(index === menuOpenIndex ? null : index)}
-             >
-               ⋮
-             </button>
-           
-             {menuOpenIndex === index && (
-               <div className="absolute right-0 mt-2 bg-white border rounded shadow-md z-10">
-                 <button
-                   className="block w-full text-left px-4 py-2 hover:bg-yellow-200"
-                   onClick={() => handleEditClick(classroom)}
-                 >
-                   ✏️ Edit
-                 </button>
-                 <button
-                   className="block w-full text-left px-4 py-2 hover:bg-red-200"
-                   onClick={() => handleDeleteClick(classroom)}
-                 >
-                   🗑️ Delete
-                 </button>
-               </div>
-             )}
-           </li>
-           
+              <li key={index} className="border p-4 rounded shadow-sm relative">
+                <h3 className="text-lg font-bold text-blue-700">{classroom.name}</h3>
+                <p className="text-gray-600">
+                  Code: <span className="font-mono">{classroom.classroomCode}</span>
+                </p>
+                <p className="text-gray-500 text-sm">{classroom.description}</p>
+
+                {/* 3-dot Menu */}
+                <button
+                  className="absolute top-2 right-2 text-gray-500 hover:text-black"
+                  onClick={() => setMenuOpenIndex(index === menuOpenIndex ? null : index)}
+                >
+                  ⋮
+                </button>
+
+                {menuOpenIndex === index && (
+                  <div className="absolute right-0 mt-2 bg-white border rounded shadow-md z-10">
+                    <button
+                      className="block w-full text-left px-4 py-2 hover:bg-yellow-200"
+                      onClick={() => handleEditClick(classroom)}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      className="block w-full text-left px-4 py-2 hover:bg-red-200"
+                      onClick={() => handleDeleteClick(classroom)}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                )}
+              </li>
             ))}
           </ul>
         )}
       </div>
 
-      {/* Enrolled Students (optional for now) */}
+      {/* Enrolled Students (optional) */}
       <div className="bg-white shadow-md rounded p-6 mt-6">
         <h2 className="text-xl font-semibold mb-4">👥 Enrolled Students</h2>
         {students.length === 0 ? (
@@ -311,6 +313,7 @@ const ClassroomManagement = () => {
         )}
       </div>
 
+      {/* Edit Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
@@ -357,6 +360,7 @@ const ClassroomManagement = () => {
         </div>
       )}
 
+      {/* Delete Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg w-full max-w-sm text-center">
@@ -380,6 +384,8 @@ const ClassroomManagement = () => {
         </div>
       )}
     </div>
+  </div>
+
   );
 };
 
