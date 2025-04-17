@@ -76,7 +76,7 @@ public class ClassroomService {
         });
     }
 
-    private ClassroomDTO mapToDTO(Classroom classroom) {
+    public ClassroomDTO mapToDTO(Classroom classroom) {
         ClassroomDTO dto = new ClassroomDTO();
         dto.setName(classroom.getName());
         dto.setDescription(classroom.getDescription());

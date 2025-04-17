@@ -29,9 +29,9 @@ public class ClassroomController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('TEACHER') or hasAuthority('ADMIN') or hasAuthority('STUDENT')")
-    public ResponseEntity<Classroom> getClassroomById(@PathVariable Long id) {
+    public ResponseEntity<ClassroomDTO> getClassroomById(@PathVariable Long id) {
         return classroomService.getClassroomById(id)
-                .map(ResponseEntity::ok)
+                .map(classroom -> ResponseEntity.ok(classroomService.mapToDTO(classroom)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
