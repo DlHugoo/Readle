@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom"; // Import useParams
+import { useParams } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
 import { BookOpen, PlusCircle } from "lucide-react";
 
@@ -9,6 +9,13 @@ const ClassroomContentManager = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [classroomContent, setClassroomContent] = useState([]); // State to hold classroom-specific content
   const [classroomName, setClassroomName] = useState(""); // State to hold classroom name
+
+  // States for the "Add Book" modal
+  const [bookTitle, setBookTitle] = useState("");
+  const [bookAuthor, setBookAuthor] = useState("");
+  const [bookGenre, setBookGenre] = useState("");
+  const [bookDifficulty, setBookDifficulty] = useState("");
+  const [bookImageURL, setBookImageURL] = useState("");
 
   // Fetch classroom-specific content and details
   useEffect(() => {
@@ -33,9 +40,9 @@ const ClassroomContentManager = () => {
           const data = await response.json();
           console.log("Classroom details fetched successfully:", data);
           setClassroomName(data.name || "Unknown Classroom");
-          setClassroomContent(data.content || []);
+          setClassroomContent(data.books || []); // Fetch books associated with the classroom
         } else {
-          const errorText = await response.text(); // Handle non-JSON error responses
+          const errorText = await response.text();
           console.error("Failed to fetch classroom details. Status:", response.status, "Error:", errorText);
         }
       } catch (error) {
@@ -49,6 +56,52 @@ const ClassroomContentManager = () => {
   const handleSelectModule = (module) => {
     setSelectedModule(module);
     setShowContentModal(true);
+  };
+
+  const handleAddBook = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("You must be logged in to add a book.");
+      return;
+    }
+
+    const newBook = {
+      title: bookTitle,
+      author: bookAuthor,
+      genre: bookGenre,
+      difficultyLevel: bookDifficulty,
+      imageURL: bookImageURL,
+      classroomId: parseInt(classroomId), // Associate the book with the current classroom
+    };
+
+    try {
+      const response = await fetch('/api/books', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newBook),
+      });
+
+      if (response.ok) {
+        const createdBook = await response.json();
+        alert("Book added successfully!");
+        setClassroomContent((prevContent) => [...prevContent, createdBook]); // Update the classroom content
+        setShowContentModal(false); // Close the modal
+        setBookTitle("");
+        setBookAuthor("");
+        setBookGenre("");
+        setBookDifficulty("");
+        setBookImageURL("");
+      } else {
+        const errorData = await response.json();
+        alert("Failed to add book: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Error adding book:", error);
+      alert("An error occurred while adding the book.");
+    }
   };
 
   return (
@@ -86,7 +139,6 @@ const ClassroomContentManager = () => {
             </div>
             <PlusCircle size={22} />
           </button>
-
           <button
             onClick={() => handleSelectModule("challenges")}
             className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-between"
@@ -108,32 +160,56 @@ const ClassroomContentManager = () => {
             <ul className="list-disc ml-6 text-gray-600">
               {classroomContent.map((content, index) => (
                 <li key={index} className="mb-2">
-                  {content.title} - {content.description}
+                  {content.title} - {content.difficultyLevel}
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        {showContentModal && (
+        {/* Add Book Modal */}
+        {showContentModal && selectedModule === "library" && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg">
-              <h2 className="text-xl font-bold mb-4 text-[#3B82F6]">
-                {selectedModule === "library"
-                  ? "Add to Digital Library"
-                  : "Create Comprehension Challenge"}
-              </h2>
+              <h2 className="text-xl font-bold mb-4 text-[#3B82F6]">Add a New Book</h2>
 
               <input
                 type="text"
-                placeholder={
-                  selectedModule === "library" ? "Book Title" : "Challenge Title"
-                }
+                placeholder="Book Title"
+                value={bookTitle}
+                onChange={(e) => setBookTitle(e.target.value)}
                 className="w-full mb-3 p-3 border border-gray-300 rounded"
               />
 
-              <textarea
-                placeholder="Description or Instructions"
+              <input
+                type="text"
+                placeholder="Author"
+                value={bookAuthor}
+                onChange={(e) => setBookAuthor(e.target.value)}
+                className="w-full mb-3 p-3 border border-gray-300 rounded"
+              />
+
+              <input
+                type="text"
+                placeholder="Genre"
+                value={bookGenre}
+                onChange={(e) => setBookGenre(e.target.value)}
+                className="w-full mb-3 p-3 border border-gray-300 rounded"
+              />
+
+              <input
+                type="text"
+                placeholder="Difficulty Level"
+                value={bookDifficulty}
+                onChange={(e) => setBookDifficulty(e.target.value)}
+                className="w-full mb-3 p-3 border border-gray-300 rounded"
+              />
+
+              <input
+                type="text"
+                placeholder="Image URL"
+                value={bookImageURL}
+                onChange={(e) => setBookImageURL(e.target.value)}
                 className="w-full mb-3 p-3 border border-gray-300 rounded"
               />
 
@@ -144,16 +220,18 @@ const ClassroomContentManager = () => {
                 >
                   Cancel
                 </button>
-                <button className="bg-[#FACC14] text-white px-4 py-2 rounded hover:bg-yellow-400">
-                  Submit
+                <button
+                  onClick={handleAddBook}
+                  className="bg-[#FACC14] text-white px-4 py-2 rounded hover:bg-yellow-400"
+                >
+                  Add Book
                 </button>
               </div>
             </div>
           </div>
         )}
-
-        {/* Future Feature Section */}
-        <div className="mt-12">
+         {/* Future Feature Section */}
+         <div className="mt-12">
           <h2 className="text-xl font-semibold text-gray-700 mb-4">📈 Coming Soon</h2>
           <ul className="list-disc ml-6 text-gray-600">
             <li>Story Sequencing Activities</li>
