@@ -15,7 +15,7 @@ public class BookEntity {
     private String title;
     private String author;
     private String genre;
-    private String difficultyLevel;
+    private int difficultyLevel; // Changed from String to int
     private String imageURL;
 
     @JsonManagedReference
@@ -31,7 +31,7 @@ public class BookEntity {
     public BookEntity() {}
 
     public BookEntity(String title, String author, String genre,
-                      String difficultyLevel, String imageURL) {
+                      int difficultyLevel, String imageURL) {
         this.title = title;
         this.author = author;
         this.genre = genre;
@@ -73,11 +73,11 @@ public class BookEntity {
         this.genre = genre;
     }
 
-    public String getDifficultyLevel() {
+    public int getDifficultyLevel() {
         return difficultyLevel;
     }
 
-    public void setDifficultyLevel(String difficultyLevel) {
+    public void setDifficultyLevel(int difficultyLevel) {
         this.difficultyLevel = difficultyLevel;
     }
 
