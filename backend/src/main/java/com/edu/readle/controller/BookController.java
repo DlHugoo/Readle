@@ -3,8 +3,15 @@ package com.edu.readle.controller;
 import com.edu.readle.dto.BookDTO;
 import com.edu.readle.entity.BookEntity;
 import com.edu.readle.service.BookService;
+import io.jsonwebtoken.io.IOException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,5 +53,29 @@ public class BookController {
     @PutMapping("/{bookId}")
     public Optional<BookEntity> updateBook(@PathVariable Long bookId, @RequestBody BookDTO updatedBookDTO) {
         return bookService.updateBook(bookId, updatedBookDTO);
+    }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) throws java.io.IOException {
+        String uploadDir = "uploads/bookcovers/";
+        try {
+            // Ensure the uploads directory exists
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // Save the file to the uploads directory
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir + fileName);
+            Files.write(filePath, file.getBytes());
+
+            // Construct the file URL
+            String fileUrl = "/uploads/bookcovers/" + fileName;
+            return ResponseEntity.ok(fileUrl);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to upload image");
+        }
     }
 }

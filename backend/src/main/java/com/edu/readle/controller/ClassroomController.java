@@ -29,9 +29,9 @@ public class ClassroomController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('TEACHER') or hasAuthority('ADMIN') or hasAuthority('STUDENT')")
-    public ResponseEntity<Classroom> getClassroomById(@PathVariable Long id) {
+    public ResponseEntity<ClassroomDTO> getClassroomById(@PathVariable Long id) {
         return classroomService.getClassroomById(id)
-                .map(ResponseEntity::ok)
+                .map(classroom -> ResponseEntity.ok(classroomService.mapToDTO(classroom)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -43,7 +43,7 @@ public class ClassroomController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('TEACHER') or hasAuthority('ADMIN')")
-    public ResponseEntity<Classroom> updateClassroom(@PathVariable Long id, @RequestBody ClassroomDTO classroomDTO) {
+    public ResponseEntity<ClassroomDTO> updateClassroom(@PathVariable Long id, @RequestBody ClassroomDTO classroomDTO) {
         return classroomService.updateClassroom(id, classroomDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

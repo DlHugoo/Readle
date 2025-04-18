@@ -1,5 +1,15 @@
 package com.edu.readle.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edu.readle.dto.BookDTO;
 import com.edu.readle.dto.ClassroomDTO;
 import com.edu.readle.entity.BookEntity;
 import com.edu.readle.entity.Classroom;
@@ -7,13 +17,6 @@ import com.edu.readle.entity.UserEntity;
 import com.edu.readle.repository.BookRepository;
 import com.edu.readle.repository.ClassroomRepository;
 import com.edu.readle.repository.UserRepository;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ClassroomService {
@@ -61,7 +64,7 @@ public class ClassroomService {
     }
 
     @Transactional
-    public Optional<Classroom> updateClassroom(Long id, ClassroomDTO classroomDTO) {
+    public Optional<ClassroomDTO> updateClassroom(Long id, ClassroomDTO classroomDTO) {
         return classroomRepository.findById(id).map(classroom -> {
             classroom.setName(classroomDTO.getName());
             classroom.setDescription(classroomDTO.getDescription());
@@ -73,9 +76,24 @@ public class ClassroomService {
             }
 
             classroom.setMaxStudents(classroomDTO.getMaxStudents());
+            Classroom updatedClassroom = classroomRepository.save(classroom);
 
-            return classroomRepository.save(classroom);
+            // Map the updated entity to a DTO
+            return mapToDTO(updatedClassroom);
         });
+    }
+
+    public ClassroomDTO mapToDTO(Classroom classroom) {
+        ClassroomDTO dto = new ClassroomDTO();
+        dto.setName(classroom.getName());
+        dto.setDescription(classroom.getDescription());
+        dto.setTeacherId(classroom.getTeacher() != null ? classroom.getTeacher().getEmail() : null);
+        dto.setMaxStudents(classroom.getMaxStudents());
+        dto.setBooks(classroom.getBooks().stream()
+                .map(book -> new BookDTO(book.getBookID(), book.getTitle(), book.getAuthor(), book.getGenre(),
+                        book.getDifficultyLevel(), book.getImageURL(), classroom.getId(), null))
+                .collect(Collectors.toList()));
+        return dto;
     }
 
     public void deleteClassroom(Long id) {
