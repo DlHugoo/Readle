@@ -303,8 +303,11 @@ const ClassroomContentManager = () => {
                       <h3 className="text-lg font-bold text-[#3B82F6] truncate">
                         {book.title}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Difficulty: <span className="font-semibold">{book.difficultyLevel}</span>
+                      <p className="text-sm text-gray-600 mt-1 flex items-center">
+                        Difficulty:{" "}
+                        <span className="ml-2 text-yellow-500 text-2xl"> {/* Larger stars */}
+                          {"★".repeat(book.difficultyLevel)} {/* Render stars based on difficulty */}
+                        </span>
                       </p>
                     </div>
 
@@ -390,7 +393,7 @@ const ClassroomContentManager = () => {
                 type="text"
                 id="bookDifficulty"
                 name="bookDifficulty"
-                placeholder="Difficulty Level"
+                placeholder="Difficulty Level (1-3)"
                 value={bookDifficulty}
                 onChange={(e) => setBookDifficulty(e.target.value)}
                 className="w-full mb-3 p-3 border border-gray-300 rounded"
