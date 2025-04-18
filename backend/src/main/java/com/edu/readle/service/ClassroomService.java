@@ -1,14 +1,17 @@
 package com.edu.readle.service;
 
 import com.edu.readle.dto.ClassroomDTO;
+import com.edu.readle.entity.BookEntity;
 import com.edu.readle.entity.Classroom;
 import com.edu.readle.entity.UserEntity;
+import com.edu.readle.repository.BookRepository;
 import com.edu.readle.repository.ClassroomRepository;
 import com.edu.readle.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,10 +20,12 @@ public class ClassroomService {
 
     private final ClassroomRepository classroomRepository;
     private final UserRepository userRepository;
+    private final BookRepository bookRepository;
 
-    public ClassroomService(ClassroomRepository classroomRepository, UserRepository userRepository) {
+    public ClassroomService(ClassroomRepository classroomRepository, UserRepository userRepository, BookRepository bookRepository) {
         this.classroomRepository = classroomRepository;
         this.userRepository = userRepository;
+        this.bookRepository = bookRepository;
     }
 
     public List<Classroom> getAllClassrooms() {
@@ -54,7 +59,6 @@ public class ClassroomService {
         } while (classroomRepository.existsByClassroomCode(code));
         return code;
     }
-
 
     @Transactional
     public Optional<ClassroomDTO> updateClassroom(Long id, ClassroomDTO classroomDTO) {
@@ -127,4 +131,37 @@ public class ClassroomService {
         return classroomRepository.findByStudentId(studentId);
     }
 
+    // 📘 BOOK RELATIONSHIP METHODS
+
+    @Transactional
+    public void addBookToClassroom(Long classroomId, Long bookId) {
+        Classroom classroom = classroomRepository.findById(classroomId)
+                .orElseThrow(() -> new RuntimeException("Classroom not found"));
+
+        BookEntity book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+
+        book.setClassroom(classroom);
+        bookRepository.save(book);
+    }
+
+    @Transactional
+    public void removeBookFromClassroom(Long classroomId, Long bookId) {
+        BookEntity book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+
+        if (book.getClassroom() == null || !book.getClassroom().getId().equals(classroomId)) {
+            throw new RuntimeException("Book does not belong to the given classroom");
+        }
+
+        book.setClassroom(null);
+        bookRepository.save(book);
+    }
+
+    public List<BookEntity> getBooksByClassroom(Long classroomId) {
+        Classroom classroom = classroomRepository.findById(classroomId)
+                .orElseThrow(() -> new RuntimeException("Classroom not found"));
+
+        return classroom.getBooks() != null ? classroom.getBooks() : new ArrayList<>();
+    }
 }
