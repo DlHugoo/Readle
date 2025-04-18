@@ -8,7 +8,7 @@ public class BookDTO {
     private String title;
     private String author;
     private String genre;
-    private String difficultyLevel;
+    private int difficultyLevel; // Changed from String to int
     private String imageURL;
     private Long classroomId;
     private List<Long> pageIds; // Optional
@@ -17,7 +17,7 @@ public class BookDTO {
     public BookDTO() {}
 
     public BookDTO(Long bookID, String title, String author, String genre,
-                   String difficultyLevel, String imageURL, Long classroomId, List<Long> pageIds) {
+                   int difficultyLevel, String imageURL, Long classroomId, List<Long> pageIds) { // Updated parameter type
         this.bookID = bookID;
         this.title = title;
         this.author = author;
@@ -27,66 +27,67 @@ public class BookDTO {
         this.classroomId = classroomId;
         this.pageIds = pageIds;
     }
+
     public Long getBookID() {
         return bookID;
     }
-    
+
     public void setBookID(Long bookID) {
         this.bookID = bookID;
     }
-    
+
     public String getTitle() {
         return title;
     }
-    
+
     public void setTitle(String title) {
         this.title = title;
     }
-    
+
     public String getAuthor() {
         return author;
     }
-    
+
     public void setAuthor(String author) {
         this.author = author;
     }
-    
+
     public String getGenre() {
         return genre;
     }
-    
+
     public void setGenre(String genre) {
         this.genre = genre;
     }
-    
-    public String getDifficultyLevel() {
+
+    public int getDifficultyLevel() { // Updated return type
         return difficultyLevel;
     }
-    
-    public void setDifficultyLevel(String difficultyLevel) {
+
+    public void setDifficultyLevel(int difficultyLevel) { // Updated parameter type
         this.difficultyLevel = difficultyLevel;
     }
-    
+
     public String getImageURL() {
         return imageURL;
     }
-    
+
     public void setImageURL(String imageURL) {
         this.imageURL = imageURL;
     }
-    
+
     public Long getClassroomId() {
         return classroomId;
     }
-    
+
     public void setClassroomId(Long classroomId) {
         this.classroomId = classroomId;
     }
-    
+
     public List<Long> getPageIds() {
         return pageIds;
     }
-    
+
     public void setPageIds(List<Long> pageIds) {
         this.pageIds = pageIds;
     }
