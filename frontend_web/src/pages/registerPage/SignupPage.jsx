@@ -48,7 +48,7 @@ const SignupPage = () => {
       if (response.ok) {
         console.log("Registration successful! Token:", data.token);
         localStorage.setItem("token", data.token);
-        window.location.href = "/dashboard"; // Change as needed
+        window.location.href = "/login"; // Change as needed
       } else {
         console.error("Registration failed:", data);
         alert(data.message || "Registration failed. Please try again.");

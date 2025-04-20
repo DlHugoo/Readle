@@ -3,6 +3,7 @@ import LandingPage from "./pages/landingPage/LandingPage";
 import RegisterPage from "./pages/registerPage/RegisterPage";
 import LoginPage from "./pages/loginPage/LoginPage";
 import ClassroomManagement from "./pages/classroom/ClassroomManagement";
+import StudentLibraryPage from "./pages/studentPage/StudentLibraryPage";
 import ClassroomContent from "./pages/classroom/ClassroomContentManager";
 
 function App() {
@@ -13,7 +14,11 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/classroom" element={<ClassroomManagement />} />
-        <Route path="/classroom-content/:classroomId" element={<ClassroomContent />} />
+        <Route path="/library" element={<StudentLibraryPage />} />
+        <Route
+          path="/classroom-content/:classroomId"
+          element={<ClassroomContent />}
+        />
       </Routes>
     </Router>
   );
