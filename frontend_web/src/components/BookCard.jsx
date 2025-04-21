@@ -1,25 +1,25 @@
-import React from "react";
-
-const difficultyStars = {
-  easy: 1,
-  medium: 2,
-  hard: 3,
+const getImageURL = (url) => {
+  // Prefix only if it's a relative path
+  if (url?.startsWith("/uploads")) {
+    return `http://localhost:8080${url}`;
+  }
+  return url;
 };
 
 const BookCard = ({ book }) => {
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className="flex flex-col items-center text-center p-2 rounded-xl shadow-md bg-white hover:shadow-lg transition">
       <img
-        src={book.imageURL}
+        src={getImageURL(book.imageURL)}
         alt={book.title}
-        className="h-48 w-36 object-cover rounded-lg shadow-md mb-2"
-        onError={(e) => (e.target.src = "https://via.placeholder.com/150")}
+        className="h-48 w-36 object-cover rounded-md mb-2"
+        onError={(e) => {
+          e.target.src = "https://via.placeholder.com/150";
+        }}
       />
-      <p className="text-sm font-semibold">{book.title}</p>
+      <p className="text-sm font-semibold text-black">{book.title}</p>
       <div className="flex justify-center mt-1">
-        {Array.from({
-          length: difficultyStars[book.difficultyLevel?.toLowerCase()] || 0,
-        }).map((_, index) => (
+        {Array.from({ length: book.difficultyLevel || 0 }).map((_, index) => (
           <span key={index} className="text-yellow-400 text-lg">
             ★
           </span>
