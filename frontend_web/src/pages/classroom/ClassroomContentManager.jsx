@@ -13,6 +13,7 @@ const ClassroomContentManager = () => {
   const [selectedBook, setSelectedBook] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [alertModal, setAlertModal] = useState({ show: false, type: "", message: "" }); // State for alert modal
 
   // States for the "Add/Edit Book" modal
   const [bookTitle, setBookTitle] = useState("");
@@ -80,10 +81,18 @@ const ClassroomContentManager = () => {
     setBookImageURL("");
   };
 
+  const showAlertModal = (type, message) => {
+    setAlertModal({ show: true, type, message });
+  };
+
+  const closeAlertModal = () => {
+    setAlertModal({ show: false, type: "", message: "" });
+  };
+
   const handleAddBook = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      alert("You must be logged in to add a book.");
+      showAlertModal("error", "You must be logged in to add a book.");
       return;
     }
 
@@ -93,14 +102,14 @@ const ClassroomContentManager = () => {
       genre: bookGenre,
       difficultyLevel: bookDifficulty,
       imageURL: bookImageURL,
-      classroomId: parseInt(classroomId), // Associate the book with the current classroom
+      classroomId: parseInt(classroomId),
     };
 
     try {
-      const response = await fetch('/api/books', {
-        method: 'POST',
+      const response = await fetch("/api/books", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(newBook),
@@ -108,21 +117,16 @@ const ClassroomContentManager = () => {
 
       if (response.ok) {
         const createdBook = await response.json();
-        alert("Book added successfully!");
-        setClassroomContent((prevContent) => [...prevContent, createdBook]); // Update the classroom content
-        setShowContentModal(false); // Close the modal
-        setBookTitle("");
-        setBookAuthor("");
-        setBookGenre("");
-        setBookDifficulty("");
-        setBookImageURL("");
+        showAlertModal("success", "Book added successfully!");
+        setClassroomContent((prevContent) => [...prevContent, createdBook]);
+        closeAddBookModal();
       } else {
         const errorData = await response.json();
-        alert("Failed to add book: " + errorData.message);
+        showAlertModal("error", `Failed to add book: ${errorData.message}`);
       }
     } catch (error) {
       console.error("Error adding book:", error);
-      alert("An error occurred while adding the book.");
+      showAlertModal("error", "An error occurred while adding the book.");
     }
   };
 
@@ -142,41 +146,39 @@ const ClassroomContentManager = () => {
   };
 
   const confirmDeleteBook = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      alert("You must be logged in to delete a book.");
+      showAlertModal("error", "You must be logged in to delete a book.");
       return;
     }
 
     try {
       const response = await fetch(`/api/books/${selectedBook.bookID}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
-        alert("Book deleted successfully!");
+        showAlertModal("success", "Book deleted successfully!");
         setClassroomContent((prevContent) =>
           prevContent.filter((book) => book.bookID !== selectedBook.bookID)
         );
+        setShowDeleteModal(false);
       } else {
-        alert("Failed to delete book.");
+        showAlertModal("error", "Failed to delete book.");
       }
     } catch (error) {
       console.error("Error deleting book:", error);
-      alert("An error occurred while deleting the book.");
-    } finally {
-      setShowDeleteModal(false);
-      setSelectedBook(null);
+      showAlertModal("error", "An error occurred while deleting the book.");
     }
   };
 
   const submitEditBook = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      alert("You must be logged in to edit a book.");
+      showAlertModal("error", "You must be logged in to edit a book.");
       return;
     }
 
@@ -192,9 +194,9 @@ const ClassroomContentManager = () => {
 
     try {
       const response = await fetch(`/api/books/${selectedBook.bookID}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(updatedBook),
@@ -202,21 +204,19 @@ const ClassroomContentManager = () => {
 
       if (response.ok) {
         const updatedBookData = await response.json();
-        alert("Book updated successfully!");
+        showAlertModal("success", "Book updated successfully!");
         setClassroomContent((prevContent) =>
           prevContent.map((book) =>
             book.bookID === updatedBookData.bookID ? updatedBookData : book
           )
         );
+        setShowEditModal(false);
       } else {
-        alert("Failed to update book.");
+        showAlertModal("error", "Failed to update book.");
       }
     } catch (error) {
       console.error("Error updating book:", error);
-      alert("An error occurred while updating the book.");
-    } finally {
-      setShowEditModal(false);
-      setSelectedBook(null);
+      showAlertModal("error", "An error occurred while updating the book.");
     }
   };
 
@@ -489,6 +489,61 @@ const ClassroomContentManager = () => {
                 className="w-full mb-3 p-2 border rounded"
               />
 
+              {/* Display Current Image */}
+              {bookImageURL ? (
+                <div className="mb-3">
+                  <p className="text-sm text-gray-600 mb-2">Current Book Cover:</p>
+                  <img
+                    src={`${"http://localhost:8080"}${bookImageURL}`} // Construct full image URL
+                    alt="Book Cover"
+                    className="h-32 w-full object-cover rounded"
+                  />
+                </div>
+              ) : (
+                <div className="mb-3">
+                  <p className="text-sm text-gray-600 mb-2">No Current Cover Available</p>
+                </div>
+              )}
+
+              {/* File Upload for New Image */}
+              <div className="mb-3">
+                <label htmlFor="editBookImage" className="block text-sm font-medium text-gray-700 mb-2">
+                  Change Book Cover
+                </label>
+                <input
+                  type="file"
+                  id="editBookImage"
+                  name="editBookImage"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const formData = new FormData();
+                      formData.append("file", file);
+
+                      try {
+                        const response = await fetch("/api/books/upload-image", {
+                          method: "POST",
+                          body: formData,
+                        });
+
+                        if (response.ok) {
+                          const fileUrl = await response.text();
+                          setBookImageURL(fileUrl); // Update the image URL
+                          showAlertModal("success", "Image uploaded successfully!");
+                        } else {
+                          showAlertModal("error", "Failed to upload image.");
+                        }
+                      } catch (error) {
+                        console.error("Error uploading image:", error);
+                        showAlertModal("error", "An error occurred while uploading the image.");
+                      }
+                    }
+                  }}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -527,6 +582,27 @@ const ClassroomContentManager = () => {
                   ✅ Confirm
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Alert Modal */}
+        {alertModal.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm text-center">
+              {alertModal.type === "success" && (
+                <div className="text-green-500 text-4xl mb-4">✔️</div>
+              )}
+              {alertModal.type === "error" && (
+                <div className="text-red-500 text-4xl mb-4">❌</div>
+              )}
+              <p className="text-lg font-semibold mb-4">{alertModal.message}</p>
+              <button
+                onClick={closeAlertModal}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                OK
+              </button>
             </div>
           </div>
         )}
