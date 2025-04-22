@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo-final.png";
@@ -10,21 +9,23 @@ function StudentNavbar() {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    // You can add navigation logic here if needed
-    // For example: navigate(`/${tab.toLowerCase()}`);
+    const routeMap = {
+      LIBRARY: "/library",
+      CLASSROOM: "/classroom",
+      DASHBOARD: "/dashboard",
+    };
+    navigate(routeMap[tab]);
   };
 
   const handleLogout = () => {
-    // Add your logout logic here
     console.log("Logging out");
-    // For example: authService.logout();
     navigate("/login");
   };
 
   return (
     <nav className="bg-white shadow-md">
-      <div className="container mx-auto px-12 py-3 flex items-center">
-        {/* Logo on the left */}
+      <div className="container mx-auto px-8 lg:px-32 py-3 flex items-center justify-between">
+        {/* Logo */}
         <div className="flex-none">
           <img
             src={logo}
@@ -37,27 +38,32 @@ function StudentNavbar() {
           />
         </div>
 
-        {/* Navigation in the center with wide spacing */}
+        {/* Tabs */}
         <div className="flex-1 flex justify-center">
-          <div className="flex space-x-24">
+          <div className="flex space-x-12 mr-16">
             {["LIBRARY", "CLASSROOM", "DASHBOARD"].map((tab) => (
               <button
                 key={tab}
-                className={`text-lg font-medium ${
-                  activeTab === tab ? "text-slate-800" : "text-gray-700"
-                } hover:text-slate-900 transition-colors`}
+                className={`relative text-lg font-semibold transition-colors duration-200 ${
+                  activeTab === tab
+                    ? "text-logo-blue"
+                    : "text-gray-600 hover:text-logo-blue-hover"
+                }`}
                 onClick={() => handleTabClick(tab)}
               >
                 {tab}
+                {activeTab === tab && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-logo-blue rounded-full"></span>
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* User icon on the right */}
+        {/* User Icon */}
         <div className="flex-none relative">
           <button
-            className="rounded-full bg-blue-500 h-10 w-10 flex items-center justify-center text-white text-xl hover:bg-blue-600 transition-colors"
+            className="rounded-full bg-logo-blue h-10 w-10 flex items-center justify-center text-white text-xl hover:bg-logo-blue-hover transition-colors"
             onClick={() => setShowDropdown(!showDropdown)}
           >
             <svg

@@ -11,6 +11,8 @@ export default {
         'btn-blue-hover': '#087AC1',
         'blue-footer': '#1174CB',
         'blue-box': '#2499e3',
+        'logo-blue': '#119AD5',
+        'logo-blue-hover': '#0D7EB1',
       },
       backgroundImage: {
         'login-bg': "url('./src/assets/login-bg.png')",

@@ -1,29 +1,44 @@
-import React from "react";
-
-const difficultyStars = {
-  easy: 1,
-  medium: 2,
-  hard: 3,
+const getImageURL = (url) => {
+  if (url?.startsWith("/uploads")) {
+    return `http://localhost:8080${url}`;
+  }
+  return url;
 };
 
 const BookCard = ({ book }) => {
+  const filledStars = book.difficultyLevel || 0;
+
   return (
-    <div className="flex flex-col items-center text-center">
-      <img
-        src={book.imageURL}
-        alt={book.title}
-        className="h-48 w-36 object-cover rounded-lg shadow-md mb-2"
-        onError={(e) => (e.target.src = "https://via.placeholder.com/150")}
-      />
-      <p className="text-sm font-semibold">{book.title}</p>
-      <div className="flex justify-center mt-1">
-        {Array.from({
-          length: difficultyStars[book.difficultyLevel?.toLowerCase()] || 0,
-        }).map((_, index) => (
-          <span key={index} className="text-yellow-400 text-lg">
-            ★
-          </span>
-        ))}
+    <div className="book-card relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-110 mx-2">
+      <div className="book-cover overflow-hidden rounded-lg shadow-md">
+        <img
+          src={getImageURL(book.imageURL)}
+          alt={book.title}
+          className="w-full h-auto object-cover"
+          onError={(e) => {
+            e.target.src = "https://via.placeholder.com/150";
+          }}
+        />
+      </div>
+
+      <div className="mt-2 text-center">
+        <div className="stars flex justify-center space-x-1">
+          {Array.from({ length: filledStars }).map((_, index) => (
+            <span
+              key={index}
+              className="text-yellow-400 text-xl transition-transform duration-200 hover:scale-125"
+              title={
+                filledStars === 1
+                  ? "Easy"
+                  : filledStars === 2
+                  ? "Medium"
+                  : "Hard"
+              }
+            >
+              ⭐
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
