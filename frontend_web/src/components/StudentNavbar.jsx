@@ -11,7 +11,7 @@ function StudentNavbar() {
     setActiveTab(tab);
     const routeMap = {
       LIBRARY: "/library",
-      CLASSROOM: "/classroom",
+      CLASSROOM: "/student-classroom",
       DASHBOARD: "/dashboard",
     };
     navigate(routeMap[tab]);
@@ -23,7 +23,7 @@ function StudentNavbar() {
   };
 
   return (
-    <nav className="bg-white shadow-md">
+    <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-8 lg:px-32 py-3 flex items-center justify-between">
         {/* Logo */}
         <div className="flex-none">

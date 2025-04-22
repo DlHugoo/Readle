@@ -13,6 +13,7 @@ export default {
         'blue-box': '#2499e3',
         'logo-blue': '#119AD5',
         'logo-blue-hover': '#0D7EB1',
+        'story-title': '#0780C6',
       },
       backgroundImage: {
         'login-bg': "url('./src/assets/login-bg.png')",
