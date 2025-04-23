@@ -5,6 +5,7 @@ import LoginPage from "./pages/loginPage/LoginPage";
 import ClassroomManagement from "./pages/classroom/ClassroomManagement";
 import StudentLibraryPage from "./pages/studentPage/StudentLibraryPage";
 import ClassroomContent from "./pages/classroom/ClassroomContentManager";
+import BookPage from "./pages/studentPage/BookPage";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           path="/classroom-content/:classroomId"
           element={<ClassroomContent />}
         />
+        <Route path="/book/:bookId" element={<BookPage />} />
       </Routes>
     </Router>
   );
