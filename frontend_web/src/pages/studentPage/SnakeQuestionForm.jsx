@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import Navbar from '../../components/Navbar'; // adjust path if needed
 
 const SnakeQuestionForm = () => {
   const [questions, setQuestions] = useState([
-    { text: '', answers: [{ text: '', correct: false }] },
-    { text: '', answers: [{ text: '', correct: false }] },
-    { text: '', answers: [{ text: '', correct: false }] },
-    { text: '', answers: [{ text: '', correct: false }] },
-    { text: '', answers: [{ text: '', correct: false }] },
+    { text: '', answer: '' },
+    { text: '', answer: '' },
+    { text: '', answer: '' },
+    { text: '', answer: '' },
+    { text: '', answer: '' },
   ]);
 
   const handleQuestionChange = (index, value) => {
@@ -16,27 +17,19 @@ const SnakeQuestionForm = () => {
     setQuestions(updated);
   };
 
-  const handleAnswerChange = (qIndex, aIndex, key, value) => {
+  const handleAnswerChange = (index, value) => {
     const updated = [...questions];
-    updated[qIndex].answers[aIndex][key] = key === 'correct' ? value : value;
-    setQuestions(updated);
-  };
-
-  const addAnswer = (qIndex) => {
-    const updated = [...questions];
-    updated[qIndex].answers.push({ text: '', correct: false });
+    updated[index].answer = value;
     setQuestions(updated);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       for (const q of questions) {
         await axios.post('http://localhost:8080/api/snake-questions', q);
       }
       alert('5 questions submitted successfully!');
-      // Reset form if needed
     } catch (err) {
       console.error(err);
       alert('Failed to submit questions');
@@ -44,63 +37,50 @@ const SnakeQuestionForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Submit 5 Snake Quiz Questions</h2>
-      {questions.map((q, qIndex) => (
-        <div key={qIndex} style={{ marginBottom: '20px' }}>
-          <h4>Question {qIndex + 1}</h4>
-          <input
-            type="text"
-            placeholder="Enter question"
-            value={q.text}
-            onChange={(e) => handleQuestionChange(qIndex, e.target.value)}
-            required
-          />
-
-          {q.answers.map((a, aIndex) => (
-            <div key={aIndex}>
+    <div className="min-h-screen bg-blue-50">
+      <Navbar />
+      <div className="container mx-auto py-12 px-6">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
+          Submit 5 Snake Quiz Questions
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {questions.map((q, index) => (
+            <div
+              key={index}
+              className="bg-white p-6 rounded-2xl shadow-lg space-y-4"
+            >
+              <h3 className="text-xl font-semibold text-gray-700">
+                Question {index + 1}
+              </h3>
               <input
                 type="text"
-                placeholder="Answer"
-                value={a.text}
-                onChange={(e) =>
-                  handleAnswerChange(qIndex, aIndex, 'text', e.target.value)
-                }
+                placeholder="Enter question"
+                value={q.text}
+                onChange={(e) => handleQuestionChange(index, e.target.value)}
                 required
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-              <label>
-                <input
-                  type="radio"
-                  name={`correct-${qIndex}`}
-                  checked={a.correct}
-                  onChange={() =>
-                    setQuestions((prev) =>
-                      prev.map((item, i) =>
-                        i === qIndex
-                          ? {
-                              ...item,
-                              answers: item.answers.map((ans, j) => ({
-                                ...ans,
-                                correct: j === aIndex,
-                              })),
-                            }
-                          : item
-                      )
-                    )
-                  }
-                />
-                Correct
-              </label>
+              <input
+                type="text"
+                placeholder="Correct answer"
+                value={q.answer}
+                onChange={(e) => handleAnswerChange(index, e.target.value)}
+                required
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+              />
             </div>
           ))}
-          <button type="button" onClick={() => addAnswer(qIndex)}>
-            Add Another Answer
-          </button>
-        </div>
-      ))}
-
-      <button type="submit">Submit All</button>
-    </form>
+          <div className="text-center">
+            <button
+              type="submit"
+              className="bg-pink-500 text-white font-bold px-8 py-3 rounded-full hover:bg-pink-600 transition"
+            >
+              Submit All
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
