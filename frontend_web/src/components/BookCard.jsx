@@ -1,18 +1,25 @@
-const getImageURL = (url) => {
-  if (url?.startsWith("/uploads")) {
-    return `http://localhost:8080${url}`;
-  }
-  return url;
-};
+import { useNavigate } from "react-router-dom";
 
 const BookCard = ({ book }) => {
+  const navigate = useNavigate();
   const filledStars = book.difficultyLevel || 0;
 
+  const handleClick = () => {
+    navigate(`/book/${book.bookID}`);
+  };
+
   return (
-    <div className="book-card relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-110 mx-2">
+    <div
+      className="book-card relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-110 mx-2"
+      onClick={handleClick}
+    >
       <div className="book-cover overflow-hidden rounded-lg shadow-md">
         <img
-          src={getImageURL(book.imageURL)}
+          src={
+            book.imageURL?.startsWith("/uploads")
+              ? `http://localhost:8080${book.imageURL}`
+              : book.imageURL
+          }
           alt={book.title}
           className="w-full h-auto object-cover"
           onError={(e) => {
@@ -20,7 +27,6 @@ const BookCard = ({ book }) => {
           }}
         />
       </div>
-
       <div className="mt-2 text-center">
         <div className="stars flex justify-center space-x-1">
           {Array.from({ length: filledStars }).map((_, index) => (
