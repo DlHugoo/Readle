@@ -69,41 +69,48 @@ const BookPage = () => {
       {/* Hover Zones */}
       {pages.length > 1 && (
         <>
+          {/* Left Hover Zone */}
           <div
-            className="fixed left-0 top-0 h-full w-24 z-40"
+            className="fixed left-0 top-0 h-full w-40 z-40 px-6"
             onMouseEnter={() => setHoverLeft(true)}
             onMouseLeave={() => setHoverLeft(false)}
           ></div>
+
+          {/* Right Hover Zone */}
           <div
-            className="fixed right-0 top-0 h-full w-24 z-40"
+            className="fixed right-0 top-0 h-full w-40 z-40 px-6 flex justify-end"
             onMouseEnter={() => setHoverRight(true)}
             onMouseLeave={() => setHoverRight(false)}
           ></div>
 
           {/* Left Button */}
           <button
+            onMouseEnter={() => setHoverLeft(true)}
+            onMouseLeave={() => setHoverLeft(false)}
             onClick={handlePreviousPage}
             disabled={currentPageIndex === 0}
-            className={`fixed left-6 top-1/2 transform -translate-y-1/2 
-              bg-blue-400 hover:bg-blue-500 text-white 
-              w-16 h-16 rounded-full flex items-center justify-center text-3xl 
-              transition-all duration-300 shadow-lg z-50
-              ${hoverLeft ? "opacity-100" : "opacity-0"}
-              disabled:opacity-30 disabled:cursor-not-allowed`}
+            className={`fixed left-40 top-1/2 transform -translate-y-1/2 
+        bg-blue-400 hover:bg-blue-500 text-white 
+        w-20 h-20 rounded-full flex items-center justify-center text-3xl 
+        transition-all duration-300 shadow-lg z-50
+        ${hoverLeft ? "opacity-100" : "opacity-0"}
+        disabled:opacity-0 disabled:cursor-not-allowed`}
           >
             ‹
           </button>
 
           {/* Right Button */}
           <button
+            onMouseEnter={() => setHoverRight(true)}
+            onMouseLeave={() => setHoverRight(false)}
             onClick={handleNextPage}
             disabled={currentPageIndex === pages.length - 1}
-            className={`fixed right-6 top-1/2 transform -translate-y-1/2 
-              bg-blue-400 hover:bg-blue-500 text-white 
-              w-16 h-16 rounded-full flex items-center justify-center text-3xl 
-              transition-all duration-300 shadow-lg z-50
-              ${hoverRight ? "opacity-100" : "opacity-0"}
-              disabled:opacity-30 disabled:cursor-not-allowed`}
+            className={`fixed right-40 top-1/2 transform -translate-y-1/2 
+        bg-blue-400 hover:bg-blue-500 text-white 
+        w-20 h-20 rounded-full flex items-center justify-center text-3xl 
+        transition-all duration-300 shadow-lg z-50
+        ${hoverRight ? "opacity-100" : "opacity-0"}
+        disabled:opacity-0 disabled:cursor-not-allowed`}
           >
             ›
           </button>
