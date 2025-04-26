@@ -1,16 +1,25 @@
 package com.edu.readle.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    // Serving static files
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Map the "uploads/" directory to be served as static resources
-        registry.addResourceHandler("/uploads/**") // Add /** to match all files and subdirectories
-                .addResourceLocations("file:uploads/"); // Ensure this points to the correct directory
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:uploads/");
+    }
+
+    // CORS setup
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:5173") // React dev server
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 }
