@@ -4,19 +4,27 @@ import BookCard from "../../components/BookCard";
 import FeaturedCarousel from "../../components/FeaturedCarousel";
 import { fetchBooks } from "../../api/api";
 
+// ✨ Import local banners
+import Banner1 from "../../assets/Banner-1.jpg";
+import Banner2 from "../../assets/Banner-2.jpg";
+import Banner3 from "../../assets/Banner-3.jpg";
+
 const StudentLibraryPage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [featuredBooks, setFeaturedBooks] = useState([]);
+
+  // 🎯 Local static featured banners
+  const featuredBanners = [
+    { id: 1, imageURL: Banner1 },
+    { id: 2, imageURL: Banner2 },
+    { id: 3, imageURL: Banner3 },
+  ];
 
   useEffect(() => {
     const getBooks = async () => {
       try {
         const data = await fetchBooks();
         setBooks(data);
-        if (data.length) {
-          setFeaturedBooks(data.slice(0, 3));
-        }
       } catch (err) {
         console.error("Error fetching books:", err);
       } finally {
@@ -32,11 +40,10 @@ const StudentLibraryPage = () => {
       <StudentNavbar />
 
       <div className="container mx-auto px-4 pb-8">
-        {!loading && featuredBooks.length > 0 && (
-          <FeaturedCarousel books={featuredBooks} />
-        )}
+        {/* ✨ Always show featured carousel with local banners */}
+        <FeaturedCarousel books={featuredBanners} autoplay />
 
-        <section className="mt-6">
+        <section className="">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">For you</h2>
           {loading ? (
             <p className="text-center py-8">Loading books...</p>
