@@ -31,14 +31,17 @@ public class ClassroomService {
         this.bookRepository = bookRepository;
     }
 
+    // Fetch all classrooms
     public List<Classroom> getAllClassrooms() {
         return classroomRepository.findAll();
     }
 
+    // Fetch classroom by ID
     public Optional<Classroom> getClassroomById(Long id) {
         return classroomRepository.findById(id);
     }
 
+    // Create a new classroom
     @Transactional
     public Classroom createClassroom(ClassroomDTO classroomDTO) {
         UserEntity teacher = userRepository.findByEmail(classroomDTO.getTeacherId())
@@ -55,6 +58,7 @@ public class ClassroomService {
         return classroomRepository.save(classroom);
     }
 
+    // Generate a unique classroom code
     private String generateUniqueClassroomCode() {
         String code;
         do {
@@ -63,6 +67,7 @@ public class ClassroomService {
         return code;
     }
 
+    // Update classroom details
     @Transactional
     public Optional<ClassroomDTO> updateClassroom(Long id, ClassroomDTO classroomDTO) {
         return classroomRepository.findById(id).map(classroom -> {
@@ -83,23 +88,37 @@ public class ClassroomService {
         });
     }
 
+    // Map classroom entity to DTO
     public ClassroomDTO mapToDTO(Classroom classroom) {
         ClassroomDTO dto = new ClassroomDTO();
         dto.setName(classroom.getName());
         dto.setDescription(classroom.getDescription());
         dto.setTeacherId(classroom.getTeacher() != null ? classroom.getTeacher().getEmail() : null);
         dto.setMaxStudents(classroom.getMaxStudents());
-        dto.setBooks(classroom.getBooks().stream()
+        dto.setClassroomCode(classroom.getClassroomCode());
+
+        // Adding student emails to the DTO
+        List<String> studentEmails = classroom.getStudents().stream()
+                .map(UserEntity::getEmail)
+                .collect(Collectors.toList());
+        dto.setStudentEmails(studentEmails);
+
+        // Mapping books to the DTO
+        List<BookDTO> books = classroom.getBooks().stream()
                 .map(book -> new BookDTO(book.getBookID(), book.getTitle(), book.getAuthor(), book.getGenre(),
                         book.getDifficultyLevel(), book.getImageURL(), classroom.getId(), null))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+        dto.setBooks(books);
+        
         return dto;
     }
 
+    // Delete classroom
     public void deleteClassroom(Long id) {
         classroomRepository.deleteById(id);
     }
 
+    // Add student to classroom
     @Transactional
     public void addStudentToClassroom(Long classroomId, Long studentId) {
         Classroom classroom = classroomRepository.findById(classroomId)
@@ -116,6 +135,7 @@ public class ClassroomService {
         classroomRepository.save(classroom);
     }
 
+    // Remove student from classroom
     @Transactional
     public void removeStudentFromClassroom(Long classroomId, Long studentId) {
         Classroom classroom = classroomRepository.findById(classroomId)
@@ -128,18 +148,21 @@ public class ClassroomService {
         classroomRepository.save(classroom);
     }
 
+    // Get classrooms by teacher's email
     public List<Classroom> getClassroomsByTeacher(String email) {
         UserEntity teacher = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Teacher not found with email: " + email));
         return classroomRepository.findByTeacher(teacher);
     }
 
+    // Get classrooms by student's ID
     public List<Classroom> getClassroomsByStudent(Long studentId) {
         return classroomRepository.findByStudentId(studentId);
     }
 
     // 📘 BOOK RELATIONSHIP METHODS
 
+    // Add book to classroom
     @Transactional
     public void addBookToClassroom(Long classroomId, Long bookId) {
         Classroom classroom = classroomRepository.findById(classroomId)
@@ -152,6 +175,7 @@ public class ClassroomService {
         bookRepository.save(book);
     }
 
+    // Remove book from classroom
     @Transactional
     public void removeBookFromClassroom(Long classroomId, Long bookId) {
         BookEntity book = bookRepository.findById(bookId)
@@ -165,10 +189,41 @@ public class ClassroomService {
         bookRepository.save(book);
     }
 
+    // Get books by classroom
     public List<BookEntity> getBooksByClassroom(Long classroomId) {
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new RuntimeException("Classroom not found"));
 
         return classroom.getBooks() != null ? classroom.getBooks() : new ArrayList<>();
+    }
+
+    // Join classroom - prevent multiple joins for same student
+    @Transactional
+    public void joinClassroom(Long studentId, String classroomCode) {
+        // Fetch classroom by its code
+        Classroom classroom = classroomRepository.findByClassroomCode(classroomCode);
+        if (classroom == null) {
+            throw new RuntimeException("Classroom not found.");
+        }
+
+        // Check if the classroom is full
+        if (classroom.getStudentCount() >= classroom.getMaxStudents()) {
+            throw new RuntimeException("Classroom is full.");
+        }
+
+        // Fetch the student by ID
+        UserEntity student = userRepository.findById(studentId).orElse(null);
+        if (student == null) {
+            throw new RuntimeException("Student not found.");
+        }
+
+        // Check if the student is already enrolled in the classroom
+        if (classroom.getStudents().contains(student)) {
+            throw new RuntimeException("Student is already in the classroom.");
+        }
+
+        // Add the student to the classroom
+        classroom.addStudent(student);
+        classroomRepository.save(classroom);
     }
 }

@@ -33,12 +33,16 @@ public class SecurityConfig {
             .authorizeHttpRequests()
             // Allow public access to authentication and error endpoints
             .requestMatchers("/api/auth/**", "/error").permitAll()
-            // Allow public access to books and pages endpoint
-            .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**").permitAll()  // This line allows all access to /api/pages
-            // Protect all other requests
+            // Allow public access to books, pages, and other public endpoints
+            .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**").permitAll()
+            // Allow authenticated access to join classrooms (students need to join classrooms)
+            .requestMatchers("/api/classrooms/join").hasAuthority("STUDENT")  // Only allow students to join classrooms
+            // Allow authenticated access to the classrooms of students
+            .requestMatchers("/api/classrooms/student/**").hasAuthority("STUDENT")  // Students can access their classrooms
+            // Protect all other requests, allowing access only to authenticated users
             .anyRequest().authenticated()
             .and()
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);  // Add the JWT filter before the UsernamePasswordAuthenticationFilter
 
         return http.build();
     }

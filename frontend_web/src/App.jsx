@@ -10,6 +10,7 @@ import BookPage from "./pages/studentPage/BookPage";
 // 🐍 Snake game & form
 import SnakeGame from "./pages/studentPage/SnakeGame";
 import SnakeQuestionForm from "./pages/studentPage/SnakeQuestionForm";
+import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage"; // Add this import
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/classroom" element={<ClassroomManagement />} />
+        <Route path="/student-classrooms" element={<StudentClassroomPage />} /> {/* New route for student classroom page */}
         <Route path="/library" element={<StudentLibraryPage />} />
         <Route
           path="/classroom-content/:classroomId"

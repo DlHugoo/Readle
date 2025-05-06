@@ -2,8 +2,13 @@ package com.edu.readle.controller;
 
 import com.edu.readle.dto.ClassroomDTO;
 import com.edu.readle.entity.Classroom;
+import com.edu.readle.entity.UserEntity;
 import com.edu.readle.repository.ClassroomRepository;
+import com.edu.readle.repository.UserRepository;
 import com.edu.readle.service.ClassroomService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +20,17 @@ import java.util.List;
 public class ClassroomController {
 
     private final ClassroomService classroomService;
-    ClassroomRepository classroomRepository;
 
-    public ClassroomController(ClassroomService classroomService) {
+    @Autowired
+    private ClassroomRepository classroomRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    // Constructor injection
+    public ClassroomController(ClassroomService classroomService, ClassroomRepository classroomRepository) {
         this.classroomService = classroomService;
+        this.classroomRepository = classroomRepository;
     }
 
     @GetMapping
@@ -66,7 +78,7 @@ public class ClassroomController {
     @DeleteMapping("/{classroomId}/students/{studentId}")
     @PreAuthorize("hasAuthority('TEACHER') or hasAuthority('ADMIN')")
     public ResponseEntity<Void> removeStudentFromClassroom(@PathVariable Long classroomId,
-            @PathVariable Long studentId) {
+                                                           @PathVariable Long studentId) {
         classroomService.removeStudentFromClassroom(classroomId, studentId);
         return ResponseEntity.ok().build();
     }
@@ -81,5 +93,41 @@ public class ClassroomController {
     @PreAuthorize("hasAuthority('STUDENT') or hasAuthority('TEACHER') or hasAuthority('ADMIN')")
     public ResponseEntity<List<Classroom>> getClassroomsByStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(classroomService.getClassroomsByStudent(studentId));
+    }
+
+    @PostMapping("/join")
+    @PreAuthorize("hasAuthority('STUDENT')")
+    public ResponseEntity<String> joinClassroom(@RequestParam Long studentId, @RequestParam String classroomCode) {
+        // Fetch classroom by classroomCode
+        Classroom classroom = classroomRepository.findByClassroomCode(classroomCode);
+        if (classroom == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Classroom not found.");
+        }
+
+        // Check if the classroom is full
+        if (classroom.getStudentCount() >= classroom.getMaxStudents()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Classroom is full.");
+        }
+
+        // Fetch the student by studentId
+        UserEntity student = userRepository.findById(studentId).orElse(null);
+        if (student == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Student not found.");
+        }
+
+        // Log the current list of students in the classroom and the student trying to join
+        System.out.println("Classroom students: " + classroom.getStudents());
+        System.out.println("Checking if student " + student.getEmail() + " is already in the classroom.");
+
+        // Check if the student is already enrolled in the classroom
+        if (classroom.getStudents().contains(student)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Student is already in the classroom.");
+        }
+
+        // Add the student to the classroom
+        classroom.addStudent(student);
+        classroomRepository.save(classroom);  // Save the updated classroom
+
+        return ResponseEntity.ok("Successfully joined the classroom.");
     }
 }

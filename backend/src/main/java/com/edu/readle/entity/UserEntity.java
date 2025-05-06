@@ -1,6 +1,7 @@
 package com.edu.readle.entity;
 
 import jakarta.persistence.*;
+import java.util.Objects;
 
 @Entity
 @Table(name = "users")
@@ -79,5 +80,19 @@ public class UserEntity {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    // Override equals and hashCode to compare UserEntities based on their unique userId
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserEntity that = (UserEntity) o;
+        return Objects.equals(userId, that.userId);  // Compare based on userId
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId);  // Hash based on userId
     }
 }
