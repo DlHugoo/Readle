@@ -34,7 +34,7 @@ public class SecurityConfig {
             // Allow public access to authentication and error endpoints
             .requestMatchers("/api/auth/**", "/error").permitAll()
             // Allow public access to books, pages, snake-questions, and story-sequencing endpoints
-            .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**", "/api/story-sequencing/**").permitAll()
+            .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**", "/api/stories/**").permitAll()
             // Protect all other requests
             .anyRequest().authenticated()
             .and()
