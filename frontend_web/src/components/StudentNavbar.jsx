@@ -11,7 +11,7 @@ function StudentNavbar() {
     setActiveTab(tab);
     const routeMap = {
       LIBRARY: "/library",
-      CLASSROOM: "/student-classroom",
+      CLASSROOM: "/student-classrooms",  // Update this to the student classroom page route
       DASHBOARD: "/dashboard",
     };
     navigate(routeMap[tab]);

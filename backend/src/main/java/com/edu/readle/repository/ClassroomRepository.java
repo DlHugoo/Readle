@@ -18,4 +18,5 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     List<Classroom> findByTeacherUserId(Long teacherId);
 
     boolean existsByClassroomCode(String classroomCode);
+    Classroom findByClassroomCode(String classroomCode);  
 }

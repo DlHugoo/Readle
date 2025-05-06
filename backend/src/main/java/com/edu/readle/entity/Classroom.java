@@ -28,11 +28,13 @@ public class Classroom {
     @JoinColumn(name = "teacher_id", nullable = false)
     private UserEntity teacher;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)  // Change from LAZY to EAGER
     @JoinTable(name = "classroom_students", joinColumns = @JoinColumn(name = "classroom_id"), inverseJoinColumns = @JoinColumn(name = "student_id"))
     private Set<UserEntity> students = new HashSet<>();
 
+
     @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonManagedReference
     private List<BookEntity> books = new ArrayList<>();
 
     public List<BookEntity> getBooks() {
