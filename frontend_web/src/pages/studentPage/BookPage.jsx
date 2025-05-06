@@ -4,6 +4,7 @@ import StudentNavbar from "../../components/StudentNavbar";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import noContentImage from "../../assets/no-content.png"; // 🖼️ Import your no-content image
+import StoryProgressIndicator from "../../components/StoryProgressIndicator"; // Import the new component
 
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
@@ -123,6 +124,15 @@ const BookPage = () => {
           {book?.title}
         </h1>
 
+        {/* Add Story Progress Indicator here */}
+        {hasContent && pages.length > 0 && (
+          <StoryProgressIndicator 
+            currentPage={currentPageIndex + 1} 
+            totalPages={pages.length} 
+          />
+        )}
+
+      
         <div className="relative w-full">
           <AnimatePresence mode="wait">
             <motion.div
@@ -168,13 +178,14 @@ const BookPage = () => {
             </motion.div>
           </AnimatePresence>
         </div>
-
-        {/* Page Indicator */}
-        {hasContent && (
-          <div className="text-gray-700 font-semibold mt-6">
+  {/* Add page counter below the progress indicator */}
+  {hasContent && pages.length > 0 && (
+          <div className="text-gray-700 font-semibold mb-4">
             Page {currentPageIndex + 1} of {pages.length}
           </div>
         )}
+
+        {/* The old page indicator was here, now moved above */}
       </div>
     </div>
   );
