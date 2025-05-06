@@ -1,18 +1,18 @@
 package com.edu.readle.dto;
 
-import java.util.List;
-
 public class SnakeQuestionDTO {
     private String text;
-    private List<SnakeAnswerDTO> answers;
+    private String answer; // Single answer (not a List)
 
     public SnakeQuestionDTO() {}
 
-    public SnakeQuestionDTO(String text, List<SnakeAnswerDTO> answers) {
+    // Updated constructor to match the fields (no List<SnakeAnswerDTO>)
+    public SnakeQuestionDTO(String text, String answer) {
         this.text = text;
-        this.answers = answers;
+        this.answer = answer;
     }
 
+    // Getters and setters
     public String getText() {
         return text;
     }
@@ -21,11 +21,11 @@ public class SnakeQuestionDTO {
         this.text = text;
     }
 
-    public List<SnakeAnswerDTO> getAnswers() {
-        return answers;
+    public String getAnswer() {
+        return answer;
     }
 
-    public void setAnswers(List<SnakeAnswerDTO> answers) {
-        this.answers = answers;
+    public void setAnswer(String answer) {
+        this.answer = answer;
     }
 }

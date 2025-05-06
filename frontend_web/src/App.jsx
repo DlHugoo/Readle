@@ -8,10 +8,11 @@ import ClassroomContent from "./pages/classroom/ClassroomContentManager";
 import ClassroomStudents from "./pages/classroom/ClassroomStudents";
 import BookPage from "./pages/studentPage/BookPage";
 
-// 🐍 Snake game & form
+
 import SnakeGame from "./pages/studentPage/SnakeGame";
 import SnakeQuestionForm from "./pages/studentPage/SnakeQuestionForm";
 import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage"; // Add this import
+
 
 function App() {
   return (
