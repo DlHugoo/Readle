@@ -1,6 +1,5 @@
 package com.edu.readle.service;
 
-import com.edu.readle.dto.SnakeAnswerDTO;
 import com.edu.readle.dto.SnakeQuestionDTO;
 import com.edu.readle.entity.SnakeAnswerEntity;
 import com.edu.readle.entity.SnakeQuestionEntity;
@@ -23,13 +22,12 @@ public class SnakeQuestionService {
     public SnakeQuestionEntity addQuestion(SnakeQuestionDTO dto) {
         SnakeQuestionEntity question = new SnakeQuestionEntity();
         question.setText(dto.getText());
-
-        for (SnakeAnswerDTO answerDTO : dto.getAnswers()) {
-            SnakeAnswerEntity answer = new SnakeAnswerEntity();
-            answer.setText(answerDTO.getText());
-            answer.setCorrect(answerDTO.isCorrect());
-            question.addAnswer(answer);
-        }
+        
+        // Create and add the single answer (marked as correct)
+        SnakeAnswerEntity answer = new SnakeAnswerEntity();
+        answer.setAnswer(dto.getAnswer());
+        answer.setCorrect(true); // Assuming the provided answer is always correct
+        question.addAnswer(answer);
 
         return snakeQuestionRepository.save(question);
     }

@@ -10,7 +10,7 @@ public class SnakeAnswerEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long answerID;
 
-    private String text;
+    private String answer;
 
     private boolean correct;
 
@@ -22,8 +22,8 @@ public class SnakeAnswerEntity {
     // Constructors
     public SnakeAnswerEntity() {}
 
-    public SnakeAnswerEntity(String text, boolean correct) {
-        this.text = text;
+    public SnakeAnswerEntity(String answer, boolean correct) {
+        this.answer = answer;
         this.correct = correct;
     }
 
@@ -36,12 +36,12 @@ public class SnakeAnswerEntity {
         this.answerID = answerID;
     }
 
-    public String getText() {
-        return text;
+    public String getAnswer() {
+        return answer;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public void setAnswer(String answer) {
+        this.answer = answer;
     }
 
     public boolean isCorrect() {

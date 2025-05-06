@@ -9,8 +9,8 @@ import ClassroomStudents from "./pages/classroom/ClassroomStudents";
 import BookPage from "./pages/studentPage/BookPage";
 
 // 🐍 Snake game & form
-import SnakeGame from "./pages/studentPage/SnakeGame";
-import SnakeQuestionForm from "./pages/studentPage/SnakeQuestionForm";
+import SnakeGame from "./pages/snakegame/SnakeGame";
+import SnakeQuestionForm from "./pages/snakegame/SnakeQuestionForm";
 
 function App() {
   return (
