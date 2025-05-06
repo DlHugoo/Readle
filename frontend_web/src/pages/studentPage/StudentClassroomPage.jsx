@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 
@@ -7,66 +7,85 @@ const StudentClassroomPage = () => {
   const [classroomCode, setClassroomCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const studentId = 1; // Replace this with the actual student ID from the auth system (e.g., from JWT)
+  const studentId = localStorage.getItem("userId");
   const navigate = useNavigate();
-  
-  // Fetch classrooms the student is enrolled in
+
+  // 👇 Fetch classrooms when component mounts
   useEffect(() => {
-    const getClassrooms = async () => {
+    const fetchClassrooms = async () => {
+      setLoading(true);
       try {
         const response = await fetch(`/api/classrooms/student/${studentId}`, {
           headers: {
-            "Authorization": `Bearer ${localStorage.getItem("token")}`  // Get the JWT token from local storage
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
-        if (!response.ok) {
-          throw new Error("Failed to fetch classrooms");
-        }
+
+        if (!response.ok) throw new Error("Failed to fetch classrooms");
         const data = await response.json();
-        console.log("Classrooms fetched:", data); // Debugging the fetched data
         setClassrooms(data);
-      } catch (error) {
+        setError(null);
+      } catch (err) {
+        console.error(err);
         setError("Error fetching classrooms");
-        console.error(error);
       } finally {
         setLoading(false);
       }
     };
 
-    getClassrooms();
+    if (studentId) fetchClassrooms();
   }, [studentId]);
 
-  // Handle joining a classroom
   const handleJoinClassroom = async () => {
     if (!classroomCode) {
       setError("Please enter a classroom code");
       return;
     }
 
+    setLoading(true);
     try {
-      const response = await fetch(`/api/classrooms/join?studentId=${studentId}&classroomCode=${classroomCode}`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`  // Add token here from localStorage
+      const response = await fetch(
+        `/api/classrooms/join?studentId=${studentId}&classroomCode=${classroomCode}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
+      );
 
       const data = await response.json();
+
       if (response.ok) {
-        alert(data); // Success message
-        // Fetch classrooms again to show the updated list
-        await getClassrooms();
-        // Redirect to the classroom content page after joining
-        const classroom = classrooms.find((classroom) => classroom.classroomCode === classroomCode);
-        if (classroom) {
-          navigate(`/classroom-content/${classroom.id}`); // Redirect to classroom content
+        alert(data.message);
+        setError(null);
+
+        // Fetch updated classrooms
+        const refresh = await fetch(`/api/classrooms/student/${studentId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        if (refresh.ok) {
+          const updatedClassrooms = await refresh.json();
+          setClassrooms(updatedClassrooms);
+
+          const joinedClassroom = updatedClassrooms.find(
+            (c) => c.classroomCode === classroomCode
+          );
+          if (joinedClassroom) {
+            navigate(`/classroom-content/${joinedClassroom.id}`);
+          }
         }
       } else {
-        setError(data); // Show error message from backend
+        setError(data.error || "Unknown error joining classroom");
       }
     } catch (err) {
       console.error("Error joining classroom:", err);
       setError("Error joining the classroom");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +97,7 @@ const StudentClassroomPage = () => {
         <h1 className="text-2xl font-bold text-gray-800 mb-4">Your Classrooms</h1>
 
         {loading ? (
-          <p>Loading classrooms...</p>
+          <p>Loading...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : classrooms.length > 0 ? (
@@ -89,7 +108,7 @@ const StudentClassroomPage = () => {
                 <p>{classroom.description}</p>
                 <button
                   className="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
-                  onClick={() => navigate(`/classroom-content/${classroom.id}`)} // Navigate to the classroom content page
+                  onClick={() => navigate(`/classroom-content/${classroom.id}`)}
                 >
                   View Classroom
                 </button>
@@ -97,7 +116,7 @@ const StudentClassroomPage = () => {
             ))}
           </div>
         ) : (
-          <p>No classrooms found.</p>
+          <p>No classrooms joined yet. Use a code below.</p>
         )}
 
         <div className="mt-8">

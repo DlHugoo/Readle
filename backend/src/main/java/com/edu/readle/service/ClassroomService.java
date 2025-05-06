@@ -91,25 +91,32 @@ public class ClassroomService {
     // Map classroom entity to DTO
     public ClassroomDTO mapToDTO(Classroom classroom) {
         ClassroomDTO dto = new ClassroomDTO();
+        dto.setId(classroom.getId()); // ✅ THIS is what was missing
         dto.setName(classroom.getName());
         dto.setDescription(classroom.getDescription());
         dto.setTeacherId(classroom.getTeacher() != null ? classroom.getTeacher().getEmail() : null);
         dto.setMaxStudents(classroom.getMaxStudents());
         dto.setClassroomCode(classroom.getClassroomCode());
-
-        // Adding student emails to the DTO
+    
         List<String> studentEmails = classroom.getStudents().stream()
                 .map(UserEntity::getEmail)
                 .collect(Collectors.toList());
         dto.setStudentEmails(studentEmails);
-
-        // Mapping books to the DTO
+    
         List<BookDTO> books = classroom.getBooks().stream()
-                .map(book -> new BookDTO(book.getBookID(), book.getTitle(), book.getAuthor(), book.getGenre(),
-                        book.getDifficultyLevel(), book.getImageURL(), classroom.getId(), null))
+                .map(book -> new BookDTO(
+                        book.getBookID(),
+                        book.getTitle(),
+                        book.getAuthor(),
+                        book.getGenre(),
+                        book.getDifficultyLevel(),
+                        book.getImageURL(),
+                        classroom.getId(),
+                        null // Or book.getPages() if needed
+                ))
                 .collect(Collectors.toList());
         dto.setBooks(books);
-        
+    
         return dto;
     }
 
@@ -156,9 +163,12 @@ public class ClassroomService {
     }
 
     // Get classrooms by student's ID
-    public List<Classroom> getClassroomsByStudent(Long studentId) {
-        return classroomRepository.findByStudentId(studentId);
+    public List<ClassroomDTO> getClassroomsByStudent(Long studentId) {
+        return classroomRepository.findByStudentId(studentId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
+    
 
     // 📘 BOOK RELATIONSHIP METHODS
 
@@ -190,12 +200,13 @@ public class ClassroomService {
     }
 
     // Get books by classroom
-    public List<BookEntity> getBooksByClassroom(Long classroomId) {
+    public List<BookEntity> getBooksByClassroomId(Long classroomId) {
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new RuntimeException("Classroom not found"));
-
+    
         return classroom.getBooks() != null ? classroom.getBooks() : new ArrayList<>();
     }
+    
 
     // Join classroom - prevent multiple joins for same student
     @Transactional

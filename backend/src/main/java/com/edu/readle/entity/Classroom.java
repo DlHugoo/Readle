@@ -34,6 +34,7 @@ public class Classroom {
 
 
     @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonManagedReference
     private List<BookEntity> books = new ArrayList<>();
 
     public List<BookEntity> getBooks() {

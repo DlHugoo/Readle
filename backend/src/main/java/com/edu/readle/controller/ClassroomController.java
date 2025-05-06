@@ -1,6 +1,7 @@
 package com.edu.readle.controller;
 
 import com.edu.readle.dto.ClassroomDTO;
+import com.edu.readle.entity.BookEntity;
 import com.edu.readle.entity.Classroom;
 import com.edu.readle.entity.UserEntity;
 import com.edu.readle.repository.ClassroomRepository;
@@ -13,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/classrooms")
@@ -27,7 +30,6 @@ public class ClassroomController {
     @Autowired
     private UserRepository userRepository;
 
-    // Constructor injection
     public ClassroomController(ClassroomService classroomService, ClassroomRepository classroomRepository) {
         this.classroomService = classroomService;
         this.classroomRepository = classroomRepository;
@@ -91,43 +93,56 @@ public class ClassroomController {
 
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasAuthority('STUDENT') or hasAuthority('TEACHER') or hasAuthority('ADMIN')")
-    public ResponseEntity<List<Classroom>> getClassroomsByStudent(@PathVariable Long studentId) {
+    public ResponseEntity<List<ClassroomDTO>> getClassroomsByStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(classroomService.getClassroomsByStudent(studentId));
     }
 
     @PostMapping("/join")
     @PreAuthorize("hasAuthority('STUDENT')")
-    public ResponseEntity<String> joinClassroom(@RequestParam Long studentId, @RequestParam String classroomCode) {
-        // Fetch classroom by classroomCode
+    public ResponseEntity<Map<String, String>> joinClassroom(@RequestParam Long studentId, @RequestParam String classroomCode) {
+        Map<String, String> response = new HashMap<>();
+
         Classroom classroom = classroomRepository.findByClassroomCode(classroomCode);
         if (classroom == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Classroom not found.");
+            response.put("error", "Classroom not found.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // Check if the classroom is full
         if (classroom.getStudentCount() >= classroom.getMaxStudents()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Classroom is full.");
+            response.put("error", "Classroom is full.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // Fetch the student by studentId
         UserEntity student = userRepository.findById(studentId).orElse(null);
         if (student == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Student not found.");
+            response.put("error", "Student not found.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // Log the current list of students in the classroom and the student trying to join
         System.out.println("Classroom students: " + classroom.getStudents());
         System.out.println("Checking if student " + student.getEmail() + " is already in the classroom.");
 
-        // Check if the student is already enrolled in the classroom
         if (classroom.getStudents().contains(student)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Student is already in the classroom.");
+            response.put("error", "Student is already in the classroom.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // Add the student to the classroom
         classroom.addStudent(student);
-        classroomRepository.save(classroom);  // Save the updated classroom
+        classroomRepository.save(classroom);
 
-        return ResponseEntity.ok("Successfully joined the classroom.");
+        response.put("message", "Successfully joined the classroom.");
+        return ResponseEntity.ok(response);
+    }
+
+    // ✅ NEW ENDPOINT: GET /api/classrooms/{id}/books
+    @GetMapping("/{id}/books")
+    @PreAuthorize("hasAuthority('STUDENT') or hasAuthority('TEACHER') or hasAuthority('ADMIN')")
+    public ResponseEntity<?> getBooksByClassroom(@PathVariable Long id) {
+        try {
+            List<BookEntity> books = classroomService.getBooksByClassroomId(id);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching books.");
+        }
     }
 }
