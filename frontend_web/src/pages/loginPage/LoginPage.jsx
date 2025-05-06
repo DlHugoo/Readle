@@ -51,12 +51,12 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (response.ok) {
+        // ✅ Save auth values
         localStorage.setItem("token", data.token);
-
-        // Save role if needed later
         localStorage.setItem("role", data.role);
+        localStorage.setItem("userId", data.userId);
 
-        // Redirect based on role
+        // 🔁 Redirect based on role
         if (data.role === "TEACHER") {
           window.location.href = "/classroom";
         } else {
@@ -73,9 +73,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMessage(
-        "Unable to connect to the server. Please try again later."
-      );
+      setErrorMessage("Unable to connect to the server. Please try again later.");
     }
   };
 
