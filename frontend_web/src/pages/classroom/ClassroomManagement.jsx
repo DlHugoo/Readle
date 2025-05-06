@@ -198,8 +198,8 @@ const ClassroomManagement = () => {
         <TeahcerNav />
       </div>
 
-      {/* Main Content - Centered and Constrained */}
-      <div className="p-6 max-w-4xl mx-auto">
+      {/* Main Content - Centered and Wider with top padding to prevent navbar overlap */}
+      <div className="p-6 max-w-6xl mx-auto pt-24">
         <h1 className="text-3xl font-bold text-blue-600 mb-6">📘 Classroom Management</h1>
 
         <button
