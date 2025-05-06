@@ -33,8 +33,8 @@ public class SecurityConfig {
             .authorizeHttpRequests()
             // Allow public access to authentication and error endpoints
             .requestMatchers("/api/auth/**", "/error").permitAll()
-            // Allow public access to books and pages endpoint
-            .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**").permitAll()  // This line allows all access to /api/pages
+            // Allow public access to books, pages, snake-questions, and story-sequencing endpoints
+            .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**", "/api/stories/**").permitAll()
             // Protect all other requests
             .anyRequest().authenticated()
             .and()
