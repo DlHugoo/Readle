@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate  } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
 import { BookOpen, PlusCircle, Menu } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 
 const ClassroomContentManager = () => {
   const { classroomId } = useParams(); // Retrieve classroomId from the route
+  const navigate = useNavigate(); 
   const [showContentModal, setShowContentModal] = useState(false);
   const [selectedModule, setSelectedModule] = useState(null);
   const [classroomContent, setClassroomContent] = useState([]); // State to hold classroom-specific content
@@ -52,6 +53,10 @@ const ClassroomContentManager = () => {
         if (response.ok) {
           const data = await response.json();
           console.log("Classroom details fetched successfully:", data);
+          console.log("Books in classroom:", data.books);
+          if (data.books && data.books.length > 0) {
+            console.log("First book structure:", data.books[0]);
+          }
           setClassroomName(data.name || "Unknown Classroom");
           setClassroomContent(data.books || []); // Fetch books associated with the classroom
         } else {
@@ -137,6 +142,12 @@ const ClassroomContentManager = () => {
       showAlertModal("error", "An error occurred while adding the book.");
     }
   };
+
+  const handleBookClick = (bookId) => {
+    console.log("Navigating to book with ID:", bookId);
+    navigate(`/book-editor/${bookId}`);
+  };
+  
 
   const handleEditClick = (book) => {
     setSelectedBook(book);
@@ -268,7 +279,7 @@ const ClassroomContentManager = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
             <button
               onClick={() => handleSelectModule("library")}
-              className="bg-white border border-[#3B82F6] hover:bg-[#3B82F6] hover:text-white text-[#3B82F6] font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-between"
+              className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
                 <BookOpen size={28} />
@@ -276,17 +287,7 @@ const ClassroomContentManager = () => {
               </div>
               <PlusCircle size={22} />
             </button>
-            <button
-              onClick={() => handleSelectModule("challenges")}
-              className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-between"
-            >
-              
-              <div className="flex items-center gap-3">
-                <span className="text-lg">🧠</span>
-                <span>Comprehension Challenges</span>
-              </div>
-              <PlusCircle size={22} />
-            </button>
+
           </div>
 
           {/* Display Classroom Content */}
@@ -303,8 +304,9 @@ const ClassroomContentManager = () => {
 
                   return (
                     <div
-                      key={index}
+                      key={book.bookID}
                       className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 relative"
+                      onClick={() => handleBookClick(book.bookID)}
                     >
                       {/* Book Cover Image */}
                       <div className="h-48 bg-gray-200 flex items-center justify-center">

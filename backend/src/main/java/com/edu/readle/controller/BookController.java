@@ -57,8 +57,9 @@ public class BookController {
     }
 
     @PostMapping("/upload-image")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) throws java.io.IOException {
-        String uploadDir = "uploads/bookcovers/";
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file,
+                                              @RequestParam(value = "uploadType", defaultValue = "bookcovers") String uploadType) throws java.io.IOException {
+        String uploadDir = "uploads/" + uploadType + "/";
         try {
             // Ensure the uploads directory exists
             File directory = new File(uploadDir);
@@ -72,7 +73,7 @@ public class BookController {
             Files.write(filePath, file.getBytes());
 
             // Construct the file URL
-            String fileUrl = "/uploads/bookcovers/" + fileName;
+            String fileUrl = "/uploads/" + uploadType + "/" + fileName;
             return ResponseEntity.ok(fileUrl);
         } catch (IOException e) {
             e.printStackTrace();
