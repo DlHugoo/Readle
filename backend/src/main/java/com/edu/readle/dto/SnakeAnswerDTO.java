@@ -1,22 +1,22 @@
 package com.edu.readle.dto;
 
 public class SnakeAnswerDTO {
-    private String text;
+    private String answer;
     private boolean correct;
 
     public SnakeAnswerDTO() {}
 
-    public SnakeAnswerDTO(String text, boolean correct) {
-        this.text = text;
+    public SnakeAnswerDTO(String answer, boolean correct) {
+        this.answer = answer;
         this.correct = correct;
     }
 
-    public String getText() {
-        return text;
+    public String getAnswer() {
+        return answer;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public void setAnswer(String answer) {
+        this.answer = answer;
     }
 
     public boolean isCorrect() {

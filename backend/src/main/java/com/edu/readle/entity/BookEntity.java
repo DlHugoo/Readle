@@ -1,6 +1,8 @@
 package com.edu.readle.entity;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -26,6 +28,10 @@ public class BookEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "classroom_id")
     private Classroom classroom;
+
+    @JsonManagedReference
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SnakeQuestionEntity> snakeQuestions = new ArrayList<>();
 
     // Constructors
     public BookEntity() {}
@@ -103,5 +109,24 @@ public class BookEntity {
 
     public void setClassroom(Classroom classroom) {
         this.classroom = classroom;
+    }
+    
+
+    public List<SnakeQuestionEntity> getSnakeQuestions() {
+        return snakeQuestions;
+    }
+    
+    public void setSnakeQuestions(List<SnakeQuestionEntity> snakeQuestions) {
+        this.snakeQuestions = snakeQuestions;
+    }
+
+    public void addSnakeQuestion(SnakeQuestionEntity question) {
+        question.setBook(this);
+        this.snakeQuestions.add(question);
+    }
+    
+    public void removeSnakeQuestion(SnakeQuestionEntity question) {
+        question.setBook(null);
+        this.snakeQuestions.remove(question);
     }
 }
