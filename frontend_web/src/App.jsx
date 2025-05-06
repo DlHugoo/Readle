@@ -8,12 +8,10 @@ import ClassroomContent from "./pages/classroom/ClassroomContentManager";
 import ClassroomStudents from "./pages/classroom/ClassroomStudents";
 import BookPageEditor from "./pages/bookTeacherPage/BookPageEditor";
 import BookPage from "./pages/studentPage/BookPage";
-
-
-import SnakeGame from "./pages/studentPage/SnakeGame";
-import SnakeQuestionForm from "./pages/studentPage/SnakeQuestionForm";
+import SnakeGame from "./pages/snakegame/SnakeGame";
+import SnakeQuestionForm from "./pages/snakegame/SnakeQuestionForm";
 import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage"; // Add this import
-
+import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
 
 function App() {
   return (
@@ -24,16 +22,29 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/classroom" element={<ClassroomManagement />} />
-        <Route path="/student-classrooms" element={<StudentClassroomPage />} /> {/* New route for student classroom page */}
+        <Route
+          path="/student-classrooms"
+          element={<StudentClassroomPage />}
+        />{" "}
+        {/* New route for student classroom page */}
         <Route path="/library" element={<StudentLibraryPage />} />
-        <Route path="/classroom-content/:classroomId" element={<ClassroomContent />}/>
-        <Route path="/book-editor/:bookId" element={<BookPageEditor />}/>
-        <Route path="/classroom-students/:classroomId" element={<ClassroomStudents />}/>
+        <Route
+          path="/classroom-content/:classroomId"
+          element={<ClassroomContent />}
+        />
+        <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
+        <Route
+          path="/classroom-students/:classroomId"
+          element={<ClassroomStudents />}
+        />
         {/* 🐍 Snake game routes */}
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/snake-game" element={<SnakeGame />} />
         <Route path="/book/:bookId" element={<BookPage />} />
-        <Route path="/classroom-content/:id" element={<ClassroomContentPage />} />
+        <Route
+          path="/classroom-content/:id"
+          element={<ClassroomContentPage />}
+        />
       </Routes>
     </Router>
   );
