@@ -5,7 +5,7 @@ import LoginPage from "./pages/loginPage/LoginPage";
 import ClassroomManagement from "./pages/classroom/ClassroomManagement";
 import StudentLibraryPage from "./pages/studentPage/StudentLibraryPage";
 import ClassroomContent from "./pages/classroom/ClassroomContentManager";
-import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
+import ClassroomStudents from "./pages/classroom/ClassroomStudents";
 import BookPage from "./pages/studentPage/BookPage";
 
 // 🐍 Snake game & form
@@ -27,6 +27,10 @@ function App() {
         <Route
           path="/classroom-content/:classroomId"
           element={<ClassroomContent />}
+        />
+        <Route
+          path="/classroom-students/:classroomId"
+          element={<ClassroomStudents />}
         />
         {/* 🐍 Snake game routes */}
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
