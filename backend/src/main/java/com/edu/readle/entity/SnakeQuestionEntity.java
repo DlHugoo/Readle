@@ -3,6 +3,8 @@ package com.edu.readle.entity;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
@@ -17,6 +19,11 @@ public class SnakeQuestionEntity {
     @JsonManagedReference
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SnakeAnswerEntity> answers = new ArrayList<>();
+
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "book_id")
+    private BookEntity book;
 
     // Constructors
     public SnakeQuestionEntity() {}
@@ -54,5 +61,13 @@ public class SnakeQuestionEntity {
 
     public void setAnswers(List<SnakeAnswerEntity> answers) {
         this.answers = answers;
+    }
+
+    public BookEntity getBook() {
+        return book;
+    }
+    
+    public void setBook(BookEntity book) {
+        this.book = book;
     }
 }
