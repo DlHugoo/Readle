@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TeahcerNav from '../../components/TeacherNav';
 import { ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Save } from 'lucide-react';
+// Add this import at the top if not already present
+import { Link } from 'react-router-dom';
 
 const BookPageEditor = () => {
   const { bookId } = useParams();
@@ -471,7 +473,14 @@ const BookPageEditor = () => {
                         <Trash2 size={18} className="mr-2" />
                         Delete
                       </button>
-                    </div>
+                        {/* Add this new button */}
+                        <Link
+  to="/snake-questions"
+  state={{ bookId: bookId }}
+>
+  Add Snake Questions
+</Link>
+  </div>
                   )}
                   
                   <div className="flex items-center">
