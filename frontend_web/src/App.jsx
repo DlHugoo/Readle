@@ -46,7 +46,10 @@ function App() {
           path="/classroom-content/:id"
           element={<ClassroomContentPage />}
         />
-        <Route path="/sequencing" element={<StorySequencingPage />} />
+        <Route
+          path="/book/:bookId/sequencing"
+          element={<StorySequencingPage />}
+        />
       </Routes>
     </Router>
   );

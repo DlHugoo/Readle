@@ -29,23 +29,33 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable()
-            .authorizeHttpRequests()
-            // Allow public access to authentication and error endpoints
-            .requestMatchers("/api/auth/**", "/error").permitAll()
+        http
+                .cors() // ⬅️ Add this line to enable Spring’s global CORS config
+                .and()
+                .csrf().disable()
+                .authorizeHttpRequests()
+                // Allow public access to authentication and error endpoints
+                .requestMatchers("/api/auth/**", "/error").permitAll()
 
-            // Allow public access to books, pages, and other public endpoints
-             .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**", "/api/stories/**").permitAll()
-            .requestMatchers("/api/books/**").hasAnyAuthority("STUDENT", "TEACHER")
-            // Allow authenticated access to join classrooms (students need to join classrooms)
-            .requestMatchers("/api/classrooms/join").hasAuthority("STUDENT")  // Only allow students to join classrooms
-            // Allow authenticated access to the classrooms of students
-            .requestMatchers("/api/classrooms/student/**").hasAuthority("STUDENT")  // Students can access their classrooms
-            // Protect all other requests, allowing access only to authenticated users
+                // Allow public access to books, pages, and other public endpoints
+                .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**",
+                        "/api/stories/**", "/api/ssa/**")
+                .permitAll()
+                .requestMatchers("/api/books/**").hasAnyAuthority("STUDENT", "TEACHER")
+                // Allow authenticated access to join classrooms (students need to join
+                // classrooms)
+                .requestMatchers("/api/classrooms/join").hasAuthority("STUDENT") // Only allow students to join
+                                                                                 // classrooms
+                // Allow authenticated access to the classrooms of students
+                .requestMatchers("/api/classrooms/student/**").hasAuthority("STUDENT") // Students can access their
+                                                                                       // classrooms
+                // Protect all other requests, allowing access only to authenticated users
 
-            .anyRequest().authenticated()
-            .and()
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);  // Add the JWT filter before the UsernamePasswordAuthenticationFilter
+                .anyRequest().authenticated()
+                .and()
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); // Add the JWT filter before
+                                                                                         // the
+                                                                                         // UsernamePasswordAuthenticationFilter
 
         return http.build();
     }
