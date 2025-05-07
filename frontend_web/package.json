@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "axios": "^1.8.4",
     "framer-motion": "^12.10.0",
     "frontend_web": "file:",
@@ -21,7 +23,8 @@
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.4.1",
     "react-slick": "^0.30.3",
-    "slick-carousel": "^1.8.1"
+    "slick-carousel": "^1.8.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
