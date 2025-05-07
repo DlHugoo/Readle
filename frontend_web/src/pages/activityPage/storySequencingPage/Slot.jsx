@@ -1,20 +1,17 @@
-// components/Slot.jsx
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
 
 const Slot = ({ id, image, index }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
 
-  const style = {
-    borderColor: isOver ? "#3B82F6" : "#c8a675",
-  };
+  const borderStyle = image ? "border-solid" : "border-dashed";
+  const borderColor = isOver ? "border-blue-500" : "border-[#c8a675]";
 
   return (
     <div
       ref={setNodeRef}
       id={id}
-      style={style}
-      className="w-28 h-28 md:w-32 md:h-32 border-4 border-dashed rounded-xl bg-slot-color flex items-center justify-center"
+      className={`w-28 h-28 md:w-32 md:h-32 border-4 ${borderStyle} ${borderColor} rounded-xl bg-slot-color flex items-center justify-center`}
     >
       {image ? (
         <img

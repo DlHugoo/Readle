@@ -12,6 +12,7 @@ const StorySequencingPage = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [reshuffleTrigger, setReshuffleTrigger] = useState(0);
+  const [resetCounter, setResetCounter] = useState(0);
 
   useEffect(() => {
     setTimeout(() => setStoryData(dummyStoryData), 300);
@@ -31,6 +32,7 @@ const StorySequencingPage = () => {
   };
 
   const handleTryAgain = () => {
+    setResetCounter((prev) => prev + 1);
     setShowFeedback(false);
   };
 
@@ -46,7 +48,7 @@ const StorySequencingPage = () => {
     );
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="min-h-screen bg-white">
       <StudentNavbar />
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div
@@ -65,6 +67,7 @@ const StorySequencingPage = () => {
           </p>
 
           <SequencingBoard
+            key={resetCounter}
             images={storyData.images}
             onSubmit={handleSubmitSequence}
             reshuffleTrigger={reshuffleTrigger}
