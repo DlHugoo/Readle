@@ -17,7 +17,7 @@ const ImageCard = ({ id, url }) => {
       {...attributes}
       {...listeners}
       style={style}
-      className="w-24 h-24 md:w-28 md:h-28 bg-white border-2 rounded-xl shadow-md overflow-hidden"
+      className="w-24 h-24 md:w-28 md:h-28 bg-white  rounded-xl shadow-md overflow-hidden"
     >
       <img
         src={url}

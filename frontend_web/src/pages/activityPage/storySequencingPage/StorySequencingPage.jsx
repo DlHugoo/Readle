@@ -4,6 +4,7 @@ import StudentNavbar from "../../../components/StudentNavbar";
 import SequencingBoard from "./SequencingBoard";
 import FeedbackModal from "./FeedbackModal";
 import dummyStoryData from "./dummyStoryData";
+import sequenceBg from "../../../assets/sequence-bg1.png";
 
 const StorySequencingPage = () => {
   const [storyData, setStoryData] = useState(null);
@@ -48,11 +49,18 @@ const StorySequencingPage = () => {
     <div className="min-h-screen bg-blue-50">
       <StudentNavbar />
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h1 className="text-3xl font-bold text-center text-btn-blue mb-4">
+        <div
+          className="bg-white rounded-xl shadow-lg p-6"
+          style={{
+            backgroundImage: `url(${sequenceBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <h1 className="text-3xl font-bold text-center text-sequence-title mb-4">
             {storyData.title}
           </h1>
-          <p className="text-lg text-btn-blue text-center mb-6">
+          <p className="text-xl text-sequence-title text-center mb-6">
             Drag and drop the images in the correct order
           </p>
 

@@ -1,4 +1,3 @@
-// components/SequencingBoard.jsx
 import React, { useEffect, useState } from "react";
 import {
   DndContext,
@@ -7,7 +6,6 @@ import {
   useSensors,
   closestCenter,
 } from "@dnd-kit/core";
-import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { v4 as uuidv4 } from "uuid";
 import Slot from "./Slot";
 import ImageCard from "./ImageCard";
@@ -39,18 +37,24 @@ const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
       return;
     }
 
-    // Slot drop
     if (over.id.startsWith("slot-")) {
       const index = Number(over.id.split("-")[1]);
-      if (!slots[index]) {
+
+      // If something is already in this slot, return it to the pool
+      const newSlots = [...slots];
+      const existing = newSlots[index];
+
+      if (existing?.uid !== dragged.uid) {
+        if (existing) {
+          addToPool(existing);
+        }
+
         removeFromPool(dragged.uid);
         removeFromSlots(dragged.uid);
-        const newSlots = [...slots];
         newSlots[index] = dragged;
         setSlots(newSlots);
       }
     } else {
-      // Dropped back into pool
       removeFromSlots(active.id);
       addToPool(dragged);
     }
@@ -89,24 +93,22 @@ const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex justify-center gap-3 mb-10 flex-wrap">
-        <SortableContext
-          items={slots.map((_, i) => `slot-${i}`)}
-          strategy={rectSortingStrategy}
-        >
+      <div className="flex flex-col items-center min-h-[300px]">
+        {" "}
+        {/* NEW wrapper */}
+        <div className="flex justify-center gap-3 mb-10 flex-wrap min-h-[150px]">
           {slots.map((img, index) => (
-            <Slot key={index} id={`slot-${index}`} image={img} />
+            <Slot key={index} id={`slot-${index}`} image={img} index={index} />
           ))}
-        </SortableContext>
-      </div>
-
-      <div
-        id="pool"
-        className="flex flex-wrap justify-center gap-4 p-4 rounded-xl"
-      >
-        {availableImages.map((img) => (
-          <ImageCard key={img.uid} id={img.uid} url={img.url} />
-        ))}
+        </div>
+        <div
+          id="pool"
+          className="flex flex-wrap justify-center gap-4 p-4 rounded-xl"
+        >
+          {availableImages.map((img) => (
+            <ImageCard key={img.uid} id={img.uid} url={img.url} />
+          ))}
+        </div>
       </div>
 
       <div className="text-center mt-6">

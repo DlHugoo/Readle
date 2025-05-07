@@ -14,6 +14,9 @@ export default {
         'logo-blue': '#119AD5',
         'logo-blue-hover': '#0D7EB1',
         'story-title': '#0780C6',
+        'sequence-title': '#0F7CB7',
+        'slot-color': '#FFF4D7',
+        'seq-text': '#c8a675'
       },
       backgroundImage: {
         'login-bg': "url('./src/assets/login-bg.png')",

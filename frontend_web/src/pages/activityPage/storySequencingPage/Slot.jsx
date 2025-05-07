@@ -1,25 +1,20 @@
 // components/Slot.jsx
 import React from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useDroppable } from "@dnd-kit/core";
 
-const Slot = ({ id, image }) => {
-  const { setNodeRef, attributes, listeners, transform, transition, isOver } =
-    useSortable({ id });
+const Slot = ({ id, image, index }) => {
+  const { setNodeRef, isOver } = useDroppable({ id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    borderColor: isOver ? "#3B82F6" : "#CBD5E1",
+    borderColor: isOver ? "#3B82F6" : "#c8a675",
   };
 
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
+      id={id}
       style={style}
-      className="w-28 h-28 md:w-32 md:h-32 border-4 border-dashed rounded-xl bg-white flex items-center justify-center"
+      className="w-28 h-28 md:w-32 md:h-32 border-4 border-dashed rounded-xl bg-slot-color flex items-center justify-center"
     >
       {image ? (
         <img
@@ -28,7 +23,7 @@ const Slot = ({ id, image }) => {
           className="w-full h-full object-cover rounded-lg"
         />
       ) : (
-        <span className="text-3xl text-gray-300">?</span>
+        <span className="text-3xl text-seq-text font-bold">{index + 1}</span>
       )}
     </div>
   );
