@@ -1,5 +1,7 @@
 package com.edu.readle.controller;
 
+import com.edu.readle.dto.StorySequenceDTO;
+import com.edu.readle.dto.StorySequenceDTO.ImageDTO;
 import com.edu.readle.entity.*;
 import com.edu.readle.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class StorySequenceActivityController {
 
     @Autowired
     private UserRepository userRepo;
+
+    @Autowired
+    private BookRepository bookRepo;
 
     @Autowired
     private SSAAttemptRepository attemptRepo;
@@ -61,8 +66,8 @@ public class StorySequenceActivityController {
      */
     @PostMapping("/{ssaId}/check")
     public ResponseEntity<?> submitAnswer(@PathVariable Long ssaId,
-            @RequestBody Map<String, List<Long>> body,
-            Principal principal) {
+                                          @RequestBody Map<String, List<Long>> body,
+                                          Principal principal) {
 
         List<Long> attempted = body.get("attemptedSequence");
         if (attempted == null || attempted.isEmpty()) {
@@ -91,5 +96,27 @@ public class StorySequenceActivityController {
         }
 
         return ResponseEntity.ok(Map.of("correct", isCorrect));
+    }
+
+    /**
+     * POST /api/ssa/create
+     */
+    @PostMapping("/create")
+    public ResponseEntity<?> createSSA(@RequestBody StorySequenceDTO dto) {
+        Optional<BookEntity> optionalBook = bookRepo.findById(dto.getBookId());
+        if (optionalBook.isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid book ID");
+        }
+
+        StorySequenceActivityEntity ssa = new StorySequenceActivityEntity(dto.getTitle(), optionalBook.get());
+
+        List<SequenceImageEntity> sequenceImages = dto.getImages().stream().map(imgDto ->
+            new SequenceImageEntity(imgDto.getImageUrl(), imgDto.getCorrectPosition(), ssa)
+        ).collect(Collectors.toList());
+
+        ssa.setSequenceImages(sequenceImages);
+        ssaRepo.save(ssa); // saves SSA and cascade saves images
+
+        return ResponseEntity.ok(Map.of("message", "SSA created successfully", "ssaId", ssa.getSsaID()));
     }
 }

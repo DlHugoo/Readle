@@ -13,6 +13,7 @@ import SnakeQuestionForm from "./pages/snakegame/SnakeQuestionForm";
 import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage"; // Add this import
 import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
 import StorySequencingPage from "./pages/activityPage/storySequencingPage/StorySequencingPage";
+import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
           path="/book/:bookId/sequencing"
           element={<StorySequencingPage />}
         />
+        <Route path="/create-ssa" element={<CreateSSA />} />
       </Routes>
     </Router>
   );
