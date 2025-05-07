@@ -9,6 +9,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import Slot from "./Slot";
 import ImageCard from "./ImageCard";
+import { ArrowUturnLeftIcon } from "@heroicons/react/24/solid";
 
 const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
   const [slots, setSlots] = useState(Array(images.length).fill(null));
@@ -40,7 +41,6 @@ const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
     if (over.id.startsWith("slot-")) {
       const index = Number(over.id.split("-")[1]);
 
-      // If something is already in this slot, return it to the pool
       const newSlots = [...slots];
       const existing = newSlots[index];
 
@@ -81,6 +81,12 @@ const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
     setSlots((prev) => prev.map((img) => (img?.uid === uid ? null : img)));
   };
 
+  const handleClear = () => {
+    const imagesToReturn = slots.filter((img) => img !== null);
+    setAvailableImages((prev) => [...prev, ...imagesToReturn]);
+    setSlots(Array(slots.length).fill(null));
+  };
+
   const handleSubmit = () => {
     if (slots.some((s) => !s)) return alert("Fill all slots first.");
     const ids = slots.map((img) => img.originalId);
@@ -94,8 +100,6 @@ const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
       onDragEnd={handleDragEnd}
     >
       <div className="flex flex-col items-center min-h-[300px]">
-        {" "}
-        {/* NEW wrapper */}
         <div className="flex justify-center gap-3 mb-10 flex-wrap min-h-[150px]">
           {slots.map((img, index) => (
             <Slot key={index} id={`slot-${index}`} image={img} index={index} />
@@ -111,11 +115,17 @@ const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
         </div>
       </div>
 
-      <div className="text-center mt-6">
+      <div className="text-center mt-6 flex justify-center gap-2">
+        <button
+          onClick={handleClear}
+          className="px-4 py-3 rounded-full text-xl font-bold bg-red-100 hover:bg-red-200 text-red-600 transition-colors duration-200"
+        >
+          Clear
+        </button>
         <button
           onClick={handleSubmit}
           disabled={slots.some((s) => !s)}
-          className={`px-6 py-3 rounded-full text-xl font-bold mt-4 ${
+          className={`px-6 py-3 rounded-full text-xl font-bold flex items-center gap-2 ${
             slots.some((s) => !s)
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : "bg-green-500 hover:bg-green-600 text-white"

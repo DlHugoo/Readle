@@ -1,41 +1,108 @@
 // pages/StorySequencingPage.jsx
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import StudentNavbar from "../../../components/StudentNavbar";
 import SequencingBoard from "./SequencingBoard";
 import FeedbackModal from "./FeedbackModal";
-import dummyStoryData from "./dummyStoryData";
 import sequenceBg from "../../../assets/sequence-bg1.png";
 
 const StorySequencingPage = () => {
+  const { bookId } = useParams();
+  const navigate = useNavigate();
+
   const [storyData, setStoryData] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [reshuffleTrigger, setReshuffleTrigger] = useState(0);
+  const [resetCounter, setResetCounter] = useState(0);
 
   useEffect(() => {
-    setTimeout(() => setStoryData(dummyStoryData), 300);
-  }, []);
+    const fetchSSA = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("You must be logged in.");
+          navigate("/login");
+          return;
+        }
 
-  const handleSubmitSequence = (sequenceIds) => {
-    const correct =
-      JSON.stringify(sequenceIds) ===
-      JSON.stringify(dummyStoryData.correctSequence);
-    setIsCorrect(correct);
-    setShowFeedback(true);
+        const res = await axios.get(
+          `http://localhost:8080/api/ssa/by-book/${bookId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-    if (!correct) {
-      setAttemptsLeft((prev) => prev - 1);
-      setReshuffleTrigger((prev) => prev + 1); // trigger reshuffle
+        const { title, id, images } = res.data;
+
+        if (!images || !Array.isArray(images)) {
+          throw new Error("Invalid or missing image data from response.");
+        }
+
+        setStoryData({
+          ssaId: id,
+          title,
+          images: images.map((img) => ({
+            id: img.id,
+            url: img.imageUrl.startsWith("/uploads")
+              ? `http://localhost:8080${img.imageUrl}`
+              : img.imageUrl,
+          })),
+        });
+      } catch (err) {
+        console.error("Failed to fetch SSA:", err);
+        alert(
+          "❌ Failed to load activity. Make sure this book has a Story Sequencing Activity."
+        );
+      }
+    };
+
+    fetchSSA();
+  }, [bookId, navigate]);
+
+  const handleSubmitSequence = async (sequenceIds) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("You must be logged in.");
+        navigate("/login");
+        return;
+      }
+
+      const res = await axios.post(
+        `http://localhost:8080/api/ssa/${storyData.ssaId}/check`,
+        { attemptedSequence: sequenceIds },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsCorrect(res.data.correct);
+      setShowFeedback(true);
+
+      if (!res.data.correct) {
+        setAttemptsLeft((prev) => prev - 1);
+        setReshuffleTrigger((prev) => prev + 1); // reshuffle images
+      }
+    } catch (err) {
+      console.error("Failed to submit sequence:", err);
+      alert("❌ Submission failed. Please try again.");
     }
   };
 
   const handleTryAgain = () => {
+    setResetCounter((prev) => prev + 1);
     setShowFeedback(false);
   };
 
   const handleContinue = () => {
-    alert("🎉 Continue to next activity!");
+    navigate("/library");
   };
 
   if (!storyData)
@@ -46,7 +113,7 @@ const StorySequencingPage = () => {
     );
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="min-h-screen bg-white">
       <StudentNavbar />
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div
@@ -65,6 +132,7 @@ const StorySequencingPage = () => {
           </p>
 
           <SequencingBoard
+            key={resetCounter}
             images={storyData.images}
             onSubmit={handleSubmitSequence}
             reshuffleTrigger={reshuffleTrigger}

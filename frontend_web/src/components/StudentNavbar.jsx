@@ -1,17 +1,29 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo-final.png";
 
 function StudentNavbar() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("LIBRARY");
   const [showDropdown, setShowDropdown] = useState(false);
-  const navigate = useNavigate();
+
+  // Map pathname to tab
+  useEffect(() => {
+    const pathToTab = {
+      "/library": "LIBRARY",
+      "/student-classrooms": "CLASSROOM",
+      "/dashboard": "DASHBOARD",
+    };
+    const currentTab = pathToTab[location.pathname] || "LIBRARY";
+    setActiveTab(currentTab);
+  }, [location.pathname]);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     const routeMap = {
       LIBRARY: "/library",
-      CLASSROOM: "/student-classrooms",  // Update this to the student classroom page route
+      CLASSROOM: "/student-classrooms",
       DASHBOARD: "/dashboard",
     };
     navigate(routeMap[tab]);
@@ -27,15 +39,20 @@ function StudentNavbar() {
       <div className="container mx-auto px-8 lg:px-32 py-3 flex items-center justify-between">
         {/* Logo */}
         <div className="flex-none">
-          <img
-            src={logo}
-            alt="Readle Logo"
-            className="h-12"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "https://via.placeholder.com/48?text=R";
-            }}
-          />
+          <button
+            onClick={() => navigate("/library")}
+            className="focus:outline-none"
+          >
+            <img
+              src={logo}
+              alt="Readle Logo"
+              className="h-12"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/48?text=R";
+              }}
+            />
+          </button>
         </div>
 
         {/* Tabs */}

@@ -5,6 +5,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import noContentImage from "../../assets/no-content.png"; // 🖼️ Import your no-content image
 import StoryProgressIndicator from "../../components/StoryProgressIndicator"; // Import the new component
+import { useNavigate } from "react-router-dom";
 
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
@@ -21,6 +22,7 @@ const BookPage = () => {
   const [loading, setLoading] = useState(true);
   const [hoverLeft, setHoverLeft] = useState(false);
   const [hoverRight, setHoverRight] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadBookAndPages = async () => {
@@ -126,13 +128,12 @@ const BookPage = () => {
 
         {/* Add Story Progress Indicator here */}
         {hasContent && pages.length > 0 && (
-          <StoryProgressIndicator 
-            currentPage={currentPageIndex + 1} 
-            totalPages={pages.length} 
+          <StoryProgressIndicator
+            currentPage={currentPageIndex + 1}
+            totalPages={pages.length}
           />
         )}
 
-      
         <div className="relative w-full">
           <AnimatePresence mode="wait">
             <motion.div
@@ -178,13 +179,20 @@ const BookPage = () => {
             </motion.div>
           </AnimatePresence>
         </div>
-  {/* Add page counter below the progress indicator */}
-  {hasContent && pages.length > 0 && (
+        {/* Add page counter below the progress indicator */}
+        {hasContent && pages.length > 0 && (
           <div className="text-gray-700 font-semibold mb-4">
             Page {currentPageIndex + 1} of {pages.length}
           </div>
         )}
-
+        {currentPageIndex === pages.length - 1 && (
+          <button
+            onClick={() => navigate(`/book/${bookId}/sequencing`)}
+            className="mt-4 px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow-lg hover:bg-green-700 transition"
+          >
+            🎯 Start Story Sequencing Activity
+          </button>
+        )}
         {/* The old page indicator was here, now moved above */}
       </div>
     </div>
