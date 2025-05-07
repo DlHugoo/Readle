@@ -8,8 +8,8 @@ import SnakeRight from "../../assets/snake/snakeright.png";
 import Confetti from "react-confetti";
 
 const gridSize = 10;
-const cellSize = 50; // Increased from 40px
-const gapSize = 2; // Reduced from 4px
+const cellSize = 50;
+const gapSize = 2;
 const initialSnake = [{ x: 0, y: 0 }];
 const directions = {
   ArrowUp: { x: 0, y: -1 },
@@ -30,10 +30,10 @@ const SnakeGame = () => {
   const [gameWon, setGameWon] = useState(false);
   const [score, setScore] = useState(0);
   const [speed, setSpeed] = useState(300);
+  const [gameStarted, setGameStarted] = useState(false);
   const intervalRef = useRef();
   const gridContainerRef = useRef();
 
-  // Calculate the exact grid container size
   const gridContainerSize = gridSize * cellSize + (gridSize - 1) * gapSize;
 
   useEffect(() => {
@@ -43,14 +43,10 @@ const SnakeGame = () => {
           "http://localhost:8080/api/snake-questions/random?count=5"
         );
         setQuestions(res.data);
-
-        // Set the sequence of correct answers (to check against)
         const correctAnswers = res.data.map(
           (q) => q.answers.find((a) => a.correct)?.answer
         );
         setSequence(correctAnswers);
-
-        // Get all answers (correct and incorrect) for the grid
         const allAnswers = res.data.flatMap((q) =>
           q.answers.map((a) => a.answer)
         );
@@ -68,7 +64,7 @@ const SnakeGame = () => {
   }, []);
 
   useEffect(() => {
-    if (gameOver || gameWon) return;
+    if (!gameStarted || gameOver || gameWon) return;
 
     intervalRef.current = setInterval(() => {
       setSnake((prev) => {
@@ -78,7 +74,6 @@ const SnakeGame = () => {
           y: head.y + dir.y,
         };
 
-        // Wall collision
         if (
           newHead.x < 0 ||
           newHead.x >= gridSize ||
@@ -90,7 +85,6 @@ const SnakeGame = () => {
           return prev;
         }
 
-        // Self collision
         if (
           prev.some(
             (segment, index) =>
@@ -109,7 +103,7 @@ const SnakeGame = () => {
           if (found.text === sequence[currentIndex]) {
             setCurrentIndex(currentIndex + 1);
             setScore((prev) => prev + 100);
-            setSpeed((prev) => Math.max(prev - 20, 100)); // Increase speed
+            setSpeed((prev) => Math.max(prev - 20, 100));
             setAnswerPositions(
               answerPositions.filter(
                 (p) => !(p.x === found.x && p.y === found.y)
@@ -132,13 +126,14 @@ const SnakeGame = () => {
     }, speed);
 
     return () => clearInterval(intervalRef.current);
-  }, [dir, answerPositions, currentIndex, gameOver, gameWon, speed]);
+  }, [dir, answerPositions, currentIndex, gameOver, gameWon, speed, gameStarted]);
 
   useEffect(() => {
+    if (!gameStarted) return;
+    
     const handleKey = (e) => {
       if (directions[e.key]) {
         e.preventDefault();
-        // Prevent 180-degree turns
         if (
           !(dir.x === 1 && e.key === "ArrowLeft") &&
           !(dir.x === -1 && e.key === "ArrowRight") &&
@@ -152,7 +147,11 @@ const SnakeGame = () => {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [dir]);
+  }, [dir, gameStarted]);
+
+  const startGame = () => {
+    setGameStarted(true);
+  };
 
   const resetGame = () => {
     setSnake(initialSnake);
@@ -163,7 +162,7 @@ const SnakeGame = () => {
     setGameWon(false);
     setScore(0);
     setSpeed(300);
-    // Re-fetch questions for a new game
+    setGameStarted(false);
     axios
       .get("http://localhost:8080/api/snake-questions/random?count=5")
       .then((res) => {
@@ -217,6 +216,52 @@ const SnakeGame = () => {
         />
       )}
 
+      {/* Game start overlay */}
+      {!gameStarted && !gameOver && !gameWon && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-8 rounded-xl max-w-md text-center">
+            <h3 className="text-3xl font-bold mb-4 text-indigo-600">
+              Ready to Play?
+            </h3>
+            <p className="text-lg mb-6">
+              Press "Start Game" to begin your Snake Quiz challenge!
+            </p>
+            <button
+              onClick={startGame}
+              className="px-6 py-3 rounded-lg font-bold text-white bg-green-500 hover:bg-green-600 transition-colors"
+            >
+              Start Game
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Game over/won overlay */}
+      {(gameOver || gameWon) && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-8 rounded-xl max-w-md text-center">
+            <h3 className={`text-3xl font-bold mb-4 ${gameWon ? "text-green-600" : "text-red-600"}`}>
+              {gameWon ? "You Won! 🎉" : "Game Over! 😢"}
+            </h3>
+            <p className="text-lg mb-6">
+              {gameWon
+                ? `You answered all ${sequence.length} questions correctly!`
+                : `You made it to question ${currentIndex + 1} of ${sequence.length}`}
+            </p>
+            <button
+              onClick={resetGame}
+              className={`px-6 py-3 rounded-lg font-bold text-white ${
+                gameWon
+                  ? "bg-green-500 hover:bg-green-600"
+                  : "bg-red-500 hover:bg-red-600"
+              } transition-colors`}
+            >
+              Play Again
+            </button>
+          </div>
+        </div>
+      )}
+
       <Navbar />
       <div className="container mx-auto py-8 px-4 max-w-6xl">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -234,6 +279,8 @@ const SnakeGame = () => {
                     {currentIndex}/{sequence.length}
                   </p>
                 </div>
+                
+
               </div>
 
               <div className="mb-6">
@@ -291,41 +338,6 @@ const SnakeGame = () => {
           {/* Right side - Game board */}
           <div className="lg:w-2/3">
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              {(gameOver || gameWon) && (
-                <div
-                  className={`absolute inset-0 flex items-center justify-center z-10 bg-black bg-opacity-50 rounded-2xl ${
-                    gameOver ? "animate-fade-in" : ""
-                  }`}
-                >
-                  <div className="bg-white p-8 rounded-xl max-w-md text-center">
-                    <h3
-                      className={`text-3xl font-bold mb-4 ${
-                        gameWon ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {gameWon ? "You Won! 🎉" : "Game Over! 😢"}
-                    </h3>
-                    <p className="text-lg mb-6">
-                      {gameWon
-                        ? `You answered all ${sequence.length} questions correctly!`
-                        : `You made it to question ${currentIndex + 1} of ${
-                            sequence.length
-                          }`}
-                    </p>
-                    <button
-                      onClick={resetGame}
-                      className={`px-6 py-3 rounded-lg font-bold text-white ${
-                        gameWon
-                          ? "bg-green-500 hover:bg-green-600"
-                          : "bg-red-500 hover:bg-red-600"
-                      } transition-colors`}
-                    >
-                      Play Again
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <div
                 ref={gridContainerRef}
                 className="mx-auto bg-gray-100 rounded-xl shadow-inner overflow-hidden"
