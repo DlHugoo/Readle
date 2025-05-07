@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Navbar from '../../components/Navbar'; // adjust path if needed
+import { useLocation, useNavigate } from 'react-router-dom';
+import Navbar from '../../components/Navbar';
 
 const SnakeQuestionForm = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [bookId, setBookId] = useState(null);
   const [questions, setQuestions] = useState([
     { text: '', answer: '' },
     { text: '', answer: '' },
@@ -10,6 +14,19 @@ const SnakeQuestionForm = () => {
     { text: '', answer: '' },
     { text: '', answer: '' },
   ]);
+
+  // Get bookId from navigation state or URL params
+  useEffect(() => {
+    if (location.state?.bookId) {
+      setBookId(location.state.bookId);
+    } else if (location.search) {
+      const params = new URLSearchParams(location.search);
+      setBookId(params.get('bookId'));
+    } else {
+      // If no bookId found, redirect back
+      navigate(-1);
+    }
+  }, [location, navigate]);
 
   const handleQuestionChange = (index, value) => {
     const updated = [...questions];
@@ -26,10 +43,25 @@ const SnakeQuestionForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      for (const q of questions) {
-        await axios.post('http://localhost:8080/api/snake-questions', q);
+      if (!bookId) {
+        alert('No book associated with these questions');
+        return;
       }
+
+      // Prepare all questions with bookId
+      const questionsToSubmit = questions.map(q => ({
+        ...q,
+        bookId: bookId
+      }));
+
+      // Submit all questions
+      const promises = questionsToSubmit.map(q => 
+        axios.post('http://localhost:8080/api/snake-questions', q)
+      );
+
+      await Promise.all(promises);
       alert('5 questions submitted successfully!');
+      navigate(-1); // Go back after submission
     } catch (err) {
       console.error(err);
       alert('Failed to submit questions');
@@ -41,7 +73,7 @@ const SnakeQuestionForm = () => {
       <Navbar />
       <div className="container mx-auto py-12 px-6">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
-          Submit 5 Snake Quiz Questions
+          Submit 5 Snake Quiz Questions {bookId && `for Book #${bookId}`}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-8">
           {questions.map((q, index) => (
@@ -70,7 +102,14 @@ const SnakeQuestionForm = () => {
               />
             </div>
           ))}
-          <div className="text-center">
+          <div className="flex justify-center space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="bg-gray-500 text-white font-bold px-8 py-3 rounded-full hover:bg-gray-600 transition"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               className="bg-pink-500 text-white font-bold px-8 py-3 rounded-full hover:bg-pink-600 transition"

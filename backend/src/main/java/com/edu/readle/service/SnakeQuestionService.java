@@ -1,8 +1,10 @@
 package com.edu.readle.service;
 
 import com.edu.readle.dto.SnakeQuestionDTO;
+import com.edu.readle.entity.BookEntity;
 import com.edu.readle.entity.SnakeAnswerEntity;
 import com.edu.readle.entity.SnakeQuestionEntity;
+import com.edu.readle.repository.BookRepository;
 import com.edu.readle.repository.SnakeQuestionRepository;
 import org.springframework.stereotype.Service;
 
@@ -14,19 +16,27 @@ import java.util.stream.Collectors;
 public class SnakeQuestionService {
 
     private final SnakeQuestionRepository snakeQuestionRepository;
+    private final BookRepository bookRepository;
 
-    public SnakeQuestionService(SnakeQuestionRepository snakeQuestionRepository) {
+    public SnakeQuestionService(SnakeQuestionRepository snakeQuestionRepository, BookRepository bookRepository) {
         this.snakeQuestionRepository = snakeQuestionRepository;
+        this.bookRepository = bookRepository;
     }
 
     public SnakeQuestionEntity addQuestion(SnakeQuestionDTO dto) {
         SnakeQuestionEntity question = new SnakeQuestionEntity();
         question.setText(dto.getText());
-        
-        // Create and add the single answer (marked as correct)
+
+        // Fetch the BookEntity using the bookId from DTO
+        BookEntity book = bookRepository.findById(dto.getBookId())
+            .orElseThrow(() -> new RuntimeException("Book not found with ID: " + dto.getBookId()));
+
+        question.setBook(book); // ⬅ Associate the book with the question
+
+        // Create and add the answer
         SnakeAnswerEntity answer = new SnakeAnswerEntity();
         answer.setAnswer(dto.getAnswer());
-        answer.setCorrect(true); // Assuming the provided answer is always correct
+        answer.setCorrect(true);
         question.addAnswer(answer);
 
         return snakeQuestionRepository.save(question);

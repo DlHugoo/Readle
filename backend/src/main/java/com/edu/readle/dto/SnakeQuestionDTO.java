@@ -2,14 +2,15 @@ package com.edu.readle.dto;
 
 public class SnakeQuestionDTO {
     private String text;
-    private String answer; // Single answer (not a List)
+    private String answer;
+    private Long bookId; // New field
 
     public SnakeQuestionDTO() {}
 
-    // Updated constructor to match the fields (no List<SnakeAnswerDTO>)
-    public SnakeQuestionDTO(String text, String answer) {
+    public SnakeQuestionDTO(String text, String answer, Long bookId) {
         this.text = text;
         this.answer = answer;
+        this.bookId = bookId;
     }
 
     // Getters and setters
@@ -27,5 +28,13 @@ public class SnakeQuestionDTO {
 
     public void setAnswer(String answer) {
         this.answer = answer;
+    }
+
+    public Long getBookId() {
+        return bookId;
+    }
+
+    public void setBookId(Long bookId) {
+        this.bookId = bookId;
     }
 }
