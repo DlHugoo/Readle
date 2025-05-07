@@ -12,6 +12,7 @@ import SnakeGame from "./pages/snakegame/SnakeGame";
 import SnakeQuestionForm from "./pages/snakegame/SnakeQuestionForm";
 import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage"; // Add this import
 import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
+import StorySequencingPage from "./pages/activityPage/storySequencingPage/StorySequencingPage";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
           path="/classroom-content/:id"
           element={<ClassroomContentPage />}
         />
+        <Route path="/sequencing" element={<StorySequencingPage />} />
       </Routes>
     </Router>
   );
