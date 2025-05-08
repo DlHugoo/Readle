@@ -341,7 +341,7 @@ const BookPageEditor = () => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Page header with controls */}
           <div className="bg-blue-500 text-white p-4 flex justify-between items-center">
-            <div className="text-xl font-bold">Readle</div>
+            <div className="text-xl font-bold">Teacher Content Creator</div>
             <button 
               onClick={goBackToClassroom}
               className="text-white hover:text-blue-200"
@@ -473,14 +473,7 @@ const BookPageEditor = () => {
                         <Trash2 size={18} className="mr-2" />
                         Delete
                       </button>
-                        {/* Add this new button */}
-                        <Link
-  to="/snake-questions"
-  state={{ bookId: bookId }}
->
-  Add Snake Questions
-</Link>
-  </div>
+                    </div>
                   )}
                   
                   <div className="flex items-center">
@@ -523,6 +516,44 @@ const BookPageEditor = () => {
             )}
           </div>
         </div>
+        
+        {/* Activity buttons - Moved outside the main box */}
+        {pages.length > 0 && (
+          <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Add Learning Activities</h2>
+            <p className="text-gray-600 mb-6">Enhance this book with interactive learning activities for students</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Link
+                to="/teacher-create-ssa"
+                state={{ bookId: bookId, bookTitle: book?.title }}
+                className="flex items-center p-4 bg-purple-100 border border-purple-200 rounded-lg hover:bg-purple-200 transition-colors group"
+              >
+                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white mr-4 group-hover:bg-purple-600">
+                  <Plus size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-purple-700">Story Sequencing Activity</h3>
+                  <p className="text-sm text-purple-600">Create an activity to arrange story events in order</p>
+                </div>
+              </Link>
+              
+              <Link
+                to="/snake-questions"
+                state={{ bookId: bookId, bookTitle: book?.title }}
+                className="flex items-center p-4 bg-green-100 border border-green-200 rounded-lg hover:bg-green-200 transition-colors group"
+              >
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white mr-4 group-hover:bg-green-600">
+                  <Plus size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-green-700">Snake Game Questions</h3>
+                  <p className="text-sm text-green-600">Add questions for the snake game activity</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

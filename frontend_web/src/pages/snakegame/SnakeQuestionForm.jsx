@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
+import TeacherNav from '../../components/TeacherNav';
+import { ArrowLeft } from 'lucide-react';
 
 const SnakeQuestionForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [bookId, setBookId] = useState(null);
+  const [bookTitle, setBookTitle] = useState('');
+  const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState([
     { text: '', answer: '' },
     { text: '', answer: '' },
@@ -19,6 +22,10 @@ const SnakeQuestionForm = () => {
   useEffect(() => {
     if (location.state?.bookId) {
       setBookId(location.state.bookId);
+      // If book title is passed directly in state, use it
+      if (location.state.bookTitle) {
+        setBookTitle(location.state.bookTitle);
+      }
     } else if (location.search) {
       const params = new URLSearchParams(location.search);
       setBookId(params.get('bookId'));
@@ -27,6 +34,23 @@ const SnakeQuestionForm = () => {
       navigate(-1);
     }
   }, [location, navigate]);
+
+  // Fetch book title if we have bookId but no title yet
+  useEffect(() => {
+    if (bookId && !bookTitle) {
+      setLoading(true);
+      axios.get(`http://localhost:8080/api/books/${bookId}`)
+        .then(response => {
+          setBookTitle(response.data.title);
+        })
+        .catch(error => {
+          console.error('Error fetching book details:', error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [bookId, bookTitle]);
 
   const handleQuestionChange = (index, value) => {
     const updated = [...questions];
@@ -70,11 +94,32 @@ const SnakeQuestionForm = () => {
 
   return (
     <div className="min-h-screen bg-blue-50">
-      <Navbar />
-      <div className="container mx-auto py-12 px-6">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
-          Submit 5 Snake Quiz Questions {bookId && `for Book #${bookId}`}
-        </h2>
+      <TeacherNav />
+      <div className="container mx-auto pt-24 pb-12 px-6">
+        {loading ? (
+          <div className="text-center">
+            <p className="text-xl">Loading book information...</p>
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-xl shadow-md mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <button 
+                onClick={() => navigate(-1)} 
+                className="text-blue-600 hover:text-blue-800 flex items-center"
+              >
+                <ArrowLeft size={20} className="mr-1" />
+                Back to Book
+              </button>
+            </div>
+            <h3 className="text-xl text-center text-gray-600 mb-2">
+                Submit Snake Quiz Questions 
+            </h3>
+            <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
+              for "{bookTitle}"
+            </h2>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-8">
           {questions.map((q, index) => (
             <div
