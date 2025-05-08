@@ -10,14 +10,23 @@ function StudentNavbar() {
 
   // Map pathname to tab
   useEffect(() => {
-    const pathToTab = {
-      "/library": "LIBRARY",
-      "/student-classrooms": "CLASSROOM",
-      "/dashboard": "DASHBOARD",
-    };
-    const currentTab = pathToTab[location.pathname] || "LIBRARY";
-    setActiveTab(currentTab);
+    const path = location.pathname;
+  
+    if (
+      path.startsWith("/student-classrooms") ||
+      path.startsWith("/student/classroom-content") ||
+      path.startsWith("/book/")
+    ) {
+      setActiveTab("CLASSROOM");
+    } else if (path.startsWith("/library")) {
+      setActiveTab("LIBRARY");
+    } else if (path.startsWith("/dashboard")) {
+      setActiveTab("DASHBOARD");
+    } else {
+      setActiveTab(""); // fallback
+    }
   }, [location.pathname]);
+  
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);

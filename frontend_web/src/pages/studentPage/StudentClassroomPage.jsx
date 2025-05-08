@@ -10,7 +10,6 @@ const StudentClassroomPage = () => {
   const studentId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
-  // 👇 Fetch classrooms when component mounts
   useEffect(() => {
     const fetchClassrooms = async () => {
       setLoading(true);
@@ -60,7 +59,6 @@ const StudentClassroomPage = () => {
         alert(data.message);
         setError(null);
 
-        // Fetch updated classrooms
         const refresh = await fetch(`/api/classrooms/student/${studentId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -75,7 +73,7 @@ const StudentClassroomPage = () => {
             (c) => c.classroomCode === classroomCode
           );
           if (joinedClassroom) {
-            navigate(`/classroom-content/${joinedClassroom.id}`);
+            navigate(`/student/classroom-content/${joinedClassroom.id}`);
           }
         }
       } else {
@@ -93,22 +91,33 @@ const StudentClassroomPage = () => {
     <div className="student-classroom-page">
       <StudentNavbar />
 
-      <div className="container mx-auto px-4 pb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Your Classrooms</h1>
+      <div className="container mx-auto px-4 pb-12 pt-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">
+          📚 Classroom Content Access
+        </h1>
 
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : classrooms.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {classrooms.map((classroom) => (
-              <div key={classroom.id} className="p-4 border rounded shadow">
-                <h2 className="text-xl font-semibold">{classroom.name}</h2>
-                <p>{classroom.description}</p>
+              <div
+                key={classroom.id}
+                className="bg-white rounded-lg shadow-lg p-6 border border-gray-200"
+              >
+                <h2 className="text-2xl font-bold text-logo-blue mb-2">
+                  {classroom.name}
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  {classroom.description}
+                </p>
                 <button
-                  className="mt-4 bg-blue-500 text-white py-2 px-4 rounded"
-                  onClick={() => navigate(`/classroom-content/${classroom.id}`)}
+                  onClick={() =>
+                    navigate(`/student/classroom-content/${classroom.id}`)
+                  }
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
                 >
                   View Classroom
                 </button>
@@ -119,18 +128,20 @@ const StudentClassroomPage = () => {
           <p>No classrooms joined yet. Use a code below.</p>
         )}
 
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Join a Classroom</h2>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-md max-w-xl mx-auto">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">
+            🔑 Join a Classroom
+          </h2>
           <input
             type="text"
             placeholder="Enter Classroom Code"
             value={classroomCode}
             onChange={(e) => setClassroomCode(e.target.value)}
-            className="p-2 border rounded mb-4"
+            className="w-full p-3 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <button
             onClick={handleJoinClassroom}
-            className="bg-blue-500 text-white py-2 px-4 rounded"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
           >
             Join Classroom
           </button>
