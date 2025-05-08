@@ -51,4 +51,8 @@ public class SnakeQuestionService {
         Collections.shuffle(all);
         return all.stream().limit(count).collect(Collectors.toList());
     }
+
+    public List<SnakeQuestionEntity> getQuestionsByBookId(Long bookId) {
+        return snakeQuestionRepository.findByBook_BookID(bookId);
+    }
 }
