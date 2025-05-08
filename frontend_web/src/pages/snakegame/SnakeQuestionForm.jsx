@@ -59,7 +59,7 @@ const SnakeQuestionForm = () => {
     if (bookId) {
       setLoading(true);
       // Fix: Use the correct endpoint format
-      axios.get(`http://localhost:8080/api/snake-questions/by-book/${bookId}`)
+      axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
         .then(response => {
           if (response.data && response.data.length > 0) {
             setExistingQuestions(response.data);
