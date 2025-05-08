@@ -58,8 +58,8 @@ const SnakeQuestionForm = () => {
   useEffect(() => {
     if (bookId) {
       setLoading(true);
-      // Fix: Use the correct endpoint format
-      axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
+      // Fix: Use the correct endpoint format with a query parameter instead of path parameter
+      axios.get(`http://localhost:8080/api/snake-questions?bookId=${bookId}`)
         .then(response => {
           if (response.data && response.data.length > 0) {
             setExistingQuestions(response.data);
