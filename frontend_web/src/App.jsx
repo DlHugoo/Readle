@@ -42,6 +42,7 @@ function App() {
         <Route path="/create-ssa" element={<CreateSSA />} />
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
         <Route path="/book/:bookId" element={<BookReaderPage />} />
+        <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
       </Routes>
     </Router>
   );
