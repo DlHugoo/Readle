@@ -3,8 +3,8 @@ import { useParams } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import noContentImage from "../../assets/no-content.png"; // 🖼️ Import your no-content image
-import StoryProgressIndicator from "../../components/StoryProgressIndicator"; // Import the new component
+import noContentImage from "../../assets/no-content.png";
+import StoryProgressIndicator from "../../components/StoryProgressIndicator";
 import { useNavigate } from "react-router-dom";
 
 const getImageURL = (url) => {
@@ -185,15 +185,23 @@ const BookPage = () => {
             Page {currentPageIndex + 1} of {pages.length}
           </div>
         )}
-        {currentPageIndex === pages.length - 1 && (
+        <div className="flex gap-4">
+          {currentPageIndex === pages.length - 1 && (
+            <button
+              onClick={() => navigate(`/book/${bookId}/sequencing`)}
+              className="mt-4 px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow-lg hover:bg-green-700 transition"
+            >
+              🎯 Start Story Sequencing Activity
+            </button>
+          )}
+          {/* Updated Snake Game Button */}
           <button
-            onClick={() => navigate(`/book/${bookId}/sequencing`)}
-            className="mt-4 px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow-lg hover:bg-green-700 transition"
+            onClick={() => navigate(`/book/${bookId}/snake-game`)}
+            className="mt-4 px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow-lg hover:bg-purple-700 transition"
           >
-            🎯 Start Story Sequencing Activity
+            🐍 Play Snake Game
           </button>
-        )}
-        {/* The old page indicator was here, now moved above */}
+        </div>
       </div>
     </div>
   );
