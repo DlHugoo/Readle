@@ -53,6 +53,6 @@ public class SnakeQuestionService {
     }
 
     public List<SnakeQuestionEntity> getQuestionsByBookId(Long bookId) {
-        return snakeQuestionRepository.findByBook_bookID(bookId);
+        return snakeQuestionRepository.findByBook_BookID(bookId);  
     }
 }
