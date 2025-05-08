@@ -33,4 +33,9 @@ public class SnakeQuestionController {
     public ResponseEntity<List<SnakeQuestionEntity>> getRandomQuestions(@RequestParam(defaultValue = "5") int count) {
         return ResponseEntity.ok(snakeQuestionService.getRandomQuestions(count));
     }
+
+    @GetMapping("/book/{bookId}")
+    public ResponseEntity<List<SnakeQuestionEntity>> getQuestionsByBookId(@PathVariable Long bookId) {
+        return ResponseEntity.ok(snakeQuestionService.getQuestionsByBookId(bookId));
+    }
 }

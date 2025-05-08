@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import Navbar from "../../components/Navbar";
+import Navbar from "../../components/StudentNavbar";
 import SnakeUp from "../../assets/snake/snakeup.png";
 import SnakeDown from "../../assets/snake/snakedown.png";
 import SnakeLeft from "../../assets/snake/snakeleft.png";
 import SnakeRight from "../../assets/snake/snakeright.png";
 import Confetti from "react-confetti";
+import { useParams } from "react-router-dom";
 
 const gridSize = 10;
 const cellSize = 50;
@@ -19,6 +20,7 @@ const directions = {
 };
 
 const SnakeGame = () => {
+  const { bookId } = useParams();
   const [snake, setSnake] = useState(initialSnake);
   const [dir, setDir] = useState(directions.ArrowRight);
   const [currentDirection, setCurrentDirection] = useState("ArrowRight");
@@ -37,11 +39,15 @@ const SnakeGame = () => {
   const gridContainerSize = gridSize * cellSize + (gridSize - 1) * gapSize;
 
   useEffect(() => {
+    console.log("Received bookId:", bookId); // Add this line to check bookId
+    
     const fetchQuestions = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:8080/api/snake-questions/random?count=5"
+          `http://localhost:8080/api/snake-questions/book/${bookId}`
         );
+        console.log("Fetched questions:", res.data); // Also log the response data
+        
         setQuestions(res.data);
         const correctAnswers = res.data.map(
           (q) => q.answers.find((a) => a.correct)?.answer
@@ -57,11 +63,12 @@ const SnakeGame = () => {
         }));
         setAnswerPositions(positions);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching questions:", err);
       }
     };
+    
     fetchQuestions();
-  }, []);
+  }, [bookId]); // Make sure bookId is in the dependency array
 
   useEffect(() => {
     if (!gameStarted || gameOver || gameWon) return;
@@ -164,7 +171,7 @@ const SnakeGame = () => {
     setSpeed(300);
     setGameStarted(false);
     axios
-      .get("http://localhost:8080/api/snake-questions/random?count=5")
+      .get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
       .then((res) => {
         setQuestions(res.data);
         const correctAnswers = res.data.map(
@@ -323,15 +330,6 @@ const SnakeGame = () => {
                   <li>• Wrong answer ends the game</li>
                 </ul>
               </div>
-
-              {(gameOver || gameWon) && (
-                <button
-                  onClick={resetGame}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors"
-                >
-                  {gameWon ? "Play Again" : "Try Again"}
-                </button>
-              )}
             </div>
           </div>
 
