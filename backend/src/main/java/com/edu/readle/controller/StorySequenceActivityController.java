@@ -4,6 +4,8 @@ import com.edu.readle.dto.StorySequenceDTO;
 import com.edu.readle.dto.StorySequenceDTO.ImageDTO;
 import com.edu.readle.entity.*;
 import com.edu.readle.repository.*;
+import com.edu.readle.dto.StorySequenceProgressDTO;
+import com.edu.readle.service.StorySequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +33,9 @@ public class StorySequenceActivityController {
 
     @Autowired
     private SSAAttemptRepository attemptRepo;
+
+    @Autowired
+    private StorySequenceService storySequenceService;
 
     /**
      * GET /api/ssa/by-book/{bookId}
@@ -118,5 +123,14 @@ public class StorySequenceActivityController {
         ssaRepo.save(ssa); // saves SSA and cascade saves images
 
         return ResponseEntity.ok(Map.of("message", "SSA created successfully", "ssaId", ssa.getSsaID()));
+    }
+
+    /**
+     * GET /api/ssa/progress/{userId}
+     */
+    @GetMapping("/progress/{userId}")
+    public ResponseEntity<List<StorySequenceProgressDTO>> getStudentSSAProgress(@PathVariable Long userId) {
+        List<StorySequenceProgressDTO> progress = storySequenceService.getStudentSSAProgress(userId);
+        return ResponseEntity.ok(progress);
     }
 }
