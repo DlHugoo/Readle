@@ -3,6 +3,7 @@ import { useParams, useNavigate  } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
 import { BookOpen, PlusCircle, Menu } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
+import axios from 'axios'; // Import axios
 
 const ClassroomContentManager = () => {
   const { classroomId } = useParams(); // Retrieve classroomId from the route
@@ -31,8 +32,7 @@ const ClassroomContentManager = () => {
   };
 
   // Fetch classroom-specific content and details
-   // Fetch classroom-specific content and details
-   useEffect(() => {
+  useEffect(() => {
     const fetchClassroomDetails = async () => {
       const token = localStorage.getItem('token');
       console.log("Fetching details for classroomId:", classroomId);
@@ -44,27 +44,21 @@ const ClassroomContentManager = () => {
       }
 
       try {
-        const response = await fetch(`/api/classrooms/${classroomId}`, {
+        const response = await axios.get(`/api/classrooms/${classroomId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Classroom details fetched successfully:", data);
-          console.log("Books in classroom:", data.books);
-          if (data.books && data.books.length > 0) {
-            console.log("First book structure:", data.books[0]);
-          }
-          setClassroomName(data.name || "Unknown Classroom");
-          setClassroomContent(data.books || []); // Fetch books associated with the classroom
-        } else {
-          const errorText = await response.text();
-          console.error("Failed to fetch classroom details. Status:", response.status, "Error:", errorText);
+        console.log("Classroom details fetched successfully:", response.data);
+        console.log("Books in classroom:", response.data.books);
+        if (response.data.books && response.data.books.length > 0) {
+          console.log("First book structure:", response.data.books[0]);
         }
+        setClassroomName(response.data.name || "Unknown Classroom");
+        setClassroomContent(response.data.books || []); // Fetch books associated with the classroom
       } catch (error) {
-        console.error("Error fetching classroom details:", error);
+        console.error("Failed to fetch classroom details. Status:", error.response?.status, "Error:", error.message);
       }
     };
 
@@ -119,27 +113,19 @@ const ClassroomContentManager = () => {
     };
 
     try {
-      const response = await fetch("/api/books", {
-        method: "POST",
+      const response = await axios.post("/api/books", newBook, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newBook),
       });
 
-      if (response.ok) {
-        const createdBook = await response.json();
-        showAlertModal("success", "Book added successfully!");
-        setClassroomContent((prevContent) => [...prevContent, createdBook]);
-        closeAddBookModal();
-      } else {
-        const errorData = await response.json();
-        showAlertModal("error", `Failed to add book: ${errorData.message}`);
-      }
+      showAlertModal("success", "Book added successfully!");
+      setClassroomContent((prevContent) => [...prevContent, response.data]);
+      closeAddBookModal();
     } catch (error) {
       console.error("Error adding book:", error);
-      showAlertModal("error", "An error occurred while adding the book.");
+      showAlertModal("error", `Failed to add book: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -172,22 +158,17 @@ const ClassroomContentManager = () => {
     }
 
     try {
-      const response = await fetch(`/api/books/${selectedBook.bookID}`, {
-        method: "DELETE",
+      await axios.delete(`/api/books/${selectedBook.bookID}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (response.ok) {
-        showAlertModal("success", "Book deleted successfully!");
-        setClassroomContent((prevContent) =>
-          prevContent.filter((book) => book.bookID !== selectedBook.bookID)
-        );
-        setShowDeleteModal(false);
-      } else {
-        showAlertModal("error", "Failed to delete book.");
-      }
+      showAlertModal("success", "Book deleted successfully!");
+      setClassroomContent((prevContent) =>
+        prevContent.filter((book) => book.bookID !== selectedBook.bookID)
+      );
+      setShowDeleteModal(false);
     } catch (error) {
       console.error("Error deleting book:", error);
       showAlertModal("error", "An error occurred while deleting the book.");
@@ -212,27 +193,20 @@ const ClassroomContentManager = () => {
     };
 
     try {
-      const response = await fetch(`/api/books/${selectedBook.bookID}`, {
-        method: "PUT",
+      const response = await axios.put(`/api/books/${selectedBook.bookID}`, updatedBook, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedBook),
       });
 
-      if (response.ok) {
-        const updatedBookData = await response.json();
-        showAlertModal("success", "Book updated successfully!");
-        setClassroomContent((prevContent) =>
-          prevContent.map((book) =>
-            book.bookID === updatedBookData.bookID ? updatedBookData : book
-          )
-        );
-        setShowEditModal(false);
-      } else {
-        showAlertModal("error", "Failed to update book.");
-      }
+      showAlertModal("success", "Book updated successfully!");
+      setClassroomContent((prevContent) =>
+        prevContent.map((book) =>
+          book.bookID === response.data.bookID ? response.data : book
+        )
+      );
+      setShowEditModal(false);
     } catch (error) {
       console.error("Error updating book:", error);
       showAlertModal("error", "An error occurred while updating the book.");
@@ -435,18 +409,14 @@ const ClassroomContentManager = () => {
                       formData.append("file", file);
 
                       try {
-                        const response = await fetch("/api/books/upload-image", {
-                          method: "POST",
-                          body: formData,
+                        const response = await axios.post("/api/books/upload-image", formData, {
+                          headers: {
+                            "Content-Type": "multipart/form-data",
+                          },
                         });
 
-                        if (response.ok) {
-                          const fileUrl = await response.text();
-                          setBookImageURL(fileUrl); // Set the uploaded image URL
-                          alert("Image uploaded successfully!");
-                        } else {
-                          alert("Failed to upload image.");
-                        }
+                        setBookImageURL(response.data); // Set the uploaded image URL
+                        alert("Image uploaded successfully!");
                       } catch (error) {
                         console.error("Error uploading image:", error);
                         alert("An error occurred while uploading the image.");

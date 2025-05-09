@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import TeahcerNav from '../../components/TeacherNav';
+import axios from 'axios'; // Import axios
 
 const ClassroomManagement = () => {
   const [classroomName, setClassroomName] = useState('');
@@ -43,18 +44,13 @@ const ClassroomManagement = () => {
     if (!teacherId) return;
 
     try {
-      const response = await fetch(`/api/classrooms/teacher/${teacherId}`, {
+      const response = await axios.get(`/api/classrooms/teacher/${teacherId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setClassrooms(data);
-      } else {
-        console.error("Failed to fetch classrooms");
-      }
+      setClassrooms(response.data);
     } catch (error) {
       console.error("Error fetching classrooms:", error);
     }
@@ -82,31 +78,26 @@ const ClassroomManagement = () => {
     };
   
     try {
-      const response = await fetch('/api/classrooms', {
-        method: 'POST',
+      const response = await axios.post('/api/classrooms', classroomDTO, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(classroomDTO),
       });
   
-      if (response.ok) {
-        const data = await response.json();
-        setClassroomCode(data.classroomCode);
-        setSuccessMessage("Classroom created successfully! 🎉");
-        setShowModal(false);
-        setCreateName('');
-        setCreateDescription('');
-        setCreateMaxStudents('');
-        fetchClassrooms();
-      } else {
-        const err = await response.json();
-        alert('Failed to create classroom: ' + err.message);
-      }
+      setClassroomCode(response.data.classroomCode);
+      setSuccessMessage("Classroom created successfully! 🎉");
+      setShowModal(false);
+      setCreateName('');
+      setCreateDescription('');
+      setCreateMaxStudents('');
+      fetchClassrooms();
     } catch (error) {
       console.error('Error creating classroom:', error);
-      alert('An error occurred while creating the classroom.');
+      if (error.response && error.response.data) {
+        alert('Failed to create classroom: ' + error.response.data.message);
+      } else {
+        alert('An error occurred while creating the classroom.');
+      }
     }
   };
   
@@ -133,20 +124,15 @@ const ClassroomManagement = () => {
   
   const confirmDeleteClassroom = async () => {
     try {
-      const response = await fetch(`/api/classrooms/${selectedClassroom.id}`, {
-        method: 'DELETE',
+      await axios.delete(`/api/classrooms/${selectedClassroom.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
   
-      if (response.ok) {
-        setSuccessMessage("Classroom deleted successfully! 🗑️");
-        setShowSuccessModal(true);
-        fetchClassrooms();
-      } else {
-        alert("Failed to delete classroom.");
-      }
+      setSuccessMessage("Classroom deleted successfully! 🗑️");
+      setShowSuccessModal(true);
+      fetchClassrooms();
     } catch (error) {
       console.error("Delete error:", error);
       alert("Error deleting classroom.");
@@ -165,22 +151,15 @@ const ClassroomManagement = () => {
     };
   
     try {
-      const response = await fetch(`/api/classrooms/${selectedClassroom.id}`, {
-        method: 'PUT',
+      await axios.put(`/api/classrooms/${selectedClassroom.id}`, updatedDTO, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedDTO),
       });
   
-      if (response.ok) {
-        setSuccessMessage("Classroom updated successfully! ✏️");
-        setShowSuccessModal(true);
-        fetchClassrooms();
-      } else {
-        alert("Failed to update classroom.");
-      }
+      setSuccessMessage("Classroom updated successfully! ✏️");
+      setShowSuccessModal(true);
+      fetchClassrooms();
     } catch (error) {
       console.error("Update error:", error);
       alert("Error updating classroom.");
