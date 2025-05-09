@@ -33,7 +33,7 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
               </p>
               <p className="text-lg mb-6 font-semibold">
                 {attemptsLeft > 0
-                  ? `You have ${attemptsLeft} ${    
+                  ? `You have ${attemptsLeft} ${
                       attemptsLeft === 1 ? "try" : "tries"
                     } left`
                   : "Let's see the correct order"}
@@ -64,7 +64,7 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
       </div>
 
       {/* CSS for animations */}
-      <style>{`
+      <style jsx>{`
         @keyframes bounce-in {
           0% {
             transform: scale(0.8);

@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import noContentImage from "../../assets/no-content.png"; // 🖼️ Import your no-content image
 import StoryProgressIndicator from "../../components/StoryProgressIndicator"; // Import the new component
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
@@ -24,21 +23,6 @@ const BookPage = () => {
   const [hoverLeft, setHoverLeft] = useState(false);
   const [hoverRight, setHoverRight] = useState(false);
   const navigate = useNavigate();
-  const [userId, setUserId] = useState(null);
-  const [trackerId, setTrackerId] = useState(null);
-
-  useEffect(() => {
-    // Get userId from token
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setUserId(decoded.userID || decoded.id);
-      } catch (e) {
-        console.error("Failed to decode token", e);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const loadBookAndPages = async () => {
@@ -61,94 +45,12 @@ const BookPage = () => {
     loadBookAndPages();
   }, [bookId]);
 
-  // Start reading progress when book and pages are loaded
-  useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    if (!storedUserId) {
-      console.error("[BookPage] No userId found in localStorage");
-      return;
-    }
-    if (!book || !book.bookID) {
-      console.error("[BookPage] Book or bookID not loaded yet", book);
-      return;
-    }
-    if (!pages || pages.length === 0) {
-      console.error("[BookPage] Pages not loaded yet");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    console.log(`[BookPage] Attempting to start progress: userId=${storedUserId}, bookId=${book.bookID}`);
-
-    axios.post(
-      `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-      .then(res => {
-        if (res.data && res.data.id) {
-          setTrackerId(res.data.id);
-          console.log("[BookPage] Progress started, trackerId:", res.data.id);
-        }
-      })
-      .catch((err) => console.error("[BookPage] Error starting book progress:", err));
-  }, [book, pages]);
-
-  // After setting trackerId, update progress for the first page
-  useEffect(() => {
-    if (trackerId && pages.length > 0) {
-      const token = localStorage.getItem("token");
-      axios.put(
-        `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=1&readingTimeMinutes=1`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      ).catch((err) => console.error("Error updating book progress on first load:", err));
-    }
-  }, [trackerId, pages.length]);
-
   const handleNextPage = () => {
-    setCurrentPageIndex((prev) => {
-      const nextIndex = Math.min(prev + 1, pages.length - 1);
-      // Update progress on page turn
-      if (userId && book && trackerId) {
-        const token = localStorage.getItem("token");
-        const pageNumber = nextIndex + 1;
-        const readingTimeMinutes = 1; // You can replace this with actual reading time if available
-        axios.put(
-          `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=${readingTimeMinutes}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).catch((err) => console.error("Error updating book progress:", err));
-      }
-      // If last page, mark as completed
-      if (nextIndex === pages.length - 1 && userId && book && trackerId) {
-        const token = localStorage.getItem("token");
-        axios.put(
-          `http://localhost:8080/api/progress/complete/${trackerId}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).catch((err) => console.error("Error completing book:", err));
-      }
-      return nextIndex;
-    });
+    setCurrentPageIndex((prev) => Math.min(prev + 1, pages.length - 1));
   };
 
   const handlePreviousPage = () => {
-    setCurrentPageIndex((prev) => {
-      const prevIndex = Math.max(prev - 1, 0);
-      // Update progress on page turn
-      if (userId && book && trackerId) {
-        const token = localStorage.getItem("token");
-        const pageNumber = prevIndex + 1;
-        const readingTimeMinutes = 1; // You can replace this with actual reading time if available
-        axios.put(
-          `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=${readingTimeMinutes}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).catch((err) => console.error("Error updating book progress:", err));
-      }
-      return prevIndex;
-    });
+    setCurrentPageIndex((prev) => Math.max(prev - 1, 0));
   };
 
   if (loading) {
