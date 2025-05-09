@@ -22,19 +22,34 @@ const SnakeQuestionForm = () => {
 
   // Get bookId from navigation state or URL params
   useEffect(() => {
+    setLoading(true);
+    let id = null;
+    
+    // First try to get bookId from state
     if (location.state?.bookId) {
-      setBookId(location.state.bookId);
+      id = location.state.bookId;
       // If book title is passed directly in state, use it
       if (location.state.bookTitle) {
         setBookTitle(location.state.bookTitle);
       }
-    } else if (location.search) {
+    } 
+    // If not in state, try URL parameters
+    else if (location.search) {
       const params = new URLSearchParams(location.search);
-      setBookId(params.get('bookId'));
+      id = params.get('bookId');
+    }
+    
+    // If we found a bookId, set it. Otherwise redirect
+    if (id) {
+      console.log('Found bookId:', id);
+      setBookId(id);
     } else {
-      // If no bookId found, redirect back
+      console.log('No bookId found, redirecting back');
+      alert('No book selected. Returning to previous page.');
       navigate(-1);
     }
+    
+    setLoading(false);
   }, [location, navigate]);
 
   // Fetch book title if we have bookId but no title yet
@@ -54,23 +69,34 @@ const SnakeQuestionForm = () => {
     }
   }, [bookId, bookTitle]);
 
-  // Check if questions already exist for this book
+  // Check if questions already exist for this specific book
   useEffect(() => {
     if (bookId) {
       setLoading(true);
-      // Fix: Use the correct endpoint format
+      // Use the proper endpoint that specifically filters by bookId
       axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
         .then(response => {
-          if (response.data && response.data.length > 0) {
+          console.log('API Response for book questions:', response.data);
+          
+          // If we get an array back with at least one question, show existing questions
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
             setExistingQuestions(response.data);
             setHasExistingQuestions(true);
           } else {
+            setExistingQuestions([]);
             setHasExistingQuestions(false);
           }
         })
         .catch(error => {
           console.error('Error checking existing questions:', error);
-          setHasExistingQuestions(false);
+          // If there's a 404, it likely means no questions exist for this book
+          if (error.response && error.response.status === 404) {
+            setExistingQuestions([]);
+            setHasExistingQuestions(false);
+          } else {
+            // For other errors, alert the user
+            alert('Error loading questions. Please try again.');
+          }
         })
         .finally(() => {
           setLoading(false);
@@ -98,6 +124,28 @@ const SnakeQuestionForm = () => {
         return;
       }
 
+      // Validate all questions have text and answers
+      const emptyQuestions = questions.filter(q => !q.text || !q.answer);
+      if (emptyQuestions.length > 0) {
+        alert('Please fill in all questions and answers');
+        return;
+      }
+
+      // Set loading state
+      setLoading(true);
+
+      // First check if questions already exist for this book
+      const checkResponse = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
+      
+      // If questions already exist, show an error and don't submit
+      if (checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
+        alert('Questions already exist for this book. You cannot add more.');
+        setLoading(false);
+        setHasExistingQuestions(true);
+        setExistingQuestions(checkResponse.data);
+        return;
+      }
+
       // Prepare all questions with bookId
       const questionsToSubmit = questions.map(q => ({
         ...q,
@@ -112,11 +160,13 @@ const SnakeQuestionForm = () => {
       await Promise.all(promises);
       alert('5 questions submitted successfully!');
       
-      // Refresh the page to show the newly created questions
+      // Refresh to show the newly created questions
       window.location.reload();
     } catch (err) {
-      console.error(err);
-      alert('Failed to submit questions');
+      console.error('Error submitting questions:', err);
+      alert('Failed to submit questions: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -148,7 +198,12 @@ const SnakeQuestionForm = () => {
           </div>
         )}
         
-        {hasExistingQuestions ? (
+        {loading ? (
+          <div className="text-center p-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+            <p className="text-gray-600">Loading questions...</p>
+          </div>
+        ) : hasExistingQuestions ? (
           <div className="bg-white p-6 rounded-xl shadow-md mb-8">
             <div className="flex items-center justify-center mb-4 text-green-600">
               <CheckCircle size={24} className="mr-2" />
@@ -159,13 +214,20 @@ const SnakeQuestionForm = () => {
             
             <div className="space-y-6">
               {existingQuestions.map((q, index) => (
-                <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div key={q.id || index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <h4 className="font-semibold text-lg mb-2">Question {index + 1}</h4>
                   <p className="mb-2"><span className="font-medium">Question:</span> {q.text}</p>
-                  <p><span className="font-medium">Answer:</span> {q.answers && q.answers.length > 0 ? 
-                    q.answers.find(a => a.correct)?.answer || q.answers[0].answer : 'No answer provided'}</p>
+                  <p><span className="font-medium">Answer:</span> {q.answer || 
+                    (q.answers && q.answers.length > 0 ? 
+                      q.answers.find(a => a.correct)?.answer || q.answers[0].answer 
+                      : 'No answer provided')}</p>
                 </div>
               ))}
+              {existingQuestions.length === 0 && (
+                <div className="text-center text-gray-500 p-4">
+                  Questions exist for this book but could not be displayed. Please refresh the page.
+                </div>
+              )}
             </div>
             
             <div className="mt-6 text-center">
