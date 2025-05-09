@@ -21,7 +21,9 @@ const StoryProgressIndicator = ({ currentPage, totalPages }) => {
   return (
     <div className="w-full max-w-md mx-auto mb-4 bg-blue-100 rounded-full p-2 shadow-md relative">
       {/* Title overlay */}
-    
+      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white px-4 py-1 rounded-full shadow-sm">
+        <span className="font-bold text-gray-800">STORY PROGRESS</span>
+      </div>
       
       {/* Progress bar */}
       <div className="relative h-8 flex items-center justify-between px-4">

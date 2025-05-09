@@ -16,6 +16,7 @@ import StorySequencingPage from "./pages/activityPage/storySequencingPage/StoryS
 import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
 import BookReaderPage from "./pages/studentPage/BookReaderPage"; // Add this
+import StudentProgressDashboard from './pages/studentPage/StudentProgressDashboard';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/classroom" element={<ClassroomManagement />} />
         <Route path="/student-classrooms" element={<StudentClassroomPage />} />
         <Route path="/library" element={<StudentLibraryPage />} />
+        <Route path="/dashboard" element={<StudentProgressDashboard />} />
 
         {/* ⬇️ Differentiated content routes for teacher vs student */}
         <Route path="/classroom-content/:classroomId" element={<ClassroomContent />} />
@@ -41,7 +43,7 @@ function App() {
         <Route path="/book/:bookId/sequencing" element={<StorySequencingPage />} />
         <Route path="/create-ssa" element={<CreateSSA />} />
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
-        <Route path="/book/:bookId" element={<BookReaderPage />} />
+       <Route path="/book/:bookId" element={<BookReaderPage />} /> 
       </Routes>
     </Router>
   );

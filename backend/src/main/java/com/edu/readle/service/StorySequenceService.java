@@ -11,6 +11,8 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import com.edu.readle.dto.StorySequenceProgressDTO;
+import java.util.ArrayList;
 
 @Service
 public class StorySequenceService {
@@ -44,5 +46,19 @@ public class StorySequenceService {
         attemptRepo.save(attempt);
 
         return isCorrect;
+    }
+
+    public List<StorySequenceProgressDTO> getStudentSSAProgress(Long userId) {
+        List<StorySequenceActivityEntity> allActivities = ssaRepo.findAll();
+        List<StorySequenceProgressDTO> progressList = new ArrayList<>();
+
+        for (StorySequenceActivityEntity activity : allActivities) {
+            boolean finished = attemptRepo
+                .findTopByUser_UserIdAndSsa_SsaIDOrderByAttemptedAtDesc(userId, activity.getSsaID())
+                .map(SSAAttemptEntity::isCorrect)
+                .orElse(false);
+            progressList.add(new StorySequenceProgressDTO(activity.getSsaID(), activity.getTitle(), finished));
+        }
+        return progressList;
     }
 }
