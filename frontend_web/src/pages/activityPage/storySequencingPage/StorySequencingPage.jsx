@@ -17,6 +17,20 @@ const StorySequencingPage = () => {
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [reshuffleTrigger, setReshuffleTrigger] = useState(0);
   const [resetCounter, setResetCounter] = useState(0);
+  const [trackerId, setTrackerId] = useState(null);
+  const userId = localStorage.getItem("userId");
+
+  // Fetch trackerId for this user/book
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (userId && bookId && token) {
+      axios.get(`http://localhost:8080/api/progress/book/${userId}/${bookId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => setTrackerId(res.data.id))
+      .catch(err => console.error("Failed to fetch trackerId:", err));
+    }
+  }, [userId, bookId]);
 
   useEffect(() => {
     const fetchSSA = async () => {
@@ -89,6 +103,14 @@ const StorySequencingPage = () => {
       if (!res.data.correct) {
         setAttemptsLeft((prev) => prev - 1);
         setReshuffleTrigger((prev) => prev + 1); // reshuffle images
+      }
+      // Mark book as completed if correct and trackerId is available
+      if (res.data.correct && trackerId) {
+        axios.put(
+          `http://localhost:8080/api/progress/complete/${trackerId}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(err => console.error("Failed to mark book as completed:", err));
       }
     } catch (err) {
       console.error("Failed to submit sequence:", err);
