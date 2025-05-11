@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, UserPlus, X, BookOpen, Clock, CheckCircle } from "lucide-react";
+import { Menu, UserPlus, X, BookOpen, Clock, CheckCircle, UserMinus, Mail } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from "axios";
 
@@ -26,6 +26,18 @@ const ClassroomStudents = () => {
   });
   const [completedBooks, setCompletedBooks] = useState([]);
   const [inProgressBooks, setInProgressBooks] = useState([]);
+
+  // Add student state
+  const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [addingStudent, setAddingStudent] = useState(false);
+  const [addStudentError, setAddStudentError] = useState(null);
+  const [addStudentSuccess, setAddStudentSuccess] = useState(null);
+  
+  // Remove student state
+  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState(null);
+  const [removingStudent, setRemovingStudent] = useState(false);
 
   // Toggle sidebar function
   const toggleSidebar = () => {
@@ -209,6 +221,159 @@ const ClassroomStudents = () => {
     return `${hours}h ${remainingMinutes}m`;
   };
 
+  // Function to add a student to the classroom
+  const handleAddStudent = async () => {
+    if (!newStudentEmail || !newStudentEmail.includes('@')) {
+      setAddStudentError("Please enter a valid email address");
+      return;
+    }
+
+    setAddingStudent(true);
+    setAddStudentError(null);
+    setAddStudentSuccess(null);
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setAddStudentError("Authentication required. Please log in.");
+      setAddingStudent(false);
+      return;
+    }
+    
+    try {
+      // First, get the user ID from the email
+      const userResponse = await axios.get(`/api/users/by-email/${newStudentEmail}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      const studentId = userResponse.data.userId || userResponse.data.id;
+      
+      if (!studentId) {
+        setAddStudentError("Student not found with this email address");
+        setAddingStudent(false);
+        return;
+      }
+      
+      // Add the student to the classroom
+      await axios.post(`/api/classrooms/${classroomId}/students/${studentId}`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      // Refresh the student list
+      const classroomResponse = await axios.get(`/api/classrooms/${classroomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      const classroomData = classroomResponse.data;
+      
+      // Update the student list with the new student
+      if (classroomData.studentEmails && Array.isArray(classroomData.studentEmails)) {
+        const studentPromises = classroomData.studentEmails.map(async (email) => {
+          try {
+            const userResponse = await axios.get(`/api/users/by-email/${email}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            return userResponse.data;
+          } catch (error) {
+            return {
+              email: email,
+              firstName: email.split('@')[0],
+              lastName: "",
+              userId: null,
+              username: email.split('@')[0]
+            };
+          }
+        });
+        
+        const studentDetails = await Promise.all(studentPromises);
+        setStudents(studentDetails);
+      }
+      
+      setAddStudentSuccess("Student added successfully");
+      setNewStudentEmail("");
+      
+      // Close the modal after a short delay
+      setTimeout(() => {
+        setAddStudentModalOpen(false);
+        setAddStudentSuccess(null);
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Error adding student:", error);
+      if (error.response) {
+        switch (error.response.status) {
+          case 400:
+            setAddStudentError(error.response.data.error || "Student could not be added");
+            break;
+          case 401:
+            setAddStudentError("Your session has expired. Please log in again.");
+            break;
+          case 403:
+            setAddStudentError("You do not have permission to add students.");
+            break;
+          case 404:
+            setAddStudentError("Student not found with this email address");
+            break;
+          default:
+            setAddStudentError("Failed to add student. Please try again later.");
+        }
+      } else if (error.request) {
+        setAddStudentError("Unable to connect to the server. Please check your internet connection.");
+      } else {
+        setAddStudentError("An unexpected error occurred. Please try again later.");
+      }
+    } finally {
+      setAddingStudent(false);
+    }
+  };
+
+  // Function to remove a student from the classroom
+  const handleRemoveStudent = async () => {
+    if (!studentToRemove) return;
+    
+    setRemovingStudent(true);
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError("Authentication required. Please log in.");
+      setRemovingStudent(false);
+      return;
+    }
+    
+    const studentId = studentToRemove.userId || studentToRemove.id;
+    
+    try {
+      // Remove the student from the classroom
+      await axios.delete(`/api/classrooms/${classroomId}/students/${studentId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      // Update the student list by removing the student
+      setStudents(students.filter(student => 
+        (student.userId !== studentId) && (student.id !== studentId)
+      ));
+      
+      // Close the modal
+      setRemoveModalOpen(false);
+      setStudentToRemove(null);
+      
+    } catch (error) {
+      console.error("Error removing student:", error);
+      setError("Failed to remove student. Please try again.");
+    } finally {
+      setRemovingStudent(false);
+    }
+  };
+
   // Progress Modal Component
   const ProgressModal = () => {
     if (!progressModalOpen) return null;
@@ -334,6 +499,169 @@ const ClassroomStudents = () => {
     );
   };
 
+  // Add Student Modal Component
+  const AddStudentModal = () => {
+    if (!addStudentModalOpen) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+          {/* Modal Header */}
+          <div className="flex justify-between items-center border-b p-4">
+            <h2 className="text-xl font-bold text-gray-800">
+              Add Student to Classroom
+            </h2>
+            <button 
+              onClick={() => {
+                setAddStudentModalOpen(false);
+                setNewStudentEmail("");
+                setAddStudentError(null);
+                setAddStudentSuccess(null);
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          
+          {/* Modal Content */}
+          <div className="p-6">
+            {addStudentError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong className="font-bold">Error: </strong>
+                <span className="block sm:inline">{addStudentError}</span>
+              </div>
+            )}
+            
+            {addStudentSuccess && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong className="font-bold">Success: </strong>
+                <span className="block sm:inline">{addStudentSuccess}</span>
+              </div>
+            )}
+            
+            <div className="mb-4">
+              <label htmlFor="studentEmail" className="block text-gray-700 text-sm font-bold mb-2">
+                Student Email Address
+              </label>
+              <div className="flex">
+                <div className="relative flex-grow">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail size={18} className="text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    id="studentEmail"
+                    placeholder="student@example.com"
+                    value={newStudentEmail}
+                    onChange={(e) => setNewStudentEmail(e.target.value)}
+                    className="shadow appearance-none border rounded w-full py-2 pl-10 pr-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    disabled={addingStudent}
+                    autoFocus
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                The student must already have a Readle account with this email address.
+              </p>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={handleAddStudent}
+                disabled={addingStudent || !newStudentEmail}
+                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                  (addingStudent || !newStudentEmail) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {addingStudent ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Adding...
+                  </span>
+                ) : (
+                  'Add Student'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Remove Student Confirmation Modal
+  const RemoveStudentModal = () => {
+    if (!removeModalOpen || !studentToRemove) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+          {/* Modal Header */}
+          <div className="flex justify-between items-center border-b p-4">
+            <h2 className="text-xl font-bold text-gray-800">
+              Remove Student
+            </h2>
+            <button 
+              onClick={() => {
+                setRemoveModalOpen(false);
+                setStudentToRemove(null);
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          
+          {/* Modal Content */}
+          <div className="p-6">
+            <p className="mb-4 text-gray-700">
+              Are you sure you want to remove <span className="font-bold">{studentToRemove.firstName} {studentToRemove.lastName}</span> from this classroom?
+            </p>
+            <p className="mb-6 text-sm text-gray-500">
+              This action cannot be undone. The student will lose access to all classroom materials.
+            </p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setRemoveModalOpen(false);
+                  setStudentToRemove(null);
+                }}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRemoveStudent}
+                disabled={removingStudent}
+                className={`bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                  removingStudent ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {removingStudent ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Removing...
+                  </span>
+                ) : (
+                  'Remove Student'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full min-h-screen flex">
     {/* Sidebar */}
@@ -371,7 +699,10 @@ const ClassroomStudents = () => {
           </div>
 
           {/* Add Student Button */}
-          <button className="mb-6 bg-white border border-[#3B82F6] hover:bg-[#3B82F6] hover:text-white text-[#3B82F6] font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300 flex items-center gap-2">
+          <button 
+            onClick={() => setAddStudentModalOpen(true)}
+            className="mb-6 bg-white border border-[#3B82F6] hover:bg-[#3B82F6] hover:text-white text-[#3B82F6] font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300 flex items-center gap-2"
+          >
             <UserPlus size={20} />
             <span>Add Student</span>
           </button>
@@ -391,10 +722,23 @@ const ClassroomStudents = () => {
                 {students.map((student) => (
                   <div 
                     key={student.id || student.userId || student.email} 
-                    className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:border-blue-300"
-                    onClick={() => fetchStudentProgress(student)}
+                    className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow relative"
                   >
-                    <div className="flex items-center gap-3">
+                    <div 
+                      className="absolute top-2 right-2 p-1 rounded-full hover:bg-red-100 text-red-500 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStudentToRemove(student);
+                        setRemoveModalOpen(true);
+                      }}
+                    >
+                      <UserMinus size={16} />
+                    </div>
+                    
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => fetchStudentProgress(student)}
+                    >
                       <div className="bg-blue-100 text-blue-500 rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg">
                         {student.firstName ? student.firstName.charAt(0).toUpperCase() : '?'}
                       </div>
@@ -404,10 +748,12 @@ const ClassroomStudents = () => {
                           <span className="font-extrabold"> {student.lastName || student.last_name || ''}</span>
                         </h3>
                         <p className="text-sm text-gray-500">{student.email}</p>
-                        {/* Username display removed as requested */}
                       </div>
                     </div>
-                    <div className="mt-2 text-xs text-blue-500 hover:text-blue-700 flex items-center justify-end">
+                    <div 
+                      className="mt-2 text-xs text-blue-500 hover:text-blue-700 flex items-center justify-end cursor-pointer"
+                      onClick={() => fetchStudentProgress(student)}
+                    >
                       <Clock size={12} className="mr-1" />
                       View Progress
                     </div>
@@ -419,8 +765,10 @@ const ClassroomStudents = () => {
         </div>
       </div>
       
-      {/* Progress Modal */}
+      {/* Modals */}
       <ProgressModal />
+      <AddStudentModal />
+      <RemoveStudentModal />
     </div>
   );
 };
