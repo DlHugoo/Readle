@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TeacherNav from '../../components/TeacherNav';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Edit, Save, X } from 'lucide-react';
 
 const SnakeQuestionForm = () => {
   const location = useLocation();
@@ -12,6 +12,8 @@ const SnakeQuestionForm = () => {
   const [loading, setLoading] = useState(false);
   const [existingQuestions, setExistingQuestions] = useState([]);
   const [hasExistingQuestions, setHasExistingQuestions] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState(null);
+  const [editFormData, setEditFormData] = useState({ text: '', answer: '' });
   const [questions, setQuestions] = useState([
     { text: '', answer: '' },
     { text: '', answer: '' },
@@ -25,21 +27,17 @@ const SnakeQuestionForm = () => {
     setLoading(true);
     let id = null;
     
-    // First try to get bookId from state
     if (location.state?.bookId) {
       id = location.state.bookId;
-      // If book title is passed directly in state, use it
       if (location.state.bookTitle) {
         setBookTitle(location.state.bookTitle);
       }
     } 
-    // If not in state, try URL parameters
     else if (location.search) {
       const params = new URLSearchParams(location.search);
       id = params.get('bookId');
     }
     
-    // If we found a bookId, set it. Otherwise redirect
     if (id) {
       console.log('Found bookId:', id);
       setBookId(id);
@@ -73,12 +71,10 @@ const SnakeQuestionForm = () => {
   useEffect(() => {
     if (bookId) {
       setLoading(true);
-      // Use the proper endpoint that specifically filters by bookId
       axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
         .then(response => {
           console.log('API Response for book questions:', response.data);
           
-          // If we get an array back with at least one question, show existing questions
           if (response.data && Array.isArray(response.data) && response.data.length > 0) {
             setExistingQuestions(response.data);
             setHasExistingQuestions(true);
@@ -89,12 +85,10 @@ const SnakeQuestionForm = () => {
         })
         .catch(error => {
           console.error('Error checking existing questions:', error);
-          // If there's a 404, it likely means no questions exist for this book
           if (error.response && error.response.status === 404) {
             setExistingQuestions([]);
             setHasExistingQuestions(false);
           } else {
-            // For other errors, alert the user
             alert('Error loading questions. Please try again.');
           }
         })
@@ -124,20 +118,16 @@ const SnakeQuestionForm = () => {
         return;
       }
 
-      // Validate all questions have text and answers
       const emptyQuestions = questions.filter(q => !q.text || !q.answer);
       if (emptyQuestions.length > 0) {
         alert('Please fill in all questions and answers');
         return;
       }
 
-      // Set loading state
       setLoading(true);
 
-      // First check if questions already exist for this book
       const checkResponse = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
       
-      // If questions already exist, show an error and don't submit
       if (checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
         alert('Questions already exist for this book. You cannot add more.');
         setLoading(false);
@@ -146,21 +136,17 @@ const SnakeQuestionForm = () => {
         return;
       }
 
-      // Prepare all questions with bookId
       const questionsToSubmit = questions.map(q => ({
         ...q,
         bookId: bookId
       }));
 
-      // Submit all questions
       const promises = questionsToSubmit.map(q => 
         axios.post('http://localhost:8080/api/snake-questions', q)
       );
 
       await Promise.all(promises);
       alert('5 questions submitted successfully!');
-      
-      // Refresh to show the newly created questions
       window.location.reload();
     } catch (err) {
       console.error('Error submitting questions:', err);
@@ -169,6 +155,59 @@ const SnakeQuestionForm = () => {
       setLoading(false);
     }
   };
+
+ const handleEditClick = (question) => {
+    setEditingQuestionId(question.questionID);  // ✅ Use correct property
+    setEditFormData({
+        text: question.text,
+        answer: question.answers?.[0]?.answer || question.answer || ''
+    });
+};
+
+const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+        ...prev,
+        [name]: value
+    }));
+};
+
+const handleCancelEdit = () => {
+    setEditingQuestionId(null);
+    setEditFormData({ text: '', answer: '' });
+};
+
+const handleUpdateQuestion = async (questionID) => {  // ✅ Renamed parameter for clarity
+    try {
+        if (!editFormData.text || !editFormData.answer) {
+            alert('Please fill in both question and answer fields');
+            return;
+        }
+
+        setLoading(true);
+
+        // ✅ Respect backend entity naming
+        await axios.put(
+            `http://localhost:8080/api/snake-questions/${questionID}`,
+            {
+                text: editFormData.text,
+                answer: editFormData.answer,
+                bookId: bookId
+            }
+        );
+
+        const response = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
+        setExistingQuestions(response.data);
+        setEditingQuestionId(null);
+        alert('Question updated successfully!');
+    } catch (error) {
+        console.error('Error updating question:', error);
+        alert('Failed to update question: ' + (error.response?.data?.message || error.message));
+    } finally {
+        setLoading(false);
+    }
+};
+
 
   return (
     <div className="min-h-screen bg-blue-50">
@@ -214,25 +253,62 @@ const SnakeQuestionForm = () => {
             
             <div className="space-y-6">
               {existingQuestions.map((q, index) => (
-                <div key={q.id || index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <h4 className="font-semibold text-lg mb-2">Question {index + 1}</h4>
-                  <p className="mb-2"><span className="font-medium">Question:</span> {q.text}</p>
-                  <p><span className="font-medium">Answer:</span> {q.answer || 
-                    (q.answers && q.answers.length > 0 ? 
-                      q.answers.find(a => a.correct)?.answer || q.answers[0].answer 
-                      : 'No answer provided')}</p>
+                <div key={q.questionID} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
+                  {editingQuestionId === q.questionID ? (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg">Editing Question {index + 1}</h4>
+                      <input
+                        type="text"
+                        name="text"
+                        value={editFormData.text}
+                        onChange={handleEditFormChange}
+                        className="w-full p-2 border rounded"
+                        placeholder="Question text"
+                      />
+                      <input
+                        type="text"
+                        name="answer"
+                        value={editFormData.answer}
+                        onChange={handleEditFormChange}
+                        className="w-full p-2 border rounded"
+                        placeholder="Correct answer"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        >
+                          <X size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleUpdateQuestion(q.questionID)}
+                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          <Save size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h4 className="font-semibold text-lg mb-2">Question {index + 1}</h4>
+                      <p className="mb-2"><span className="font-medium">Question:</span> {q.text}</p>
+                      <p><span className="font-medium">Answer:</span> {q.answers?.[0]?.answer || q.answer}</p>
+                      <button
+                        onClick={() => handleEditClick(q)}
+                        className="absolute top-4 right-4 text-blue-600 hover:text-blue-800"
+                        title="Edit question"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
-              {existingQuestions.length === 0 && (
-                <div className="text-center text-gray-500 p-4">
-                  Questions exist for this book but could not be displayed. Please refresh the page.
-                </div>
-              )}
             </div>
             
             <div className="mt-6 text-center">
               <p className="text-gray-600 mb-4">
-                This book already has Snake Game questions. Each book can only have one set of questions.
+                This book already has Snake Game questions. You can edit them above.
               </p>
               <button
                 onClick={() => navigate(-1)}
