@@ -163,18 +163,19 @@ const StudentProgressDashboard = () => {
                                         <span className="font-semibold text-lg text-blue-700">{book.book.title}</span>
                                         <div className="text-sm text-gray-500 mt-1">
                                             Last read: {new Date(book.lastReadAt).toLocaleDateString()}<br />
-                                            Page {book.lastPageRead} &bull; {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                            Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
                                         </div>
                                     </div>
                                     <div className="w-full md:w-1/2 mt-2 md:mt-0">
                                         <div className="w-full bg-gray-200 rounded-full h-3">
                                             <div
                                                 className="bg-blue-500 h-3 rounded-full"
-                                                style={{ width: `${(book.lastPageRead / book.book.totalPages) * 100}%` }}
+                                                style={{ width: `${book.book.pageIds && book.lastPageRead ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}%` }}
                                             ></div>
                                         </div>
+                                       
                                         <div className="text-xs text-gray-400 mt-1 text-right">
-                                            {Math.round((book.lastPageRead / book.book.totalPages) * 100)}% complete
+                                            {book.book.pageIds ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}% complete
                                         </div>
                                     </div>
                                 </div>
@@ -210,4 +211,4 @@ const StudentProgressDashboard = () => {
     );
 };
 
-export default StudentProgressDashboard; 
+export default StudentProgressDashboard;

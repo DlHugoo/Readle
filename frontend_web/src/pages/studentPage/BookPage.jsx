@@ -68,10 +68,18 @@ const BookPage = () => {
       console.error("[BookPage] No userId found in localStorage");
       return;
     }
-    if (!book || !book.bookID) {
-      console.error("[BookPage] Book or bookID not loaded yet", book);
+    
+    // Add this check to ensure book is loaded
+    if (!book) {
+      console.log("[BookPage] Book not loaded yet, waiting...");
       return;
     }
+    
+    if (!book.bookID) {
+      console.error("[BookPage] Book loaded but bookID is missing", book);
+      return;
+    }
+    
     if (!pages || pages.length === 0) {
       console.error("[BookPage] Pages not loaded yet");
       return;
@@ -114,12 +122,20 @@ const BookPage = () => {
         const token = localStorage.getItem("token");
         const pageNumber = nextIndex + 1;
         const readingTimeMinutes = 1; // You can replace this with actual reading time if available
+        
+        console.log(`[BookPage] Updating progress: page ${pageNumber}, trackerId=${trackerId}`);
+        
         axios.put(
           `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=${readingTimeMinutes}`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
-        ).catch((err) => console.error("Error updating book progress:", err));
+        )
+        .then(response => {
+          console.log("[BookPage] Progress updated successfully:", response.data);
+        })
+        .catch((err) => console.error("Error updating book progress:", err));
       }
+      
       // If last page, mark as completed
       if (nextIndex === pages.length - 1 && userId && book && trackerId) {
         const token = localStorage.getItem("token");

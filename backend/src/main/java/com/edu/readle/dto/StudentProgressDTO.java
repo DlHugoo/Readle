@@ -111,4 +111,4 @@ public class StudentProgressDTO {
     public long getTotalReadingTimeMinutes() {
         return totalReadingTime != null ? totalReadingTime.toMinutes() : 0;
     }
-} 
+}
