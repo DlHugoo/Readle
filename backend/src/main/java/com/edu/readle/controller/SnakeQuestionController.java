@@ -38,4 +38,10 @@ public class SnakeQuestionController {
     public ResponseEntity<List<SnakeQuestionEntity>> getQuestionsByBookId(@PathVariable Long bookId) {
         return ResponseEntity.ok(snakeQuestionService.getQuestionsByBookId(bookId));
     }
+
+    // New endpoint for updating a question
+    @PutMapping("/{questionId}")
+    public ResponseEntity<SnakeQuestionEntity> updateQuestion(@PathVariable Long questionId, @RequestBody SnakeQuestionDTO dto) {
+        return ResponseEntity.ok(snakeQuestionService.updateQuestion(questionId, dto));
+    }
 }

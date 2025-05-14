@@ -283,23 +283,25 @@ const BookPage = () => {
             Page {currentPageIndex + 1} of {pages.length}
           </div>
         )}
-        <div className="flex gap-4">
-          {currentPageIndex === pages.length - 1 && (
-            <button
-              onClick={() => navigate(`/book/${bookId}/sequencing`)}
-              className="mt-4 px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow-lg hover:bg-green-700 transition"
-            >
-              🎯 Start Story Sequencing Activity
-            </button>
-          )}
-          {/* Updated Snake Game Button */}
-          <button
-            onClick={() => navigate(`/book/${bookId}/snake-game`)}
-            className="mt-4 px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow-lg hover:bg-purple-700 transition"
-          >
-            🐍 Play Snake Game
-          </button>
-        </div>
+<div className="flex gap-4">
+  {currentPageIndex === pages.length - 1 && (
+    <>
+      <button
+        onClick={() => navigate(`/book/${bookId}/sequencing`)}
+        className="mt-4 px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow-lg hover:bg-green-700 transition"
+      >
+        🎯 Start Story Sequencing Activity
+      </button>
+      <button
+        onClick={() => navigate(`/book/${bookId}/snake-game`)}
+        className="mt-4 px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow-lg hover:bg-purple-700 transition"
+      >
+        🐍 Play Snake Game
+      </button>
+    </>
+  )}
+</div>
+
       </div>
     </div>
   );

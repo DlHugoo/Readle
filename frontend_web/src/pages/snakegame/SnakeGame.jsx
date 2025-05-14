@@ -33,20 +33,39 @@ const SnakeGame = () => {
   const [score, setScore] = useState(0);
   const [speed, setSpeed] = useState(300);
   const [gameStarted, setGameStarted] = useState(false);
+  const [isCreatingAttempt, setIsCreatingAttempt] = useState(false);
   const intervalRef = useRef();
   const gridContainerRef = useRef();
+  const [attemptCount, setAttemptCount] = useState(0);
 
   const gridContainerSize = gridSize * cellSize + (gridSize - 1) * gapSize;
+  const userId = localStorage.getItem("userId");
+
+  const fetchAttemptCount = async () => {
+  try {
+    const res = await fetch(`/api/snake-attempts/user/${userId}/book/${bookId}/count`);
+    const data = await res.json();
+    setAttemptCount(data);
+  } catch (err) {
+    console.error("Error fetching attempt count:", err);
+  }
+};
+
+useEffect(() => {
+  if (userId && bookId) {
+    fetchAttemptCount();
+  }
+}, [userId, bookId]);
 
   useEffect(() => {
-    console.log("Received bookId:", bookId); // Add this line to check bookId
+    console.log("Received bookId:", bookId);
     
     const fetchQuestions = async () => {
       try {
         const res = await axios.get(
           `http://localhost:8080/api/snake-questions/book/${bookId}`
         );
-        console.log("Fetched questions:", res.data); // Also log the response data
+        console.log("Fetched questions:", res.data);
         
         setQuestions(res.data);
         const correctAnswers = res.data.map(
@@ -68,7 +87,31 @@ const SnakeGame = () => {
     };
     
     fetchQuestions();
-  }, [bookId]); // Make sure bookId is in the dependency array
+  }, [bookId]);
+
+const createAttempt = async (finalScore) => {
+  if (!userId) {
+    console.warn("No user ID found in localStorage");
+    return;
+  }
+
+  setIsCreatingAttempt(true);
+  try {
+    await axios.post(`http://localhost:8080/api/snake-attempts`, null, {
+      params: {
+        userId: userId,
+        bookId: bookId,
+        score: finalScore
+      }
+    });
+    // Refresh the attempt count after creating
+    await fetchAttemptCount();
+  } catch (err) {
+    console.error("Error creating attempt:", err);
+  } finally {
+    setIsCreatingAttempt(false);
+  }
+};
 
   useEffect(() => {
     if (!gameStarted || gameOver || gameWon) return;
@@ -156,11 +199,14 @@ const SnakeGame = () => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [dir, gameStarted]);
 
-  const startGame = () => {
-    setGameStarted(true);
-  };
+const startGame = async () => {
+  await createAttempt(0); // Create initial attempt with score 0
+  setGameStarted(true);
+};
 
   const resetGame = () => {
+    // Create attempt with final score before resetting
+    // Reset game state
     setSnake(initialSnake);
     setDir(directions.ArrowRight);
     setCurrentDirection("ArrowRight");
@@ -170,6 +216,7 @@ const SnakeGame = () => {
     setScore(0);
     setSpeed(300);
     setGameStarted(false);
+    
     axios
       .get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
       .then((res) => {
@@ -235,9 +282,12 @@ const SnakeGame = () => {
             </p>
             <button
               onClick={startGame}
-              className="px-6 py-3 rounded-lg font-bold text-white bg-green-500 hover:bg-green-600 transition-colors"
+              disabled={isCreatingAttempt}
+              className={`px-6 py-3 rounded-lg font-bold text-white ${
+                isCreatingAttempt ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+              } transition-colors`}
             >
-              Start Game
+              {isCreatingAttempt ? 'Starting...' : 'Start Game'}
             </button>
           </div>
         </div>
@@ -255,16 +305,14 @@ const SnakeGame = () => {
                 ? `You answered all ${sequence.length} questions correctly!`
                 : `You made it to question ${currentIndex + 1} of ${sequence.length}`}
             </p>
-            <button
-              onClick={resetGame}
-              className={`px-6 py-3 rounded-lg font-bold text-white ${
-                gameWon
-                  ? "bg-green-500 hover:bg-green-600"
-                  : "bg-red-500 hover:bg-red-600"
-              } transition-colors`}
-            >
-              Play Again
-            </button>
+<button
+  onClick={resetGame}
+  className={`px-6 py-3 rounded-lg font-bold text-white ${
+    gameWon ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+  } transition-colors`}
+>
+  Play Again
+</button>
           </div>
         </div>
       )}
@@ -286,8 +334,10 @@ const SnakeGame = () => {
                     {currentIndex}/{sequence.length}
                   </p>
                 </div>
-                
-
+  <div className="bg-blue-100 px-4 py-2 rounded-lg">
+    <p className="text-sm text-blue-600">Attempts</p>
+    <p className="text-2xl font-bold text-blue-800">{attemptCount}</p>
+  </div>
               </div>
 
               <div className="mb-6">
