@@ -292,12 +292,12 @@ const BookPage = () => {
       >
         🎯 Start Story Sequencing Activity
       </button>
-      <button
-        onClick={() => navigate(`/book/${bookId}/snake-game`)}
-        className="mt-4 px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow-lg hover:bg-purple-700 transition"
-      >
-        🐍 Play Snake Game
-      </button>
+<button
+  onClick={() => navigate(`/book/${bookId}/snake-game`)}
+  className="mt-4 px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow-lg hover:bg-purple-700 transition"
+>
+  🐍 Play Snake Game
+</button>
     </>
   )}
 </div>
