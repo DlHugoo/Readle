@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,5 +55,36 @@ public class SnakeQuestionService {
 
     public List<SnakeQuestionEntity> getQuestionsByBookId(Long bookId) {
         return snakeQuestionRepository.findByBook_bookID(bookId);
+    }
+
+    // Update question and answers method
+    public SnakeQuestionEntity updateQuestion(Long questionId, SnakeQuestionDTO dto) {
+        SnakeQuestionEntity question = snakeQuestionRepository.findById(questionId)
+            .orElseThrow(() -> new RuntimeException("Question not found with ID: " + questionId));
+
+        // Update question text
+        question.setText(dto.getText());
+
+        // Update book if needed
+        if (dto.getBookId() != null) {
+            BookEntity book = bookRepository.findById(dto.getBookId())
+                .orElseThrow(() -> new RuntimeException("Book not found with ID: " + dto.getBookId()));
+            question.setBook(book);
+        }
+
+        // Update the answer
+        if (!question.getAnswers().isEmpty()) {
+            SnakeAnswerEntity answer = question.getAnswers().get(0); // Assuming only one answer for simplicity
+            answer.setAnswer(dto.getAnswer());
+            answer.setCorrect(true); // You may modify this condition depending on your needs
+        } else {
+            // If no answer exists, create a new one
+            SnakeAnswerEntity answer = new SnakeAnswerEntity();
+            answer.setAnswer(dto.getAnswer());
+            answer.setCorrect(true);
+            question.addAnswer(answer);
+        }
+
+        return snakeQuestionRepository.save(question);
     }
 }

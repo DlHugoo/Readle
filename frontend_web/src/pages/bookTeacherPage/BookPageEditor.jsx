@@ -4,6 +4,7 @@ import TeahcerNav from '../../components/TeacherNav';
 import { ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Save } from 'lucide-react';
 // Add this import at the top if not already present
 import { Link } from 'react-router-dom';
+import axios from 'axios'; // Import axios
 
 const BookPageEditor = () => {
   const { bookId } = useParams();
@@ -37,31 +38,23 @@ const BookPageEditor = () => {
         const token = localStorage.getItem('token');
         
         // Fetch book details
-        const bookResponse = await fetch(`/api/books/${bookId}`, {
+        const bookResponse = await axios.get(`/api/books/${bookId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
         
-        if (!bookResponse.ok) {
-          throw new Error('Failed to fetch book details');
-        }
-        
-        const bookData = await bookResponse.json();
+        const bookData = bookResponse.data;
         setBook(bookData);
         
         // Fetch pages for this book
-        const pagesResponse = await fetch(`/api/pages/${bookId}`, {
+        const pagesResponse = await axios.get(`/api/pages/${bookId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
         
-        if (!pagesResponse.ok) {
-          throw new Error('Failed to fetch book pages');
-        }
-        
-        const pagesData = await pagesResponse.json();
+        const pagesData = pagesResponse.data;
         
         // Ensure each page has the bookId property for API calls and normalize imageUrl
         const pagesWithBookId = pagesData.map(page => ({
@@ -80,7 +73,7 @@ const BookPageEditor = () => {
         }
       } catch (err) {
         console.error('Error fetching book data:', err);
-        setError(err.message);
+        setError(err.response?.data?.message || err.message);
       } finally {
         setIsLoading(false);
       }
@@ -126,25 +119,19 @@ const BookPageEditor = () => {
   const createNewPage = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/pages/${bookId}`, {
-        method: 'POST',
+      const response = await axios.post(`/api/pages/${bookId}`, {
+        bookId: bookId,
+        pageNumber: pages.length + 1,
+        content: '',
+        imageUrl: null
+      }, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          bookId: bookId,
-          pageNumber: pages.length + 1,
-          content: '',
-          imageUrl: null
-        })
+        }
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to create new page');
-      }
-      
-      const newPage = await response.json();
+      const newPage = response.data;
       // Add bookId to the new page for future API calls
       const newPageWithBookId = {
         ...newPage,
@@ -158,7 +145,7 @@ const BookPageEditor = () => {
       setIsEditing(true);
     } catch (err) {
       console.error('Error creating new page:', err);
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
   
@@ -178,42 +165,31 @@ const BookPageEditor = () => {
         formData.append('uploadType', 'bookcontent');
         
         // Use the correct image upload endpoint with actual bookId
-        const imageResponse = await fetch(`/api/books/upload-image`, {
-          method: 'POST',
+        const imageResponse = await axios.post(`/api/books/upload-image`, formData, {
           headers: {
-            Authorization: `Bearer ${token}`
-          },
-          body: formData
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
         });
         
-        if (!imageResponse.ok) {
-          throw new Error('Failed to upload image');
-        }
-        
-        imageUrl = await imageResponse.text(); // Get the image URL as text
+        imageUrl = imageResponse.data; // Get the image URL from response data
       }
       
       // Update the page with the correct endpoint and property names
-      const response = await fetch(`/api/pages/${bookId}/page/${currentPage.id || currentPage.pageID}`, {
-        method: 'PUT',
+      const response = await axios.put(`/api/pages/${bookId}/page/${currentPage.id || currentPage.pageID}`, {
+        pageID: currentPage.id || currentPage.pageID,
+        bookId: bookId,
+        pageNumber: currentPage.pageNumber,
+        content: pageContent,
+        imageURL: imageUrl
+      }, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          pageID: currentPage.id || currentPage.pageID,
-          bookId: bookId,
-          pageNumber: currentPage.pageNumber,
-          content: pageContent,
-          imageURL: imageUrl
-        })
+        }
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to update page');
-      }
-      
-      const updatedPage = await response.json();
+      const updatedPage = response.data;
       
       // Ensure bookId is included and normalize imageUrl property
       const updatedPageWithBookId = {
@@ -231,7 +207,7 @@ const BookPageEditor = () => {
       setPageImage(null);
     } catch (err) {
       console.error('Error saving page:', err);
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
   
@@ -243,16 +219,11 @@ const BookPageEditor = () => {
         const currentPage = pages[currentPageIndex];
         
         // Use the correct delete endpoint with pageID instead of id
-        const response = await fetch(`/api/pages/${bookId}/page/${currentPage.id || currentPage.pageID}`, {
-          method: 'DELETE',
+        await axios.delete(`/api/pages/${bookId}/page/${currentPage.id || currentPage.pageID}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        
-        if (!response.ok) {
-          throw new Error('Failed to delete page');
-        }
         
         // Remove the page from the array
         const updatedPages = pages.filter((_, index) => index !== currentPageIndex);
@@ -278,7 +249,7 @@ const BookPageEditor = () => {
         setIsEditing(false);
       } catch (err) {
         console.error('Error deleting page:', err);
-        setError(err.message);
+        setError(err.response?.data?.message || err.message);
       }
     }
   };

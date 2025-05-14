@@ -39,7 +39,7 @@ public class SecurityConfig {
 
                 // Allow public access to books, pages, and other public endpoints
                 .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**",
-                        "/api/stories/**", "/api/ssa/**")
+                        "/api/stories/**", "/api/ssa/**", "/api/snake-attempts/**")
                 .permitAll()
                 .requestMatchers("/api/books/**").hasAnyAuthority("STUDENT", "TEACHER")
                 // Allow authenticated access to join classrooms (students need to join

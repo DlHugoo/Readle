@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TeacherNav from '../../components/TeacherNav';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Edit, Save, X } from 'lucide-react';
 
 const SnakeQuestionForm = () => {
   const location = useLocation();
@@ -10,6 +10,10 @@ const SnakeQuestionForm = () => {
   const [bookId, setBookId] = useState(null);
   const [bookTitle, setBookTitle] = useState('');
   const [loading, setLoading] = useState(false);
+  const [existingQuestions, setExistingQuestions] = useState([]);
+  const [hasExistingQuestions, setHasExistingQuestions] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState(null);
+  const [editFormData, setEditFormData] = useState({ text: '', answer: '' });
   const [questions, setQuestions] = useState([
     { text: '', answer: '' },
     { text: '', answer: '' },
@@ -20,19 +24,30 @@ const SnakeQuestionForm = () => {
 
   // Get bookId from navigation state or URL params
   useEffect(() => {
+    setLoading(true);
+    let id = null;
+    
     if (location.state?.bookId) {
-      setBookId(location.state.bookId);
-      // If book title is passed directly in state, use it
+      id = location.state.bookId;
       if (location.state.bookTitle) {
         setBookTitle(location.state.bookTitle);
       }
-    } else if (location.search) {
+    } 
+    else if (location.search) {
       const params = new URLSearchParams(location.search);
-      setBookId(params.get('bookId'));
+      id = params.get('bookId');
+    }
+    
+    if (id) {
+      console.log('Found bookId:', id);
+      setBookId(id);
     } else {
-      // If no bookId found, redirect back
+      console.log('No bookId found, redirecting back');
+      alert('No book selected. Returning to previous page.');
       navigate(-1);
     }
+    
+    setLoading(false);
   }, [location, navigate]);
 
   // Fetch book title if we have bookId but no title yet
@@ -51,6 +66,37 @@ const SnakeQuestionForm = () => {
         });
     }
   }, [bookId, bookTitle]);
+
+  // Check if questions already exist for this specific book
+  useEffect(() => {
+    if (bookId) {
+      setLoading(true);
+      axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
+        .then(response => {
+          console.log('API Response for book questions:', response.data);
+          
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            setExistingQuestions(response.data);
+            setHasExistingQuestions(true);
+          } else {
+            setExistingQuestions([]);
+            setHasExistingQuestions(false);
+          }
+        })
+        .catch(error => {
+          console.error('Error checking existing questions:', error);
+          if (error.response && error.response.status === 404) {
+            setExistingQuestions([]);
+            setHasExistingQuestions(false);
+          } else {
+            alert('Error loading questions. Please try again.');
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [bookId]);
 
   const handleQuestionChange = (index, value) => {
     const updated = [...questions];
@@ -72,25 +118,96 @@ const SnakeQuestionForm = () => {
         return;
       }
 
-      // Prepare all questions with bookId
+      const emptyQuestions = questions.filter(q => !q.text || !q.answer);
+      if (emptyQuestions.length > 0) {
+        alert('Please fill in all questions and answers');
+        return;
+      }
+
+      setLoading(true);
+
+      const checkResponse = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
+      
+      if (checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
+        alert('Questions already exist for this book. You cannot add more.');
+        setLoading(false);
+        setHasExistingQuestions(true);
+        setExistingQuestions(checkResponse.data);
+        return;
+      }
+
       const questionsToSubmit = questions.map(q => ({
         ...q,
         bookId: bookId
       }));
 
-      // Submit all questions
       const promises = questionsToSubmit.map(q => 
         axios.post('http://localhost:8080/api/snake-questions', q)
       );
 
       await Promise.all(promises);
       alert('5 questions submitted successfully!');
-      navigate(-1); // Go back after submission
+      window.location.reload();
     } catch (err) {
-      console.error(err);
-      alert('Failed to submit questions');
+      console.error('Error submitting questions:', err);
+      alert('Failed to submit questions: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
     }
   };
+
+ const handleEditClick = (question) => {
+    setEditingQuestionId(question.questionID);  // ✅ Use correct property
+    setEditFormData({
+        text: question.text,
+        answer: question.answers?.[0]?.answer || question.answer || ''
+    });
+};
+
+const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+        ...prev,
+        [name]: value
+    }));
+};
+
+const handleCancelEdit = () => {
+    setEditingQuestionId(null);
+    setEditFormData({ text: '', answer: '' });
+};
+
+const handleUpdateQuestion = async (questionID) => {  // ✅ Renamed parameter for clarity
+    try {
+        if (!editFormData.text || !editFormData.answer) {
+            alert('Please fill in both question and answer fields');
+            return;
+        }
+
+        setLoading(true);
+
+        // ✅ Respect backend entity naming
+        await axios.put(
+            `http://localhost:8080/api/snake-questions/${questionID}`,
+            {
+                text: editFormData.text,
+                answer: editFormData.answer,
+                bookId: bookId
+            }
+        );
+
+        const response = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
+        setExistingQuestions(response.data);
+        setEditingQuestionId(null);
+        alert('Question updated successfully!');
+    } catch (error) {
+        console.error('Error updating question:', error);
+        alert('Failed to update question: ' + (error.response?.data?.message || error.message));
+    } finally {
+        setLoading(false);
+    }
+};
+
 
   return (
     <div className="min-h-screen bg-blue-50">
@@ -112,7 +229,7 @@ const SnakeQuestionForm = () => {
               </button>
             </div>
             <h3 className="text-xl text-center text-gray-600 mb-2">
-                Submit Snake Quiz Questions 
+                Snake Quiz Questions 
             </h3>
             <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
               for "{bookTitle}"
@@ -120,49 +237,132 @@ const SnakeQuestionForm = () => {
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {questions.map((q, index) => (
-            <div
-              key={index}
-              className="bg-white p-6 rounded-2xl shadow-lg space-y-4"
-            >
-              <h3 className="text-xl font-semibold text-gray-700">
-                Question {index + 1}
-              </h3>
-              <input
-                type="text"
-                placeholder="Enter question"
-                value={q.text}
-                onChange={(e) => handleQuestionChange(index, e.target.value)}
-                required
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <input
-                type="text"
-                placeholder="Correct answer"
-                value={q.answer}
-                onChange={(e) => handleAnswerChange(index, e.target.value)}
-                required
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-              />
-            </div>
-          ))}
-          <div className="flex justify-center space-x-4">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="bg-gray-500 text-white font-bold px-8 py-3 rounded-full hover:bg-gray-600 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="bg-pink-500 text-white font-bold px-8 py-3 rounded-full hover:bg-pink-600 transition"
-            >
-              Submit All
-            </button>
+        {loading ? (
+          <div className="text-center p-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+            <p className="text-gray-600">Loading questions...</p>
           </div>
-        </form>
+        ) : hasExistingQuestions ? (
+          <div className="bg-white p-6 rounded-xl shadow-md mb-8">
+            <div className="flex items-center justify-center mb-4 text-green-600">
+              <CheckCircle size={24} className="mr-2" />
+              <h3 className="text-xl font-semibold">
+                Questions Already Created
+              </h3>
+            </div>
+            
+            <div className="space-y-6">
+              {existingQuestions.map((q, index) => (
+                <div key={q.questionID} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
+                  {editingQuestionId === q.questionID ? (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg">Editing Question {index + 1}</h4>
+                      <input
+                        type="text"
+                        name="text"
+                        value={editFormData.text}
+                        onChange={handleEditFormChange}
+                        className="w-full p-2 border rounded"
+                        placeholder="Question text"
+                      />
+                      <input
+                        type="text"
+                        name="answer"
+                        value={editFormData.answer}
+                        onChange={handleEditFormChange}
+                        className="w-full p-2 border rounded"
+                        placeholder="Correct answer"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                        >
+                          <X size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleUpdateQuestion(q.questionID)}
+                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          <Save size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h4 className="font-semibold text-lg mb-2">Question {index + 1}</h4>
+                      <p className="mb-2"><span className="font-medium">Question:</span> {q.text}</p>
+                      <p><span className="font-medium">Answer:</span> {q.answers?.[0]?.answer || q.answer}</p>
+                      <button
+                        onClick={() => handleEditClick(q)}
+                        className="absolute top-4 right-4 text-blue-600 hover:text-blue-800"
+                        title="Edit question"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 text-center">
+              <p className="text-gray-600 mb-4">
+                This book already has Snake Game questions. You can edit them above.
+              </p>
+              <button
+                onClick={() => navigate(-1)}
+                className="bg-blue-500 text-white font-bold px-8 py-3 rounded-full hover:bg-blue-600 transition"
+              >
+                Return to Book
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {questions.map((q, index) => (
+              <div
+                key={index}
+                className="bg-white p-6 rounded-2xl shadow-lg space-y-4"
+              >
+                <h3 className="text-xl font-semibold text-gray-700">
+                  Question {index + 1}
+                </h3>
+                <input
+                  type="text"
+                  placeholder="Enter question"
+                  value={q.text}
+                  onChange={(e) => handleQuestionChange(index, e.target.value)}
+                  required
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Correct answer"
+                  value={q.answer}
+                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  required
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+              </div>
+            ))}
+            <div className="flex justify-center space-x-4">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="bg-gray-500 text-white font-bold px-8 py-3 rounded-full hover:bg-gray-600 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="bg-pink-500 text-white font-bold px-8 py-3 rounded-full hover:bg-pink-600 transition"
+              >
+                Submit All
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
