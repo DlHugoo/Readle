@@ -1,6 +1,6 @@
 package com.edu.readle.service;
 
-import com.edu.readle.entity.StudentProgressTracker;
+import com.edu.readle.entity.StudentProgressTrackerEntity;
 import com.edu.readle.entity.UserEntity;
 import com.edu.readle.entity.BookEntity;
 import com.edu.readle.repository.StudentProgressTrackerRepository;
@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -41,18 +42,18 @@ public class StudentProgressTrackerService {
                 .orElseThrow(() -> new RuntimeException("Book not found"));
 
         // Check if already exists
-        Optional<StudentProgressTracker> existingTracker = progressTrackerRepository.findByUserAndBook(user, book);
+        Optional<StudentProgressTrackerEntity> existingTracker = progressTrackerRepository.findByUserAndBook(user, book);
         if (existingTracker.isPresent()) {
             return convertToDTO(existingTracker.get());
         }
 
-        StudentProgressTracker tracker = new StudentProgressTracker(user, book);
+        StudentProgressTrackerEntity tracker = new StudentProgressTrackerEntity(user, book);
         return convertToDTO(progressTrackerRepository.save(tracker));
     }
 
     @Transactional
     public StudentProgressDTO updateReadingProgress(Long trackerId, int pageNumber, Duration readingTime) {
-        StudentProgressTracker tracker = progressTrackerRepository.findById(trackerId)
+        StudentProgressTrackerEntity tracker = progressTrackerRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
 
         tracker.setLastPageRead(pageNumber);
@@ -62,7 +63,7 @@ public class StudentProgressTrackerService {
 
     @Transactional
     public StudentProgressDTO completeBook(Long trackerId) {
-        StudentProgressTracker tracker = progressTrackerRepository.findById(trackerId)
+        StudentProgressTrackerEntity tracker = progressTrackerRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
 
         tracker.completeBook();
@@ -110,7 +111,72 @@ public class StudentProgressTrackerService {
                 .orElseThrow(() -> new RuntimeException("No progress found for this book"));
     }
 
-    private StudentProgressDTO convertToDTO(StudentProgressTracker tracker) {
+    @Transactional
+    public StudentProgressDTO updateComprehensionScore(Long trackerId, int score, Map<String, Integer> breakdown) {
+        StudentProgressTrackerEntity tracker = progressTrackerRepository.findById(trackerId)
+                .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
+
+        tracker.updateComprehensionScore(score, breakdown);
+        return convertToDTO(progressTrackerRepository.save(tracker));
+    }
+
+    @Transactional
+    public StudentProgressDTO updateVocabularyDevelopment(Long trackerId, int score, int newWordsLearned) {
+        StudentProgressTrackerEntity tracker = progressTrackerRepository.findById(trackerId)
+                .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
+
+        tracker.updateVocabularyDevelopment(score, newWordsLearned);
+        return convertToDTO(progressTrackerRepository.save(tracker));
+    }
+
+    @Transactional
+    public StudentProgressDTO updatePhonicsScore(Long trackerId, int score) {
+        StudentProgressTrackerEntity tracker = progressTrackerRepository.findById(trackerId)
+                .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
+
+        tracker.updatePhonicsScore(score);
+        return convertToDTO(progressTrackerRepository.save(tracker));
+    }
+
+    // Get average scores for a user
+    public Map<String, Double> getUserAverageScores(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        List<StudentProgressTrackerEntity> trackers = progressTrackerRepository.findByUser(user);
+        
+        double avgComprehension = trackers.stream()
+                .mapToInt(StudentProgressTrackerEntity::getComprehensionScore)
+                .filter(score -> score > 0)
+                .average()
+                .orElse(0.0);
+                
+        double avgVocabulary = trackers.stream()
+                .mapToInt(StudentProgressTrackerEntity::getVocabularyScore)
+                .filter(score -> score > 0)
+                .average()
+                .orElse(0.0);
+                
+        double avgPhonics = trackers.stream()
+                .mapToInt(StudentProgressTrackerEntity::getPhonicsScore)
+                .filter(score -> score > 0)
+                .average()
+                .orElse(0.0);
+                
+        int totalWordsLearned = trackers.stream()
+                .mapToInt(StudentProgressTrackerEntity::getWordsLearned)
+                .sum();
+                
+        Map<String, Double> scores = new java.util.HashMap<>();
+        scores.put("comprehension", avgComprehension);
+        scores.put("vocabulary", avgVocabulary);
+        scores.put("phonics", avgPhonics);
+        scores.put("wordsLearned", (double) totalWordsLearned);
+        
+        return scores;
+    }
+
+    private StudentProgressDTO convertToDTO(StudentProgressTrackerEntity tracker) {
         return new StudentProgressDTO(
             tracker.getId(),
             tracker.getBook(),
@@ -119,7 +185,12 @@ public class StudentProgressTrackerService {
             tracker.getEndTime(),
             tracker.getTotalReadingTime(),
             tracker.getLastPageRead(),
-            tracker.getLastReadAt()
+            tracker.getLastReadAt(),
+            tracker.getComprehensionScore(),
+            tracker.getVocabularyScore(),
+            tracker.getPhonicsScore(),
+            tracker.getWordsLearned(),
+            tracker.getComprehensionBreakdown()
         );
     }
-} 
+}

@@ -3,6 +3,8 @@ package com.edu.readle.dto;
 import com.edu.readle.entity.BookEntity;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 public class StudentProgressDTO {
@@ -14,12 +16,19 @@ public class StudentProgressDTO {
     private Duration totalReadingTime;
     private int lastPageRead;
     private LocalDateTime lastReadAt;
+    private int comprehensionScore;
+    private int vocabularyScore;
+    private int phonicsScore;
+    private int wordsLearned;
+    private Map<String, Integer> comprehensionBreakdown;
 
     // Constructor
     public StudentProgressDTO(Long id, BookEntity book, boolean isCompleted, 
                             LocalDateTime startTime, LocalDateTime endTime,
                             Duration totalReadingTime, int lastPageRead,
-                            LocalDateTime lastReadAt) {
+                            LocalDateTime lastReadAt, int comprehensionScore,
+                            int vocabularyScore, int phonicsScore, int wordsLearned,
+                            Map<String, Integer> comprehensionBreakdown) {
         this.id = id;
         this.book = new BookDTO(
             book.getBookID(),
@@ -37,6 +46,13 @@ public class StudentProgressDTO {
         this.totalReadingTime = totalReadingTime;
         this.lastPageRead = lastPageRead;
         this.lastReadAt = lastReadAt;
+        this.comprehensionScore = comprehensionScore;
+        this.vocabularyScore = vocabularyScore;
+        this.phonicsScore = phonicsScore;
+        this.wordsLearned = wordsLearned;
+        this.comprehensionBreakdown = comprehensionBreakdown != null ? 
+                                      new HashMap<>(comprehensionBreakdown) : 
+                                      new HashMap<>();
     }
 
     // Getters and Setters
@@ -110,5 +126,45 @@ public class StudentProgressDTO {
 
     public long getTotalReadingTimeMinutes() {
         return totalReadingTime != null ? totalReadingTime.toMinutes() : 0;
+    }
+
+    public int getComprehensionScore() {
+        return comprehensionScore;
+    }
+
+    public void setComprehensionScore(int comprehensionScore) {
+        this.comprehensionScore = comprehensionScore;
+    }
+
+    public int getVocabularyScore() {
+        return vocabularyScore;
+    }
+
+    public void setVocabularyScore(int vocabularyScore) {
+        this.vocabularyScore = vocabularyScore;
+    }
+
+    public int getPhonicsScore() {
+        return phonicsScore;
+    }
+
+    public void setPhonicsScore(int phonicsScore) {
+        this.phonicsScore = phonicsScore;
+    }
+    
+    public int getWordsLearned() {
+        return wordsLearned;
+    }
+    
+    public void setWordsLearned(int wordsLearned) {
+        this.wordsLearned = wordsLearned;
+    }
+    
+    public Map<String, Integer> getComprehensionBreakdown() {
+        return comprehensionBreakdown;
+    }
+    
+    public void setComprehensionBreakdown(Map<String, Integer> comprehensionBreakdown) {
+        this.comprehensionBreakdown = comprehensionBreakdown;
     }
 }

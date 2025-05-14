@@ -6,7 +6,7 @@ import java.time.Duration;
 
 @Entity
 @Table(name = "student_progress_tracker")
-public class StudentProgressTracker {
+public class StudentProgressTrackerEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,12 +39,12 @@ public class StudentProgressTracker {
     private LocalDateTime lastReadAt;
 
     // Constructors
-    public StudentProgressTracker() {
+    public StudentProgressTrackerEntity() {
         this.totalReadingTime = Duration.ZERO;
         this.lastPageRead = 0;
     }
 
-    public StudentProgressTracker(UserEntity user, BookEntity book) {
+    public StudentProgressTrackerEntity(UserEntity user, BookEntity book) {
         this.user = user;
         this.book = book;
         this.isCompleted = false;
