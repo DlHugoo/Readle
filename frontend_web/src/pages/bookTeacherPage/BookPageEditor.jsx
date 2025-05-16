@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TeahcerNav from '../../components/TeacherNav';
-import { ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Edit, Trash2, X, Save, AlertCircle } from 'lucide-react';
 // Add this import at the top if not already present
 import { Link } from 'react-router-dom';
 import axios from 'axios'; // Import axios
@@ -20,6 +20,10 @@ const BookPageEditor = () => {
   const [pageContent, setPageContent] = useState('');
   const [pageImage, setPageImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  
+  // Add modal state
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
   
   // Helper function to get full image URL
   const getFullImageUrl = (url) => {
@@ -82,10 +86,30 @@ const BookPageEditor = () => {
     fetchBookAndPages();
   }, [bookId]);
   
-  // Handle image file selection
+  // Add these constants at the top of your component
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+  // Update the handleImageChange function
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        setModalMessage(`File "${file.name}" exceeds the maximum size of 5MB.`);
+        setShowModal(true);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+      
+      // Validate file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        setModalMessage(`File "${file.name}" is not a supported image format. Please use JPEG, PNG, GIF, or WebP.`);
+        setShowModal(true);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+      
       setPageImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -164,15 +188,24 @@ const BookPageEditor = () => {
         // Add a parameter to specify the upload directory should be bookcontent
         formData.append('uploadType', 'bookcontent');
         
-        // Use the correct image upload endpoint with actual bookId
-        const imageResponse = await axios.post(`/api/books/upload-image`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        
-        imageUrl = imageResponse.data; // Get the image URL from response data
+        try {
+          // Use the correct image upload endpoint with actual bookId
+          const imageResponse = await axios.post(`/api/books/upload-image`, formData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          imageUrl = imageResponse.data; // Get the image URL from response data
+        } catch (error) {
+          // Handle image upload errors
+          console.error('Error uploading image:', error);
+          const errorMessage = error.response?.data || 'Failed to upload image';
+          setModalMessage(`Error uploading image: ${errorMessage}`);
+          setShowModal(true);
+          return; // Exit the function early
+        }
       }
       
       // Update the page with the correct endpoint and property names
@@ -362,6 +395,9 @@ const BookPageEditor = () => {
                           <div className="flex flex-col items-center">
                             <Plus size={24} className="text-blue-500 mb-2" />
                             <p className="mb-2">Add page image here</p>
+                            <p className="text-xs text-gray-500 mb-2">
+                              Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                            </p>
                             <input
                               type="file"
                               accept="image/*"
@@ -487,6 +523,32 @@ const BookPageEditor = () => {
             )}
           </div>
         </div>
+        
+        {/* Modal for error messages */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 mr-3">
+                  <AlertCircle className="h-6 w-6 text-red-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900">Can not Upload File</h3>
+                  <p className="mt-2 text-sm text-gray-500">{modalMessage}</p>
+                </div>
+              </div>
+              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setShowModal(false)}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Activity buttons - Moved outside the main box */}
         {pages.length > 0 && (

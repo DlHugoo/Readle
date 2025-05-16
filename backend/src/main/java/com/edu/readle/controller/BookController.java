@@ -21,6 +21,7 @@ import java.util.Optional;
 public class BookController {
 
     private final BookService bookService;
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max file size
 
     public BookController(BookService bookService) {
         this.bookService = bookService;
@@ -60,6 +61,23 @@ public class BookController {
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file,
                                               @RequestParam(value = "uploadType", defaultValue = "bookcovers") String uploadType) throws java.io.IOException {
         String uploadDir = "uploads/" + uploadType + "/";
+        
+        // Check if file is empty
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+        
+        // Validate file size
+        if (file.getSize() > MAX_FILE_SIZE) {
+            return ResponseEntity.badRequest().body("File size exceeds the limit of 5MB");
+        }
+        
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().body("Only image files are allowed");
+        }
+        
         try {
             // Ensure the uploads directory exists
             File directory = new File(uploadDir);
@@ -77,7 +95,10 @@ public class BookController {
             return ResponseEntity.ok(fileUrl);
         } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Failed to upload image");
+            return ResponseEntity.status(500).body("Failed to upload image: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("An unexpected error occurred: " + e.getMessage());
         }
     }
 }
