@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/progress")
@@ -87,39 +86,4 @@ public class StudentProgressTrackerController {
             @PathVariable Long bookId) {
         return ResponseEntity.ok(progressTrackerService.getBookProgress(userId, bookId));
     }
-
-    @PutMapping("/comprehension/{trackerId}")
-    public ResponseEntity<StudentProgressDTO> updateComprehensionScore(
-            @PathVariable Long trackerId,
-            @RequestParam int score,
-            @RequestBody(required = false) Map<String, Integer> breakdown) {
-        return ResponseEntity.ok(progressTrackerService.updateComprehensionScore(trackerId, score, breakdown));
-    }
-
-    @PutMapping("/vocabulary/{trackerId}")
-    public ResponseEntity<StudentProgressDTO> updateVocabularyDevelopment(
-            @PathVariable Long trackerId,
-            @RequestParam int score,
-            @RequestParam int newWordsLearned) {
-        return ResponseEntity.ok(progressTrackerService.updateVocabularyDevelopment(trackerId, score, newWordsLearned));
-    }
-
-    @PutMapping("/phonics/{trackerId}")
-    public ResponseEntity<StudentProgressDTO> updatePhonicsScore(
-            @PathVariable Long trackerId,
-            @RequestParam int score) {
-        return ResponseEntity.ok(progressTrackerService.updatePhonicsScore(trackerId, score));
-    }
-
-    @GetMapping("/average-scores/{userId}")
-    public ResponseEntity<Map<String, Double>> getUserAverageScores(@PathVariable Long userId) {
-        logger.info("Getting average scores for user: {}", userId);
-        try {
-            Map<String, Double> scores = progressTrackerService.getUserAverageScores(userId);
-            return ResponseEntity.ok(scores);
-        } catch (Exception e) {
-            logger.error("Error getting average scores for user: " + userId, e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-}
+} 
