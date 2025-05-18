@@ -11,11 +11,21 @@ function StudentNavbar() {
   // Map pathname to tab
   useEffect(() => {
     const path = location.pathname;
-  
-    if (
+    const origin = location.state?.from;
+
+    if (path.startsWith("/book/")) {
+      // Book page: determine source using state
+      if (origin === "CLASSROOM") {
+        setActiveTab("CLASSROOM");
+      } else if (origin === "LIBRARY") {
+        setActiveTab("LIBRARY");
+      } else {
+        // Fallback if no state (e.g., refresh)
+        setActiveTab("LIBRARY"); // or "CLASSROOM", depending on your default preference
+      }
+    } else if (
       path.startsWith("/student-classrooms") ||
-      path.startsWith("/student/classroom-content") ||
-      path.startsWith("/book/")
+      path.startsWith("/student/classroom-content")
     ) {
       setActiveTab("CLASSROOM");
     } else if (path.startsWith("/library")) {
@@ -25,8 +35,7 @@ function StudentNavbar() {
     } else {
       setActiveTab(""); // fallback
     }
-  }, [location.pathname]);
-  
+  }, [location]);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
