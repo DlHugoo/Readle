@@ -9,7 +9,8 @@ import {
   Upload,
   XCircle,
   CheckCircle,
-  ArrowLeft
+  ArrowLeft,
+  AlertCircle
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import axios from "axios";
@@ -17,8 +18,8 @@ import TeacherNav from '../../../components/TeacherNav';
 
 const Modal = ({ open, onClose, type, message }) => {
   if (!open) return null;
-  const Icon = type === "success" ? CheckCircle : XCircle;
-  const color = type === "success" ? "text-green-600" : "text-red-600";
+  const Icon = type === "success" ? CheckCircle : type === "warning" ? AlertCircle : XCircle;
+  const color = type === "success" ? "text-green-600" : type === "warning" ? "text-amber-500" : "text-red-600";
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
@@ -107,15 +108,58 @@ const TeacherCreateSSA = () => {
       });
   }, [selectedBookId, passedBookTitle]);
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  
   const handleImageChange = (e) => {
     if (existingSSA) return;
     
-    const files = Array.from(e.target.files).map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setImages((prev) => [...prev, ...files]);
+    const selectedFiles = Array.from(e.target.files);
+    
+    // Validate files before processing
+    const invalidFiles = [];
+    const validFiles = [];
+    
+    selectedFiles.forEach(file => {
+      // Check file size
+      if (file.size > MAX_FILE_SIZE) {
+        invalidFiles.push(`${file.name} (exceeds 5MB size limit)`);
+        return;
+      }
+      
+      // Check file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        invalidFiles.push(`${file.name} (not a supported image format)`);
+        return;
+      }
+      
+      validFiles.push(file);
+    });
+    
+    // Show error for invalid files
+    if (invalidFiles.length > 0) {
+      setModal({
+        open: true,
+        message: `The following files couldn't be added:\n${invalidFiles.join('\n')}`,
+        type: "warning"
+      });
+    }
+    
+    // Process valid files
+    if (validFiles.length > 0) {
+      const newImages = validFiles.map((file, index) => ({
+        id: `${Date.now()}-${index}`,
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      
+      setImages((prev) => [...prev, ...newImages]);
+    }
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const removeImage = (idToRemove) => {
@@ -164,11 +208,21 @@ const TeacherCreateSSA = () => {
           formData.append("file", file);
           formData.append("uploadType", "ssa");
 
-          const res = await axios.post(
-            "http://localhost:8080/api/books/upload-image",
-            formData
-          );
-          return { imageUrl: res.data, correctPosition: idx + 1 };
+          try {
+            const res = await axios.post(
+              "http://localhost:8080/api/books/upload-image",
+              formData
+            );
+            return { imageUrl: res.data, correctPosition: idx + 1 };
+          } catch (error) {
+            // Handle upload errors
+            console.error("Image upload error:", error);
+            
+            // Get error message from response if available
+            const errorMessage = error.response?.data || "Failed to upload image";
+            
+            throw new Error(`Failed to upload image ${idx + 1}: ${errorMessage}`);
+          }
         })
       );
 
@@ -213,7 +267,7 @@ const TeacherCreateSSA = () => {
       console.error("SSA creation failed:", err);
       setModal({
         open: true,
-        message: "❌ Failed to create SSA.",
+        message: `❌ ${err.message || "Failed to create SSA."}`,
         type: "error",
       });
     } finally {
@@ -346,6 +400,9 @@ const TeacherCreateSSA = () => {
                   <Upload size={40} className="mx-auto text-gray-400 mb-2" />
                   <p className="mb-2 text-sm text-gray-500">
                     Upload images for each step in the story sequence
+                  </p>
+                  <p className="mb-4 text-xs text-gray-400">
+                    Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
                   </p>
                   <input
                     type="file"
