@@ -17,6 +17,7 @@ import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
 import BookReaderPage from "./pages/studentPage/BookReaderPage"; // Add this
 import StudentProgressDashboard from './pages/studentPage/StudentProgressDashboard';
+import StudentBadgeDashboard from './pages/studentPage/StudentBadgeDashboard';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
         <Route path="/book/:bookId" element={<BookReaderPage />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
+        <Route path="/student/badges" element={<StudentBadgeDashboard />} />
       </Routes>
     </Router>
   );
