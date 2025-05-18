@@ -3,6 +3,7 @@ import StudentNavbar from "../../components/StudentNavbar";
 import BookCard from "../../components/BookCard";
 import FeaturedCarousel from "../../components/FeaturedCarousel";
 import { fetchBooks } from "../../api/api";
+import axios from "axios";
 
 // ✨ Import local banners
 import Banner1 from "../../assets/Banner-1.jpg";
@@ -11,7 +12,9 @@ import Banner3 from "../../assets/Banner-3.jpg";
 
 const StudentLibraryPage = () => {
   const [books, setBooks] = useState([]);
+  const [inProgressBooks, setInProgressBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [inProgressLoading, setInProgressLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // 🎯 Local static featured banners
@@ -43,6 +46,37 @@ const StudentLibraryPage = () => {
     };
 
     getBooks();
+  }, []);
+
+  // Fetch in-progress books for the Continue Reading section
+  useEffect(() => {
+    const fetchInProgressBooks = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+        
+        if (!token || !userId) {
+          setInProgressLoading(false);
+          return;
+        }
+
+        const headers = { Authorization: `Bearer ${token}` };
+        const response = await axios.get(
+          `http://localhost:8080/api/progress/in-progress/${userId}`, 
+          { headers }
+        );
+        
+        // Extract the book objects from the progress data
+        const progressBooks = response.data.map(progress => progress.book);
+        setInProgressBooks(progressBooks);
+      } catch (err) {
+        console.error("Error fetching in-progress books:", err);
+      } finally {
+        setInProgressLoading(false);
+      }
+    };
+
+    fetchInProgressBooks();
   }, []);
 
   const renderLoadingState = () => (
@@ -84,7 +118,7 @@ const StudentLibraryPage = () => {
                 renderEmptyState()
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                  {books.slice(3, 9).map((book, index) => (
+                  {books.slice(0, 6).map((book, index) => (
                     <BookCard key={`for-you-${book.id || index}`} book={book} />
                   ))}
                 </div>
@@ -95,14 +129,16 @@ const StudentLibraryPage = () => {
               <h2 className="text-2xl font-bold text-gray-800 mb-4">
                 Continue Reading
               </h2>
-              {loading ? (
+              {inProgressLoading ? (
                 renderLoadingState()
-              ) : books.length === 0 ? (
-                renderEmptyState()
+              ) : inProgressBooks.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>You don't have any books in progress. Start reading to see them here!</p>
+                </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                  {books.slice(9, 11).map((book, index) => (
-                    <BookCard key={`continue-reading-${book.id || index}`} book={book} />
+                  {inProgressBooks.map((book, index) => (
+                    <BookCard key={`continue-reading-${book.bookID || index}`} book={book} />
                   ))}
                 </div>
               )}
