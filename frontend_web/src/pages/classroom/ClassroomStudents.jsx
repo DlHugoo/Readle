@@ -677,32 +677,28 @@ const ClassroomStudents = () => {
     );
   };
 
-  return (
-    <div className="w-full min-h-screen flex">
-    {/* Sidebar */}
-    <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-    
-    {/* Main Content */}
-    <div className="flex-1 flex flex-col pt-20"> {/* Added pt-20 for padding-top */}
-      {/* Navigation Bar - Full Width */}
-      <div className="w-full">
-        <TeahcerNav />
-      </div>
+ return (
+    <div className="min-h-screen bg-gray-50">
+      <TeahcerNav />
       
-      <div className="p-6 max-w-7xl mx-auto w-full">
-        {/* Sidebar Toggle Button */}
-        <button 
-          onClick={toggleSidebar}
-          className="mb-4 p-2 rounded-md hover:bg-gray-100 transition-colors"
-        >
-          <Menu size={24} />
-        </button>
-          
-          {/* Page Title */}
-          <h1 className="text-2xl font-semibold text-gray-700 mb-4">
-            👨‍👩‍👧‍👦 Classroom Students Management
-          </h1>
-
+      {/* Sidebar */}
+      <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      
+      {/* Main Content */}
+      <div className={`pt-[72px] transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
+        <div className="p-6 sm:p-10 max-w-7xl mx-auto">
+          {/* Header with toggle sidebar button */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center">
+              <button
+                onClick={toggleSidebar}
+                className="mr-4 p-2 rounded-md hover:bg-gray-200"
+              >
+                <Menu size={24} />
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Students</h1>
+            </div>
+          </div>
           {/* Enhanced Classroom Information Card */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md mb-8 border border-blue-100">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
