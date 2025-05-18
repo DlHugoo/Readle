@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate  } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { BookOpen, PlusCircle, Menu } from "lucide-react";
+import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from 'axios'; // Import axios
 
@@ -12,12 +12,14 @@ const ClassroomContentManager = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [classroomContent, setClassroomContent] = useState([]); // State to hold classroom-specific content
   const [classroomName, setClassroomName] = useState(""); // State to hold classroom name
+  const [classroomCode, setClassroomCode] = useState(""); // State to hold classroom code
   const [menuOpenIndex, setMenuOpenIndex] = useState(null); // State to track which menu is open
   const [selectedBook, setSelectedBook] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [alertModal, setAlertModal] = useState({ show: false, type: "", message: "" }); // State for alert modal
   const [sidebarOpen, setSidebarOpen] = useState(false); // State for sidebar
+  const [codeCopied, setCodeCopied] = useState(false); // State to track if code was copied
 
   // States for the "Add/Edit Book" modal
   const [bookTitle, setBookTitle] = useState("");
@@ -25,6 +27,12 @@ const ClassroomContentManager = () => {
   const [bookGenre, setBookGenre] = useState("");
   const [bookDifficulty, setBookDifficulty] = useState("");
   const [bookImageURL, setBookImageURL] = useState("");
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  // Add these constants for file validation
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
   // Toggle sidebar function
   const toggleSidebar = () => {
@@ -56,6 +64,7 @@ const ClassroomContentManager = () => {
           console.log("First book structure:", response.data.books[0]);
         }
         setClassroomName(response.data.name || "Unknown Classroom");
+        setClassroomCode(response.data.classroomCode || ""); // Set classroom code
         setClassroomContent(response.data.books || []); // Fetch books associated with the classroom
       } catch (error) {
         console.error("Failed to fetch classroom details. Status:", error.response?.status, "Error:", error.message);
@@ -64,6 +73,18 @@ const ClassroomContentManager = () => {
 
     fetchClassroomDetails();
   }, [classroomId]);
+
+  // Function to copy classroom code to clipboard
+  const copyClassroomCode = () => {
+    navigator.clipboard.writeText(classroomCode)
+      .then(() => {
+        setCodeCopied(true);
+        setTimeout(() => setCodeCopied(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy code: ', err);
+      });
+  };
 
   const handleSelectModule = (module) => {
     setSelectedModule(module);
@@ -75,6 +96,8 @@ const ClassroomContentManager = () => {
     setBookGenre("");
     setBookDifficulty("");
     setBookImageURL("");
+    setSelectedImageFile(null);
+    setImagePreview(null);
   };
 
   const closeAddBookModal = () => {
@@ -86,6 +109,8 @@ const ClassroomContentManager = () => {
     setBookGenre("");
     setBookDifficulty("");
     setBookImageURL("");
+    setSelectedImageFile(null);
+    setImagePreview(null);
   };
 
   const showAlertModal = (type, message) => {
@@ -96,6 +121,56 @@ const ClassroomContentManager = () => {
     setAlertModal({ show: false, type: "", message: "" });
   };
 
+  // Function to handle image file selection
+  const handleImageFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        showAlertModal("error", `File "${file.name}" exceeds the maximum size of 5MB.`);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+      
+      // Validate file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        showAlertModal("error", `File "${file.name}" is not a supported image format. Please use JPEG, PNG, GIF, or WebP.`);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+
+      // Store the file for later upload
+      setSelectedImageFile(file);
+      
+      // Create a preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Function to upload the image and return the URL
+  const uploadImage = async (file) => {
+    if (!file) return null;
+    
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post("/api/books/upload-image", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
+
   const handleAddBook = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -103,16 +178,28 @@ const ClassroomContentManager = () => {
       return;
     }
 
-    const newBook = {
-      title: bookTitle,
-      author: bookAuthor,
-      genre: bookGenre,
-      difficultyLevel: bookDifficulty,
-      imageURL: bookImageURL,
-      classroomId: parseInt(classroomId),
-    };
-
     try {
+      // First upload the image if one is selected
+      let imageURL = null;
+      if (selectedImageFile) {
+        try {
+          imageURL = await uploadImage(selectedImageFile);
+          showAlertModal("success", "Image uploaded successfully!");
+        } catch (error) {
+          showAlertModal("error", `Failed to upload image: ${error.message}`);
+          return;
+        }
+      }
+
+      const newBook = {
+        title: bookTitle,
+        author: bookAuthor,
+        genre: bookGenre,
+        difficultyLevel: bookDifficulty,
+        imageURL: imageURL,
+        classroomId: parseInt(classroomId),
+      };
+
       const response = await axios.post("/api/books", newBook, {
         headers: {
           "Content-Type": "application/json",
@@ -142,6 +229,7 @@ const ClassroomContentManager = () => {
     setBookGenre(book.genre);
     setBookDifficulty(book.difficultyLevel);
     setBookImageURL(book.imageURL);
+    setImagePreview(book.imageURL ? `http://localhost:8080${book.imageURL}` : null);
     setShowEditModal(true);
   };
 
@@ -182,17 +270,29 @@ const ClassroomContentManager = () => {
       return;
     }
 
-    const updatedBook = {
-      bookID: selectedBook.bookID,
-      title: bookTitle,
-      author: bookAuthor,
-      genre: bookGenre,
-      difficultyLevel: bookDifficulty,
-      imageURL: bookImageURL,
-      classroomId: parseInt(classroomId),
-    };
-
     try {
+      // Upload new image if selected
+      let imageURL = bookImageURL;
+      if (selectedImageFile) {
+        try {
+          imageURL = await uploadImage(selectedImageFile);
+          showAlertModal("success", "Image uploaded successfully!");
+        } catch (error) {
+          showAlertModal("error", `Failed to upload image: ${error.message}`);
+          return;
+        }
+      }
+
+      const updatedBook = {
+        bookID: selectedBook.bookID,
+        title: bookTitle,
+        author: bookAuthor,
+        genre: bookGenre,
+        difficultyLevel: bookDifficulty,
+        imageURL: imageURL,
+        classroomId: parseInt(classroomId),
+      };
+
       const response = await axios.put(`/api/books/${selectedBook.bookID}`, updatedBook, {
         headers: {
           "Content-Type": "application/json",
@@ -239,14 +339,34 @@ const ClassroomContentManager = () => {
             📚 Classroom Content Management
           </h1>
 
-          {/* Classroom Name and ID */}
-          <div className="bg-[#F3F4F6] p-4 rounded-lg shadow-md mb-6">
-            <h2 className="text-3xl font-extrabold text-[#3B82F6] mb-2">
-              {classroomName}
-            </h2>
-            <p className="text-sm text-gray-500">
-              Classroom ID: <span className="font-mono">{classroomId}</span>
-            </p>
+          {/* Enhanced Classroom Information Card */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md mb-8 border border-blue-100">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div>
+                <h2 className="text-3xl font-extrabold text-[#3B82F6] mb-2">
+                  {classroomName}
+                </h2>
+                <p className="text-sm text-gray-500 mb-2">
+                  Classroom ID: <span className="font-mono">{classroomId}</span>
+                </p>
+              </div>
+              
+              {/* Classroom Code Display */}
+              <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">Classroom Code:</p>
+                <div className="flex items-center">
+                  <span className="font-mono text-xl font-bold text-indigo-600 mr-3">{classroomCode}</span>
+                  <button 
+                    onClick={copyClassroomCode}
+                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                    title="Copy classroom code"
+                  >
+                    {codeCopied ? <Check size={18} className="text-green-500" /> : <Copy size={18} className="text-gray-500" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Share this code with students to join the classroom</p>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -261,14 +381,25 @@ const ClassroomContentManager = () => {
               </div>
               <PlusCircle size={22} />
             </button>
-
           </div>
 
           {/* Display Classroom Content */}
           <div className="mt-8">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">📋 Classroom Content</h2>
+            <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+              <BookOpen size={20} className="mr-2 text-blue-500" />
+              <span>Classroom Content</span>
+            </h2>
             {classroomContent.length === 0 ? (
-              <p className="text-gray-500">No content added yet for this classroom.</p>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                <p className="text-gray-500 mb-4">No content added yet for this classroom.</p>
+                <button
+                  onClick={() => handleSelectModule("library")}
+                  className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                >
+                  <PlusCircle size={16} className="mr-2" />
+                  Add Your First Book
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {classroomContent.map((book, index) => {
@@ -396,35 +527,42 @@ const ClassroomContentManager = () => {
                   className="w-full mb-3 p-3 border border-gray-300 rounded"
                 />
 
-                {/* File Upload for Image */}
-                <input
-                  type="file"
-                  id="bookImage"
-                  name="bookImage"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const formData = new FormData();
-                      formData.append("file", file);
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Book Cover Preview:</p>
+                    <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                      <img 
+                        src={imagePreview} 
+                        alt="Book Cover Preview" 
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
 
-                      try {
-                        const response = await axios.post("/api/books/upload-image", formData, {
-                          headers: {
-                            "Content-Type": "multipart/form-data",
-                          },
-                        });
-
-                        setBookImageURL(response.data); // Set the uploaded image URL
-                        alert("Image uploaded successfully!");
-                      } catch (error) {
-                        console.error("Error uploading image:", error);
-                        alert("An error occurred while uploading the image.");
-                      }
-                    }
-                  }}
-                  className="w-full mb-3 p-3 border border-gray-300 rounded"
-                />
+                {/* Redesigned File Upload Button */}
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Book Cover Image</p>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                  </p>
+                  <label 
+                    htmlFor="bookImage" 
+                    className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
+                  >
+                    <Upload size={20} className="text-blue-500" />
+                    <span className="text-blue-600 font-medium">Choose Image File</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="bookImage"
+                    name="bookImage"
+                    accept="image/*"
+                    onChange={handleImageFileSelect}
+                    className="hidden" // Hide the actual input
+                  />
+                </div>
 
                 <div className="flex justify-end gap-2">
                   <button
@@ -482,97 +620,81 @@ const ClassroomContentManager = () => {
                   className="w-full mb-3 p-2 border rounded"
                 />
 
-                {/* Display Current Image */}
-                {bookImageURL ? (
-                  <div className="mb-3">
-                    <p className="text-sm text-gray-600 mb-2">Current Book Cover:</p>
-                    <img
-                      src={`${"http://localhost:8080"}${bookImageURL}`} // Construct full image URL
-                      alt="Book Cover"
-                      className="h-32 w-full object-cover rounded"
-                    />
-                  </div>
-                ) : (
-                  <div className="mb-3">
-                    <p className="text-sm text-gray-600 mb-2">No Current Cover Available</p>
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Current Book Cover:</p>
+                    <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                      <img 
+                        src={imagePreview} 
+                        alt="Book Cover Preview" 
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
                   </div>
                 )}
 
-                {/* File Upload for New Image */}
-                <div className="mb-3">
-                  <label htmlFor="editBookImage" className="block text-sm font-medium text-gray-700 mb-2">
-                    Change Book Cover
+                {/* Redesigned File Upload Button */}
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Change Book Cover</p>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                  </p>
+                  <label 
+                    htmlFor="editBookImage" 
+                    className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
+                  >
+                    <Upload size={20} className="text-blue-500" />
+                    <span className="text-blue-600 font-medium">Choose New Image</span>
                   </label>
                   <input
                     type="file"
                     id="editBookImage"
                     name="editBookImage"
                     accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const formData = new FormData();
-                        formData.append("file", file);
-
-                        try {
-                          const response = await fetch("/api/books/upload-image", {
-                            method: "POST",
-                            body: formData,
-                          });
-
-                          if (response.ok) {
-                            const fileUrl = await response.text();
-                            setBookImageURL(fileUrl); // Update the image URL
-                            showAlertModal("success", "Image uploaded successfully!");
-                          } else {
-                            showAlertModal("error", "Failed to upload image.");
-                          }
-                        } catch (error) {
-                          console.error("Error uploading image:", error);
-                          showAlertModal("error", "An error occurred while uploading the image.");
-                        }
-                      }
-                    }}
-                    className="w-full p-2 border rounded"
+                    onChange={handleImageFileSelect}
+                    className="hidden" // Hide the actual input
                   />
                 </div>
 
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 mt-4">
                   <button
                     onClick={() => setShowEditModal(false)}
-                    className="bg-gray-300 px-4 py-2 rounded"
+                    className="px-4 py-2 bg-gray-300 rounded"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={submitEditBook}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
-                    Update
+                    Save Changes
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Delete Modal */}
+          {/* Delete Confirmation Modal */}
           {showDeleteModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg w-full max-w-sm text-center">
-                <h2 className="text-lg font-bold mb-4 text-red-600">Are you sure you want to delete this book?</h2>
-                <p className="text-sm text-gray-600 mb-6">This action cannot be undone.</p>
-                <div className="flex justify-center gap-4">
+              <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
+                <p className="mb-6">
+                  Are you sure you want to delete the book "{selectedBook?.title}"? This action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-2">
                   <button
                     onClick={() => setShowDeleteModal(false)}
-                    className="px-4 py-2 rounded bg-red-100 hover:bg-red-300 text-red-700"
+                    className="px-4 py-2 bg-gray-300 rounded"
                   >
-                    ❌ Cancel
+                    Cancel
                   </button>
                   <button
                     onClick={confirmDeleteBook}
-                    className="px-4 py-2 rounded bg-green-100 hover:bg-green-300 text-green-700"
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
-                    ✅ Confirm
+                    Delete
                   </button>
                 </div>
               </div>
@@ -582,33 +704,31 @@ const ClassroomContentManager = () => {
           {/* Alert Modal */}
           {alertModal.show && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm text-center">
-                {alertModal.type === "success" && (
-                  <div className="text-green-500 text-4xl mb-4">✔️</div>
-                )}
-                {alertModal.type === "error" && (
-                  <div className="text-red-500 text-4xl mb-4">❌</div>
-                )}
-                <p className="text-lg font-semibold mb-4">{alertModal.message}</p>
-                <button
-                  onClick={closeAlertModal}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  OK
-                </button>
+              <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                <div className="flex items-center mb-4">
+                  {alertModal.type === "success" ? (
+                    <CheckCircle className="text-green-500 mr-3" size={24} />
+                  ) : (
+                    <AlertCircle className="text-red-500 mr-3" size={24} />
+                  )}
+                  <h3 className="text-lg font-medium">
+                    {alertModal.type === "success" ? "Success" : "Error"}
+                  </h3>
+                </div>
+                <p className="mb-6">{alertModal.message}</p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={closeAlertModal}
+                    className={`px-4 py-2 rounded text-white ${
+                      alertModal.type === "success" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
+                    }`}
+                  >
+                    OK
+                  </button>
+                </div>
               </div>
             </div>
           )}
-
-          {/* Future Feature Section */}
-          <div className="mt-12">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">📈 Coming Soon</h2>
-            <ul className="list-disc ml-6 text-gray-600">
-              <li>Story Sequencing Activities</li>
-              <li>Prediction-Based Quizzes</li>
-              <li>Snake Game for Vocabulary Practice</li>
-            </ul>
-          </div>
         </div>
       </div>
     </div>

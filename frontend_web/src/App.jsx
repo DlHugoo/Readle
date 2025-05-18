@@ -38,7 +38,7 @@ function App() {
         <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
         <Route path="/classroom-students/:classroomId" element={<ClassroomStudents />} />
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
-        <Route path="/snake-game" element={<SnakeGame />} />
+        <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
         <Route path="/book/:bookId" element={<BookPage />} />
         <Route path="/book/:bookId/sequencing" element={<StorySequencingPage />} />
         <Route path="/create-ssa" element={<CreateSSA />} />
