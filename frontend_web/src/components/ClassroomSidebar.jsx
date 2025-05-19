@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { X, LogOut } from 'lucide-react';
+import { X, LogOut, BarChart } from 'lucide-react';
 
 const ClassroomSidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ const ClassroomSidebar = ({ isOpen, toggleSidebar }) => {
   // Determine which page is active
   const isContentPage = location.pathname.includes('classroom-content');
   const isStudentsPage = location.pathname.includes('classroom-students');
+  const isProgressPage = location.pathname.includes('classroom-progress');
   
   const handleNavigation = (path) => {
     navigate(path);
@@ -53,6 +54,17 @@ const ClassroomSidebar = ({ isOpen, toggleSidebar }) => {
               }`}
             >
               Students
+            </button>
+            
+            <button
+              onClick={() => handleNavigation(`/classroom-progress/${classroomId}`)}
+              className={`py-3 px-4 rounded-md text-left font-medium transition-colors ${
+                isProgressPage 
+                  ? 'bg-[#FFD058] text-white' 
+                  : 'text-[#FFD058] hover:bg-gray-100'
+              }`}
+            >
+              Progress Dashboard
             </button>
           </div>
           

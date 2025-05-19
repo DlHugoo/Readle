@@ -319,17 +319,17 @@ const ClassroomContentManager = () => {
       <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col pt-20"> {/* Added pt-20 for padding-top */}
+      <div className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
         {/* Navigation Bar - Full Width */}
         <div className="w-full">
           <TeahcerNav />
         </div>
         
-        <div className="p-6 max-w-7xl mx-auto w-full">
+        <div className="p-4 max-w-7xl mx-auto w-full">
           {/* Sidebar Toggle Button */}
           <button 
             onClick={toggleSidebar}
-            className="mb-4 p-2 rounded-md hover:bg-gray-100 transition-colors"
+            className="mb-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
           >
             <Menu size={24} />
           </button>
@@ -340,58 +340,58 @@ const ClassroomContentManager = () => {
           </h1>
 
           {/* Enhanced Classroom Information Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md mb-8 border border-blue-100">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl shadow-md mb-5 border border-blue-100">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
-                <h2 className="text-3xl font-extrabold text-[#3B82F6] mb-2">
+                <h2 className="text-2xl font-extrabold text-[#3B82F6] mb-1">
                   {classroomName}
                 </h2>
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-sm text-gray-500 mb-1">
                   Classroom ID: <span className="font-mono">{classroomId}</span>
                 </p>
               </div>
               
               {/* Classroom Code Display */}
-              <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm border border-blue-200">
-                <p className="text-sm font-medium text-gray-600 mb-2">Classroom Code:</p>
+              <div className="mt-2 md:mt-0 bg-white p-3 rounded-lg shadow-sm border border-blue-200">
+                <p className="text-sm font-medium text-gray-600 mb-1">Classroom Code:</p>
                 <div className="flex items-center">
-                  <span className="font-mono text-xl font-bold text-indigo-600 mr-3">{classroomCode}</span>
+                  <span className="font-mono text-xl font-bold text-indigo-600 mr-2">{classroomCode}</span>
                   <button 
                     onClick={copyClassroomCode}
-                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                    className="p-1 rounded-md hover:bg-gray-100 transition-colors"
                     title="Copy classroom code"
                   >
                     {codeCopied ? <Check size={18} className="text-green-500" /> : <Copy size={18} className="text-gray-500" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Share this code with students to join the classroom</p>
+                <p className="text-xs text-gray-500 mt-1">Share this code with students to join the classroom</p>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <button
               onClick={() => handleSelectModule("library")}
-              className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-between"
+              className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-between"
             >
-              <div className="flex items-center gap-3">
-                <BookOpen size={28} />
+              <div className="flex items-center gap-2">
+                <BookOpen size={24} />
                 <span>Digital Library & Book Selection</span>
               </div>
-              <PlusCircle size={22} />
+              <PlusCircle size={20} />
             </button>
           </div>
 
           {/* Display Classroom Content */}
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+          <div className="mt-4">
+            <h2 className="text-xl font-semibold text-gray-700 mb-3 flex items-center">
               <BookOpen size={20} className="mr-2 text-blue-500" />
               <span>Classroom Content</span>
             </h2>
             {classroomContent.length === 0 ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                <p className="text-gray-500 mb-4">No content added yet for this classroom.</p>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                <p className="text-gray-500 mb-3">No content added yet for this classroom.</p>
                 <button
                   onClick={() => handleSelectModule("library")}
                   className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
@@ -401,7 +401,7 @@ const ClassroomContentManager = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {classroomContent.map((book, index) => {
                   // Construct the full image URL
                   const backendBaseUrl = "http://localhost:8080"; // Backend URL
@@ -427,14 +427,14 @@ const ClassroomContentManager = () => {
                       </div>
 
                       {/* Book Details */}
-                      <div className="p-4">
+                      <div className="p-3">
                         <h3 className="text-lg font-bold text-[#3B82F6] truncate">
                           {book.title}
                         </h3>
                         <p className="text-sm text-gray-600 mt-1 flex items-center">
                           Difficulty:{" "}
-                          <span className="ml-2 text-yellow-500 text-2xl"> {/* Larger stars */}
-                            {"★".repeat(book.difficultyLevel)} {/* Render stars based on difficulty */}
+                          <span className="ml-2 text-yellow-500 text-2xl">
+                            {"★".repeat(book.difficultyLevel)}
                           </span>
                         </p>
                       </div>
