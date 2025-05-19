@@ -97,7 +97,8 @@ const StudentClassroomPage = () => {
 
       <div className="container mx-auto px-4 py-10 relative">
         {/* Top-right Join Button */}
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-4xl font-bold text-gray-800">My Classrooms</h1>
           <button
             onClick={() => setShowJoin(true)}
             className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow-sm"

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import mascot from "../../assets/mascot.png";
 import arrow from "../../assets/arrow.png";
+import fallbackImage from "../../assets/not-available.jpeg";
 
 const ClassroomContentPage = () => {
   const { classroomId } = useParams();
@@ -57,6 +58,11 @@ const ClassroomContentPage = () => {
   const getImageUrl = (path) =>
     path?.startsWith("/uploads") ? `http://localhost:8080${path}` : path;
 
+  const renderStars = (difficulty) => {
+    const level = Math.min(Math.max(parseInt(difficulty), 0), 3);
+    return "★".repeat(level) + "☆".repeat(3 - level);
+  };
+
   return (
     <div className="classroom-content-page min-h-screen bg-[#f9fbfc]">
       <StudentNavbar />
@@ -82,31 +88,44 @@ const ClassroomContentPage = () => {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : books.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             {books.map((book) => (
-              <Link to={`/book/${book.bookID}`} key={book.bookID}>
+              <Link
+                to={`/book/${book.bookID}`}
+                state={{ from: "CLASSROOM" }}
+                key={book.bookID}
+              >
                 <div className="relative group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition w-44 sm:w-48 mx-auto">
                   {/* Book Cover */}
-                  <div className="w-full h-72 bg-white flex items-center justify-center">
+                  <div className="w-full h-72 bg-gray-100 flex items-center justify-center">
                     <img
                       src={getImageUrl(book.imageURL)}
                       alt={book.title}
-                      className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "https://via.placeholder.com/150";
+                        e.target.src = fallbackImage;
                       }}
                     />
                   </div>
 
-                  {/* Hover Overlay */}
+                  {/* Hover Overlay with Details */}
                   <div className="absolute inset-0 bg-black bg-opacity-70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white">
                     <div>
-                      <h2 className="text-sm font-semibold truncate mb-1" title={book.title}>
+                      <h2
+                        className="text-sm font-semibold truncate mb-1"
+                        title={book.title}
+                      >
                         {book.title}
                       </h2>
                       <p className="text-xs">by {book.author}</p>
                       <p className="text-xs italic text-gray-300">{book.genre}</p>
+                      <p className="text-xs mt-1">
+                        Difficulty:{" "}
+                        <span className="text-yellow-400">
+                          {renderStars(book.difficultyLevel)}
+                        </span>
+                      </p>
                     </div>
                   </div>
                 </div>

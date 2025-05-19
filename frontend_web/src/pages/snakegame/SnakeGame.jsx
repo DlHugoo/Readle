@@ -35,6 +35,7 @@ const SnakeGame = () => {
   const [speed, setSpeed] = useState(300);
   const [gameStarted, setGameStarted] = useState(false);
   const [isCreatingAttempt, setIsCreatingAttempt] = useState(false);
+  const [pages, setPages] = useState([]);
   const intervalRef = useRef();
   const gridContainerRef = useRef();
   const [attemptCount, setAttemptCount] = useState(0);
@@ -42,21 +43,31 @@ const SnakeGame = () => {
   const gridContainerSize = gridSize * cellSize + (gridSize - 1) * gapSize;
   const userId = localStorage.getItem("userId");
 
-  const fetchAttemptCount = async () => {
-  try {
-    const res = await fetch(`/api/snake-attempts/user/${userId}/book/${bookId}/count`);
-    const data = await res.json();
-    setAttemptCount(data);
-  } catch (err) {
-    console.error("Error fetching attempt count:", err);
-  }
-};
+  const fetchPages = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8080/api/pages/${bookId}`);
+      const pagesData = res.data.sort((a, b) => a.pageNumber - b.pageNumber);
+      setPages(pagesData);
+    } catch (err) {
+      console.error("Error fetching pages:", err);
+    }
+  };
 
-useEffect(() => {
-  if (userId && bookId) {
-    fetchAttemptCount();
-  }
-}, [userId, bookId]);
+  const fetchAttemptCount = async () => {
+    try {
+      const res = await fetch(`/api/snake-attempts/user/${userId}/book/${bookId}/count`);
+      const data = await res.json();
+      setAttemptCount(data);
+    } catch (err) {
+      console.error("Error fetching attempt count:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (userId && bookId) {
+      fetchAttemptCount();
+    }
+  }, [userId, bookId]);
 
   useEffect(() => {
     console.log("Received bookId:", bookId);
@@ -88,31 +99,31 @@ useEffect(() => {
     };
     
     fetchQuestions();
+    fetchPages();
   }, [bookId]);
 
-const createAttempt = async (finalScore) => {
-  if (!userId) {
-    console.warn("No user ID found in localStorage");
-    return;
-  }
+  const createAttempt = async (finalScore) => {
+    if (!userId) {
+      console.warn("No user ID found in localStorage");
+      return;
+    }
 
-  setIsCreatingAttempt(true);
-  try {
-    await axios.post(`http://localhost:8080/api/snake-attempts`, null, {
-      params: {
-        userId: userId,
-        bookId: bookId,
-        score: finalScore
-      }
-    });
-    // Refresh the attempt count after creating
-    await fetchAttemptCount();
-  } catch (err) {
-    console.error("Error creating attempt:", err);
-  } finally {
-    setIsCreatingAttempt(false);
-  }
-};
+    setIsCreatingAttempt(true);
+    try {
+      await axios.post(`http://localhost:8080/api/snake-attempts`, null, {
+        params: {
+          userId: userId,
+          bookId: bookId,
+          score: finalScore
+        }
+      });
+      await fetchAttemptCount();
+    } catch (err) {
+      console.error("Error creating attempt:", err);
+    } finally {
+      setIsCreatingAttempt(false);
+    }
+  };
 
   useEffect(() => {
     if (!gameStarted || gameOver || gameWon) return;
@@ -200,14 +211,12 @@ const createAttempt = async (finalScore) => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [dir, gameStarted]);
 
-const startGame = async () => {
-  await createAttempt(0); // Create initial attempt with score 0
-  setGameStarted(true);
-};
+  const startGame = async () => {
+    await createAttempt(0);
+    setGameStarted(true);
+  };
 
   const resetGame = () => {
-    // Create attempt with final score before resetting
-    // Reset game state
     setSnake(initialSnake);
     setDir(directions.ArrowRight);
     setCurrentDirection("ArrowRight");
@@ -271,68 +280,68 @@ const startGame = async () => {
         />
       )}
 
-{/* Game start overlay */}
-{!gameStarted && !gameOver && !gameWon && (
-  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-    <div className="bg-white p-8 rounded-xl max-w-md text-center">
-      <h3 className="text-3xl font-bold mb-4 text-indigo-600">
-        Ready to Play?
-      </h3>
-      <p className="text-lg mb-6">
-        Press "Start Game" to begin your Snake Quiz challenge!
-      </p>
-      <div className="flex flex-col space-y-3">
-        <button
-          onClick={startGame}
-          disabled={isCreatingAttempt}
-          className={`px-6 py-3 rounded-lg font-bold text-white ${
-            isCreatingAttempt ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
-          } transition-colors`}
-        >
-          {isCreatingAttempt ? 'Starting...' : 'Start Game'}
-        </button>
-        <button
-          onClick={() => navigate(`/book/${bookId}`)}
-          className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
-        >
-          Back to Book
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Game start overlay */}
+      {!gameStarted && !gameOver && !gameWon && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-8 rounded-xl max-w-md text-center">
+            <h3 className="text-3xl font-bold mb-4 text-indigo-600">
+              Ready to Play?
+            </h3>
+            <p className="text-lg mb-6">
+              Press "Start Game" to begin your Snake Quiz challenge!
+            </p>
+            <div className="flex flex-col space-y-3">
+              <button
+                onClick={startGame}
+                disabled={isCreatingAttempt}
+                className={`px-6 py-3 rounded-lg font-bold text-white ${
+                  isCreatingAttempt ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'
+                } transition-colors`}
+              >
+                {isCreatingAttempt ? 'Starting...' : 'Start Game'}
+              </button>
+              <button
+                onClick={() => navigate(`/book/${bookId}?page=${pages.length}`)}
+                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
+              >
+                Back to Book
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-{/* Game over/won overlay */}
-{(gameOver || gameWon) && (
-  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-    <div className="bg-white p-8 rounded-xl max-w-md text-center">
-      <h3 className={`text-3xl font-bold mb-4 ${gameWon ? "text-green-600" : "text-red-600"}`}>
-        {gameWon ? "You Won! 🎉" : "Game Over! 😢"}
-      </h3>
-      <p className="text-lg mb-6">
-        {gameWon
-          ? `You answered all ${sequence.length} questions correctly!`
-          : `You made it to question ${currentIndex + 1} of ${sequence.length}`}
-      </p>
-      <div className="flex flex-col space-y-3">
-        <button
-          onClick={resetGame}
-          className={`px-6 py-3 rounded-lg font-bold text-white ${
-            gameWon ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
-          } transition-colors`}
-        >
-          Play Again
-        </button>
-        <button
-          onClick={() => navigate(`/book/${bookId}`)}
-          className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
-        >
-          Back to Book
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {/* Game over/won overlay */}
+      {(gameOver || gameWon) && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-8 rounded-xl max-w-md text-center">
+            <h3 className={`text-3xl font-bold mb-4 ${gameWon ? "text-green-600" : "text-red-600"}`}>
+              {gameWon ? "You Won! 🎉" : "Game Over! 😢"}
+            </h3>
+            <p className="text-lg mb-6">
+              {gameWon
+                ? `You answered all ${sequence.length} questions correctly!`
+                : `You made it to question ${currentIndex + 1} of ${sequence.length}`}
+            </p>
+            <div className="flex flex-col space-y-3">
+              <button
+                onClick={resetGame}
+                className={`px-6 py-3 rounded-lg font-bold text-white ${
+                  gameWon ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                } transition-colors`}
+              >
+                Play Again
+              </button>
+              <button
+                onClick={() => navigate(`/book/${bookId}?page=${pages.length}`)}
+                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
+              >
+                Back to Book
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Navbar />
       <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -351,10 +360,10 @@ const startGame = async () => {
                     {currentIndex}/{sequence.length}
                   </p>
                 </div>
-  <div className="bg-blue-100 px-4 py-2 rounded-lg">
-    <p className="text-sm text-blue-600">Attempts</p>
-    <p className="text-2xl font-bold text-blue-800">{attemptCount}</p>
-  </div>
+                <div className="bg-blue-100 px-4 py-2 rounded-lg">
+                  <p className="text-sm text-blue-600">Attempts</p>
+                  <p className="text-2xl font-bold text-blue-800">{attemptCount}</p>
+                </div>
               </div>
 
               <div className="mb-6">
