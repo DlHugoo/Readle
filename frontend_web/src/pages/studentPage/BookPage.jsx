@@ -37,25 +37,47 @@ const BookPage = () => {
   }, []);
 
   useEffect(() => {
-    const loadBookAndPages = async () => {
-      try {
-        const bookRes = await axios.get(`/api/books/${bookId}`);
-        const pagesRes = await axios.get(`/api/pages/${bookId}`);
-        const pagesData = pagesRes.data.sort(
-          (a, b) => a.pageNumber - b.pageNumber
-        );
+  const loadBookAndPages = async () => {
+    try {
+      const bookRes = await axios.get(`/api/books/${bookId}`);
+      const pagesRes = await axios.get(`/api/pages/${bookId}`);
+      const pagesData = pagesRes.data.sort(
+        (a, b) => a.pageNumber - b.pageNumber
+      );
 
-        if (bookRes.data) setBook(bookRes.data);
-        setPages(pagesData);
-      } catch (err) {
-        console.error("Error loading book:", err);
-      } finally {
-        setLoading(false);
+      if (bookRes.data) setBook(bookRes.data);
+      setPages(pagesData);
+
+      // Get page number from URL query params
+      const searchParams = new URLSearchParams(window.location.search);
+      const pageParam = searchParams.get('page');
+      const initialPage = pageParam ? Math.min(parseInt(pageParam), pagesData.length) - 1 : 0;
+      setCurrentPageIndex(initialPage);
+    } catch (err) {
+      console.error("Error loading book:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadBookAndPages();
+}, [bookId]);
+// Add this useEffect to BookPage to handle URL changes while on the page
+useEffect(() => {
+  const handleLocationChange = () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const pageParam = searchParams.get('page');
+    if (pageParam) {
+      const newPage = Math.min(parseInt(pageParam), pages.length) - 1;
+      if (newPage !== currentPageIndex) {
+        setCurrentPageIndex(newPage);
       }
-    };
+    }
+  };
 
-    loadBookAndPages();
-  }, [bookId]);
+  window.addEventListener('popstate', handleLocationChange);
+  return () => window.removeEventListener('popstate', handleLocationChange);
+}, [pages.length, currentPageIndex]);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
