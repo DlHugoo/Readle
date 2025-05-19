@@ -23,11 +23,80 @@ const ErrorModal = ({ message, onClose }) => (
   </div>
 );
 
+// ✨ Join Classroom Modal
+const JoinClassroomModal = ({ onClose }) => {
+  const [classroomCode, setClassroomCode] = useState("");
+  const [error, setError] = useState(null);
+
+  const handleJoin = async () => {
+    const token = localStorage.getItem("token");
+    const studentId = localStorage.getItem("userId");
+
+    if (!classroomCode.trim()) {
+      setError("Please enter a valid classroom code.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/classrooms/join?studentId=${studentId}&classroomCode=${classroomCode}`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const data = await response.json();
+      if (response.ok) {
+        // mark modal as shown so it doesn't repeat
+        localStorage.setItem("hasSeenJoinPrompt", "true");
+        window.location.reload(); // reload to reflect new class
+      } else {
+        setError(data?.error || "Failed to join classroom.");
+      }
+    } catch (err) {
+      console.error("Join error:", err);
+      setError("Server error. Please try again.");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm relative">
+        <button
+          className="absolute top-2 right-3 text-gray-500 hover:text-black text-xl"
+          onClick={onClose}
+        >
+          ×
+        </button>
+        <h2 className="text-lg font-bold text-gray-800 mb-3">
+          Already have a classroom code?
+        </h2>
+        <input
+          type="text"
+          placeholder="Enter Classroom Code"
+          value={classroomCode}
+          onChange={(e) => setClassroomCode(e.target.value)}
+          className="w-full border px-4 py-2 rounded-lg mb-3"
+        />
+        <button
+          onClick={handleJoin}
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded"
+        >
+          Submit
+        </button>
+        {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
+      </div>
+    </div>
+  );
+};
+
 const StudentLibraryPage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   const featuredBanners = [
     { id: 1, imageURL: Banner1 },
@@ -57,6 +126,12 @@ const StudentLibraryPage = () => {
         setLoading(false);
       }
     };
+
+    // Show the join modal only once for new users
+    const hasSeenPrompt = localStorage.getItem("hasSeenJoinPrompt");
+    if (!hasSeenPrompt) {
+      setShowJoinModal(true);
+    }
 
     getBooks();
   }, []);
@@ -116,12 +191,15 @@ const StudentLibraryPage = () => {
         </section>
       </div>
 
-      {/* 🔺 Error Modal */}
       {showErrorModal && error && (
-        <ErrorModal
-          message={error}
-          onClose={() => setShowErrorModal(false)}
-        />
+        <ErrorModal message={error} onClose={() => setShowErrorModal(false)} />
+      )}
+
+      {showJoinModal && (
+        <JoinClassroomModal onClose={() => {
+          localStorage.setItem("hasSeenJoinPrompt", "true");
+          setShowJoinModal(false);
+        }} />
       )}
     </div>
   );
