@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import StudentNavbar from "../../components/StudentNavbar";
 import BookCard from "../../components/BookCard";
 import FeaturedCarousel from "../../components/FeaturedCarousel";
@@ -93,7 +94,9 @@ const JoinClassroomModal = ({ onClose }) => {
 
 const StudentLibraryPage = () => {
   const [books, setBooks] = useState([]);
+  const [inProgressBooks, setInProgressBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [inProgressLoading, setInProgressLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -136,6 +139,37 @@ const StudentLibraryPage = () => {
     getBooks();
   }, []);
 
+  // Fetch in-progress books for the Continue Reading section
+  useEffect(() => {
+    const fetchInProgressBooks = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+        
+        if (!token || !userId) {
+          setInProgressLoading(false);
+          return;
+        }
+
+        const headers = { Authorization: `Bearer ${token}` };
+        const response = await axios.get(
+          `http://localhost:8080/api/progress/in-progress/${userId}`, 
+          { headers }
+        );
+        
+        // Extract the book objects from the progress data
+        const progressBooks = response.data.map(progress => progress.book);
+        setInProgressBooks(progressBooks);
+      } catch (err) {
+        console.error("Error fetching in-progress books:", err);
+      } finally {
+        setInProgressLoading(false);
+      }
+    };
+
+    fetchInProgressBooks();
+  }, []);
+
   const renderLoadingState = () => (
     <div className="flex justify-center items-center py-8">
       <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
@@ -174,13 +208,15 @@ const StudentLibraryPage = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Continue Reading
           </h2>
-          {loading ? (
+          {inProgressLoading ? (
             renderLoadingState()
-          ) : books.length === 0 ? (
-            renderEmptyState()
+          ) : inProgressBooks.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>You haven't started reading any books yet.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {books.map((book, index) => (
+              {inProgressBooks.map((book, index) => (
                 <BookCard
                   key={`continue-reading-${book.id || index}`}
                   book={book}
