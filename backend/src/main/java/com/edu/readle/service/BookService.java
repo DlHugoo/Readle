@@ -56,7 +56,7 @@ public class BookService {
             book.setGenre(updatedBookDTO.getGenre());
             book.setDifficultyLevel(updatedBookDTO.getDifficultyLevel());
             book.setImageURL(updatedBookDTO.getImageURL());
-    
+
             if (updatedBookDTO.getClassroomId() != null) {
                 Classroom classroom = classroomRepository.findById(updatedBookDTO.getClassroomId())
                         .orElseThrow(() -> new RuntimeException("Classroom not found"));
@@ -64,11 +64,10 @@ public class BookService {
             } else {
                 book.setClassroom(null);
             }
-    
+
             return bookRepository.save(book);
         });
     }
-    
 
     public void deleteBook(Long bookID) {
         bookRepository.deleteById(bookID);
@@ -79,4 +78,9 @@ public class BookService {
                 .orElseThrow(() -> new RuntimeException("Classroom not found"));
         return classroom.getBooks();
     }
+
+    public List<BookEntity> getBooksWithoutClassroom() {
+        return bookRepository.findByClassroomIsNull();
+    }
+
 }

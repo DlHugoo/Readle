@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import fallbackImage from "../assets/not-available.jpeg"; // Update the path if needed
 
 const BookCard = ({ book }) => {
   const navigate = useNavigate();
   const filledStars = book.difficultyLevel || 0;
 
   const handleClick = () => {
-    navigate(`/book/${book.bookID}`);
+    navigate(`/book/${book.bookID}`, { state: { from: "LIBRARY" } });
   };
 
   return (
@@ -23,7 +24,8 @@ const BookCard = ({ book }) => {
           alt={book.title}
           className="w-full h-auto object-cover"
           onError={(e) => {
-            e.target.src = "https://via.placeholder.com/150";
+            e.target.onerror = null;
+            e.target.src = fallbackImage;
           }}
         />
       </div>

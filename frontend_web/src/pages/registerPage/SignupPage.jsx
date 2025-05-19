@@ -1,6 +1,22 @@
 import { useState } from "react";
 import mascot from "../../assets/mascot.png";
 
+// ✅ Reusable Error Modal
+const ErrorModal = ({ message, onClose }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+    <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-sm relative">
+      <h2 className="text-xl font-semibold text-red-600 mb-2">⚠️ Signup Error</h2>
+      <p className="text-gray-700 text-sm">{message}</p>
+      <button
+        onClick={onClose}
+        className="mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+);
+
 const SignupPage = () => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -8,6 +24,14 @@ const SignupPage = () => {
     email: "",
     password: "",
   });
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showError, setShowError] = useState(false);
+
+  const showErrorModal = (message) => {
+    setErrorMessage(message);
+    setShowError(true);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,20 +44,20 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const role = localStorage.getItem("userRole");
-
+  
     if (!role) {
-      alert("Please select a role before signing up.");
+      showErrorModal("Please select a role before signing up.");
       return;
     }
-
+  
     const generatedUsername = formData.email.split("@")[0] + "_" + Date.now();
-
+  
     const payload = {
       ...formData,
       username: generatedUsername,
-      role: role.toUpperCase(), // Expecting "STUDENT" or "TEACHER"
+      role: role.toUpperCase(),
     };
-
+  
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -42,22 +66,26 @@ const SignupPage = () => {
         },
         body: JSON.stringify(payload),
       });
-
-      const data = await response.json();
-
+  
+      const contentType = response.headers.get("content-type");
+      const data = contentType?.includes("application/json")
+        ? await response.json()
+        : {};
+  
       if (response.ok) {
-        console.log("Registration successful! Token:", data.token);
         localStorage.setItem("token", data.token);
-        window.location.href = "/login"; // Change as needed
+        window.location.href = "/login";
+      } else if (response.status === 409 || data.message?.toLowerCase().includes("exist")) {
+        showErrorModal("User already existed.");
       } else {
-        console.error("Registration failed:", data);
-        alert(data.message || "Registration failed. Please try again.");
+        showErrorModal(data.message || "User already existed.");
       }
     } catch (error) {
       console.error("Error during registration:", error);
-      alert("Server error. Please try again later.");
+      showErrorModal("User already existed.");
     }
   };
+  
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">
@@ -149,6 +177,11 @@ const SignupPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Error Modal */}
+      {showError && (
+        <ErrorModal message={errorMessage} onClose={() => setShowError(false)} />
+      )}
     </div>
   );
 };

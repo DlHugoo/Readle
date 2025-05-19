@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, UserPlus, X, BookOpen, Clock, CheckCircle, UserMinus, Mail } from "lucide-react";
+import { Menu, UserPlus, X, BookOpen, Clock, CheckCircle, UserMinus, Mail, Copy, Check, Users } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from "axios";
 
@@ -11,9 +11,11 @@ const ClassroomStudents = () => {
   const { classroomId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [classroomName, setClassroomName] = useState("");
+  const [classroomCode, setClassroomCode] = useState(""); // Add state for classroom code
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [codeCopied, setCodeCopied] = useState(false); // State to track if code was copied
   
   // Student progress state
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -44,6 +46,18 @@ const ClassroomStudents = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Function to copy classroom code to clipboard
+  const copyClassroomCode = () => {
+    navigator.clipboard.writeText(classroomCode)
+      .then(() => {
+        setCodeCopied(true);
+        setTimeout(() => setCodeCopied(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy code: ', err);
+      });
+  };
+
   // Fetch classroom details and students
   useEffect(() => {
     const fetchData = async () => {
@@ -68,6 +82,7 @@ const ClassroomStudents = () => {
         const classroomData = classroomResponse.data;
         console.log("Classroom data received:", classroomData);
         setClassroomName(classroomData.name || "Unknown Classroom");
+        setClassroomCode(classroomData.classroomCode || ""); // Store classroom code
         
         // Fetch student details for each email in studentEmails
         if (classroomData.studentEmails && Array.isArray(classroomData.studentEmails)) {
@@ -662,113 +677,179 @@ const ClassroomStudents = () => {
     );
   };
 
-  return (
-    <div className="w-full min-h-screen flex">
-    {/* Sidebar */}
-    <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-    
-    {/* Main Content */}
-    <div className="flex-1 flex flex-col pt-20"> {/* Added pt-20 for padding-top */}
-      {/* Navigation Bar - Full Width */}
-      <div className="w-full">
-        <TeahcerNav />
-      </div>
+ return (
+    <div className="min-h-screen bg-gray-50">
+      <TeahcerNav />
       
-      <div className="p-6 max-w-7xl mx-auto w-full">
-        {/* Sidebar Toggle Button */}
-        <button 
-          onClick={toggleSidebar}
-          className="mb-4 p-2 rounded-md hover:bg-gray-100 transition-colors"
-        >
-          <Menu size={24} />
-        </button>
-          
-          {/* Page Title */}
-          <h1 className="text-2xl font-semibold text-gray-700 mb-4">
-            👨‍👩‍👧‍👦 Classroom Students
-          </h1>
-
-          {/* Classroom Name and ID */}
-          <div className="bg-[#F3F4F6] p-4 rounded-lg shadow-md mb-6">
-            <h2 className="text-3xl font-extrabold text-[#3B82F6] mb-2">
-              {classroomName}
-            </h2>
-            <p className="text-sm text-gray-500">
-              Classroom ID: <span className="font-mono">{classroomId}</span>
-            </p>
+      {/* Sidebar */}
+      <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      
+      {/* Main Content */}
+      <div className={`pt-[72px] transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
+        <div className="p-6 sm:p-10 max-w-7xl mx-auto">
+          {/* Header with toggle sidebar button */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center">
+              <button
+                onClick={toggleSidebar}
+                className="mr-4 p-2 rounded-md hover:bg-gray-200"
+              >
+                <Menu size={24} />
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Students</h1>
+            </div>
+          </div>
+          {/* Enhanced Classroom Information Card */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md mb-8 border border-blue-100">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div>
+                <h2 className="text-3xl font-extrabold text-[#3B82F6] mb-2">
+                  {classroomName}
+                </h2>
+                <p className="text-sm text-gray-500 mb-2">
+                  Classroom ID: <span className="font-mono">{classroomId}</span>
+                </p>
+              </div>
+              
+              {/* Classroom Code Display */}
+              <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                <p className="text-sm font-medium text-gray-600 mb-2">Classroom Code:</p>
+                <div className="flex items-center">
+                  <span className="font-mono text-xl font-bold text-indigo-600 mr-3">{classroomCode}</span>
+                  <button 
+                    onClick={copyClassroomCode}
+                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                    title="Copy classroom code"
+                  >
+                    {codeCopied ? <Check size={18} className="text-green-500" /> : <Copy size={18} className="text-gray-500" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Share this code with students to join the classroom</p>
+              </div>
+            </div>
           </div>
 
-          {/* Add Student Button */}
-          <button 
-            onClick={() => setAddStudentModalOpen(true)}
-            className="mb-6 bg-white border border-[#3B82F6] hover:bg-[#3B82F6] hover:text-white text-[#3B82F6] font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300 flex items-center gap-2"
-          >
-            <UserPlus size={20} />
-            <span>Add Student</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="mb-8">
+            <button
+              onClick={() => setAddStudentModalOpen(true)}
+              className="bg-white border border-[#3B82F6] hover:bg-[#3B82F6] hover:text-white text-[#3B82F6] font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300 flex items-center gap-2"
+            >
+              <UserPlus size={20} />
+              <span>Add Student</span>
+            </button>
+          </div>
 
           {/* Students List */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Students in this Classroom</h2>
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            {/* Header for the students list component */}
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-5 text-white">
+              <h2 className="text-2xl font-semibold flex items-center">
+                <Users className="mr-3" size={24} />
+                Students in this Classroom
+              </h2>
+              <p className="text-blue-100 mt-1">
+                {students.length} {students.length === 1 ? 'student' : 'students'} enrolled
+              </p>
+            </div>
             
-            {loading ? (
-              <p className="text-gray-500">Loading students...</p>
-            ) : error ? (
-              <p className="text-red-500">{error}</p>
-            ) : students.length === 0 ? (
-              <p className="text-gray-500">No students enrolled in this classroom yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {students.map((student) => (
-                  <div 
-                    key={student.id || student.userId || student.email} 
-                    className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow relative"
-                  >
-                    <div 
-                      className="absolute top-2 right-2 p-1 rounded-full hover:bg-red-100 text-red-500 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setStudentToRemove(student);
-                        setRemoveModalOpen(true);
-                      }}
-                    >
-                      <UserMinus size={16} />
-                    </div>
-                    
-                    <div 
-                      className="flex items-center gap-3 cursor-pointer"
-                      onClick={() => fetchStudentProgress(student)}
-                    >
-                      <div className="bg-blue-100 text-blue-500 rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg">
-                        {student.firstName ? student.firstName.charAt(0).toUpperCase() : '?'}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg text-gray-800">
-                          {student.firstName || student.first_name || ''} 
-                          <span className="font-extrabold"> {student.lastName || student.last_name || ''}</span>
-                        </h3>
-                        <p className="text-sm text-gray-500">{student.email}</p>
-                      </div>
-                    </div>
-                    <div 
-                      className="mt-2 text-xs text-blue-500 hover:text-blue-700 flex items-center justify-end cursor-pointer"
-                      onClick={() => fetchStudentProgress(student)}
-                    >
-                      <Clock size={12} className="mr-1" />
-                      View Progress
-                    </div>
+            {/* Content area with padding */}
+            <div className="p-6">
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : error ? (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                  <strong className="font-bold">Error: </strong>
+                  <span className="block sm:inline">{error}</span>
+                </div>
+              ) : students.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="text-gray-400 mb-4">
+                    <Users size={64} className="mx-auto" />
                   </div>
-                ))}
-              </div>
-            )}
+                  <p className="text-gray-500 text-lg">No students enrolled yet.</p>
+                  <p className="text-gray-400 mt-2">Share your classroom code or add students manually to get started!</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Student
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {students.map((student, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 font-semibold">
+                                  {student.firstName ? student.firstName.charAt(0).toUpperCase() : '?'}
+                                  {student.lastName ? student.lastName.charAt(0).toUpperCase() : ''}
+                                </span>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {student.firstName} {student.lastName}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  @{student.username || student.email.split('@')[0]}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{student.email}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => fetchStudentProgress(student)}
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                            >
+                              View Progress
+                            </button>
+                            <button
+                              onClick={() => {
+                                setStudentToRemove(student);
+                                setRemoveModalOpen(true);
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-      
-      {/* Modals */}
+
+      {/* Progress Modal */}
       <ProgressModal />
+
+      {/* Add Student Modal */}
       <AddStudentModal />
-      <RemoveStudentModal />
+
+      {/* Remove Student Modal */}
+      {removeModalOpen && (
+        <RemoveStudentModal />
+      )}
     </div>
   );
 };

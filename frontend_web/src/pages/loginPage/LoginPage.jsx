@@ -2,20 +2,13 @@ import { useState } from "react";
 import mascot from "../../assets/mascot.png";
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setErrorMessage("");
   };
 
@@ -36,46 +29,40 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!validateForm()) return;
-
+  
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
-      const data = await response.json();
-
+  
+      const contentType = response.headers.get("content-type");
+  
+      let data = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      }
+  
       if (response.ok) {
-        // ✅ Save auth values
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role);
         localStorage.setItem("userId", data.userId);
-
-        // 🔁 Redirect based on role
-        if (data.role === "TEACHER") {
-          window.location.href = "/classroom";
-        } else {
-          window.location.href = "/library";
-        }
+  
+        window.location.href = data.role === "TEACHER" ? "/classroom" : "/library";
+      } else if (response.status === 401) {
+        setErrorMessage("Incorrect email or password. Please try again.");
       } else {
-        if (response.status === 401) {
-          setErrorMessage("Incorrect email or password. Please try again.");
-        } else if (data?.message) {
-          setErrorMessage(data.message);
-        } else {
-          setErrorMessage("Something went wrong. Please try again.");
-        }
+        setErrorMessage(data.message || "Incorrect email or password. Please try again.");
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMessage("Unable to connect to the server. Please try again later.");
+      setErrorMessage("Incorrect email or password. Please try again.");
     }
   };
+  
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">
@@ -134,6 +121,7 @@ const LoginPage = () => {
               Log In
             </button>
 
+            {/* 🔴 Inline Error Box */}
             {errorMessage && (
               <div className="mt-4 text-center text-sm text-red-600 bg-red-100 border border-red-300 rounded-lg px-4 py-2">
                 {errorMessage}
