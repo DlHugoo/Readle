@@ -37,64 +37,94 @@ const BookPage = () => {
   }, []);
 
   useEffect(() => {
-  const loadBookAndPages = async () => {
-    try {
-      const bookRes = await axios.get(`/api/books/${bookId}`);
-      const pagesRes = await axios.get(`/api/pages/${bookId}`);
-      const pagesData = pagesRes.data.sort(
-        (a, b) => a.pageNumber - b.pageNumber
-      );
+    const loadBookAndPages = async () => {
+      try {
+        const bookRes = await axios.get(`/api/books/${bookId}`);
+        const pagesRes = await axios.get(`/api/pages/${bookId}`);
+        const pagesData = pagesRes.data.sort(
+          (a, b) => a.pageNumber - b.pageNumber
+        );
 
-      if (bookRes.data) setBook(bookRes.data);
-      setPages(pagesData);
+        if (bookRes.data) setBook(bookRes.data);
+        setPages(pagesData);
 
-      // Get page number from URL query params
+        // Get page number from URL query params first
+        const searchParams = new URLSearchParams(window.location.search);
+        const pageParam = searchParams.get('page');
+        
+        if (pageParam) {
+          const initialPage = Math.min(parseInt(pageParam), pagesData.length) - 1;
+          setCurrentPageIndex(initialPage);
+        } else {
+          // If no page param, check for user's last read page
+          const storedUserId = localStorage.getItem("userId");
+          if (storedUserId && bookRes.data?.bookID) {
+            const token = localStorage.getItem("token");
+            try {
+              const progressRes = await axios.get(
+                `http://localhost:8080/api/progress/book/${storedUserId}/${bookRes.data.bookID}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              
+              if (progressRes.data && progressRes.data.lastPageRead) {
+                // Set to last read page (subtract 1 for zero-based index)
+                const lastPage = Math.min(progressRes.data.lastPageRead - 1, pagesData.length - 1);
+                setCurrentPageIndex(lastPage);
+                if (progressRes.data.id) setTrackerId(progressRes.data.id);
+              }
+            } catch (err) {
+              // If no progress found or error, default to first page
+              console.log("No previous reading progress found, starting from page 1");
+              setCurrentPageIndex(0);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading book:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBookAndPages();
+  }, [bookId]);
+
+  // Add this useEffect to BookPage to handle URL changes while on the page
+  useEffect(() => {
+    const handleLocationChange = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const pageParam = searchParams.get('page');
-      const initialPage = pageParam ? Math.min(parseInt(pageParam), pagesData.length) - 1 : 0;
-      setCurrentPageIndex(initialPage);
-    } catch (err) {
-      console.error("Error loading book:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  loadBookAndPages();
-}, [bookId]);
-// Add this useEffect to BookPage to handle URL changes while on the page
-useEffect(() => {
-  const handleLocationChange = () => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const pageParam = searchParams.get('page');
-    if (pageParam) {
-      const newPage = Math.min(parseInt(pageParam), pages.length) - 1;
-      if (newPage !== currentPageIndex) {
-        setCurrentPageIndex(newPage);
+      if (pageParam) {
+        const newPage = Math.min(parseInt(pageParam), pages.length) - 1;
+        if (newPage !== currentPageIndex) {
+          setCurrentPageIndex(newPage);
+        }
       }
-    }
-  };
+    };
 
-  window.addEventListener('popstate', handleLocationChange);
-  return () => window.removeEventListener('popstate', handleLocationChange);
-}, [pages.length, currentPageIndex]);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, [pages.length, currentPageIndex]);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     if (!storedUserId || !book?.bookID || !pages.length) return;
 
-    const token = localStorage.getItem("token");
-    axios
-      .post(
-        `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then((res) => {
-        if (res.data?.id) setTrackerId(res.data.id);
-      })
-      .catch((err) => console.error("Error starting book progress:", err));
-  }, [book, pages]);
+    // Only create a new tracker if we don't already have one
+    if (!trackerId) {
+      const token = localStorage.getItem("token");
+      axios
+        .post(
+          `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .then((res) => {
+          if (res.data?.id) setTrackerId(res.data.id);
+        })
+        .catch((err) => console.error("Error starting book progress:", err));
+    }
+  }, [book, pages, trackerId]);
 
   useEffect(() => {
     if (trackerId && pages.length > 0) {
