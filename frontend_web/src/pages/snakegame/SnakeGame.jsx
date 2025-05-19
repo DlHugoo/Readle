@@ -39,9 +39,22 @@ const SnakeGame = () => {
   const intervalRef = useRef();
   const gridContainerRef = useRef();
   const [attemptCount, setAttemptCount] = useState(0);
+  const [trackerId, setTrackerId] = useState(null);
 
   const gridContainerSize = gridSize * cellSize + (gridSize - 1) * gapSize;
   const userId = localStorage.getItem("userId");
+
+  // Fetch trackerId for this user/book
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (userId && bookId && token) {
+      axios.get(`http://localhost:8080/api/progress/book/${userId}/${bookId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => setTrackerId(res.data.id))
+      .catch(err => console.error("Failed to fetch trackerId:", err));
+    }
+  }, [userId, bookId]);
 
   const fetchPages = async () => {
     try {
@@ -174,6 +187,16 @@ const SnakeGame = () => {
             if (currentIndex + 1 === sequence.length) {
               setGameWon(true);
               clearInterval(intervalRef.current);
+              
+              // Mark book as completed if game is won and trackerId is available
+              if (trackerId) {
+                const token = localStorage.getItem("token");
+                axios.put(
+                  `http://localhost:8080/api/progress/complete/${trackerId}`,
+                  {},
+                  { headers: { Authorization: `Bearer ${token}` } }
+                ).catch(err => console.error("Failed to mark book as completed:", err));
+              }
             }
             return [newHead, ...prev];
           } else {
@@ -188,7 +211,7 @@ const SnakeGame = () => {
     }, speed);
 
     return () => clearInterval(intervalRef.current);
-  }, [dir, answerPositions, currentIndex, gameOver, gameWon, speed, gameStarted]);
+  }, [dir, answerPositions, currentIndex, gameOver, gameWon, speed, gameStarted, trackerId]);
 
   useEffect(() => {
     if (!gameStarted) return;

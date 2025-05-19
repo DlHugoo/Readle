@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import StudentNavbar from '../../components/StudentNavbar';
-import { jwtDecode } from 'jwt-decode';
 
 const API_BASE_URL = 'http://localhost:8080';
 
@@ -159,11 +158,24 @@ const StudentProgressDashboard = () => {
                         {inProgressBooks.map((book) => (
                             <li key={`in-progress-${book.id}`} className="mb-6">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                                    <div>
-                                        <span className="font-semibold text-lg text-blue-700">{book.book.title}</span>
-                                        <div className="text-sm text-gray-500 mt-1">
-                                            Last read: {new Date(book.lastReadAt).toLocaleDateString()}<br />
-                                            Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                    <div className="flex items-center">
+                                        {book.book.imageURL ? (
+                                            <img 
+                                                src={book.book.imageURL.startsWith('http') ? book.book.imageURL : `${API_BASE_URL}${book.book.imageURL}`} 
+                                                alt={book.book.title}
+                                                className="w-16 h-20 object-cover rounded mr-4"
+                                                title={book.book.title}
+                                            />
+                                        ) : (
+                                            <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
+                                                <span className="text-xs text-gray-500">No image</span>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <div className="text-sm text-gray-500 mt-1">
+                                                Last read: {new Date(book.lastReadAt).toLocaleDateString()}<br />
+                                                Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="w-full md:w-1/2 mt-2 md:mt-0">
@@ -194,8 +206,19 @@ const StudentProgressDashboard = () => {
                         {completedBooks.map((book) => (
                             <li key={`completed-${book.id}`} className="mb-6">
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                                    <div>
-                                        <span className="font-semibold text-lg text-green-700">{book.book.title}</span>
+                                    <div className="flex items-center">
+                                        {book.book.imageURL ? (
+                                            <img 
+                                                src={book.book.imageURL.startsWith('http') ? book.book.imageURL : `${API_BASE_URL}${book.book.imageURL}`} 
+                                                alt={book.book.title}
+                                                className="w-16 h-20 object-cover rounded mr-4"
+                                                title={book.book.title}
+                                            />
+                                        ) : (
+                                            <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
+                                                <span className="text-xs text-gray-500">No image</span>
+                                            </div>
+                                        )}
                                         <div className="text-sm text-gray-500 mt-1">
                                             Completed on: {new Date(book.endTime).toLocaleDateString()}<br />
                                             Total reading time: {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)}

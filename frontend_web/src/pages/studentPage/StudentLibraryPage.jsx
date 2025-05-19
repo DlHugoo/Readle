@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import StudentNavbar from "../../components/StudentNavbar";
 import BookCard from "../../components/BookCard";
 import FeaturedCarousel from "../../components/FeaturedCarousel";
@@ -207,13 +208,15 @@ const StudentLibraryPage = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Continue Reading
           </h2>
-          {loading ? (
+          {inProgressLoading ? (
             renderLoadingState()
-          ) : books.length === 0 ? (
-            renderEmptyState()
+          ) : inProgressBooks.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>You haven't started reading any books yet.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {books.map((book, index) => (
+              {inProgressBooks.map((book, index) => (
                 <BookCard
                   key={`continue-reading-${book.id || index}`}
                   book={book}

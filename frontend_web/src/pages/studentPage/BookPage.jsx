@@ -101,7 +101,7 @@ useEffect(() => {
       const token = localStorage.getItem("token");
       axios
         .put(
-          `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=1&readingTimeMinutes=1`,
+          `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeMinutes=1`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         )
@@ -109,7 +109,7 @@ useEffect(() => {
           console.error("Error updating book progress on first load:", err)
         );
     }
-  }, [trackerId, pages.length]);
+  }, [trackerId, pages.length, currentPageIndex]);
 
   const handleNextPage = () => {
     setCurrentPageIndex((prev) => {
