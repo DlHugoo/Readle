@@ -24,9 +24,9 @@ const StudentLibraryPage = () => {
   useEffect(() => {
     const getBooks = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          setError('Please log in to view the library');
+          setError("Please log in to view the library");
           setLoading(false);
           return;
         }
@@ -36,7 +36,7 @@ const StudentLibraryPage = () => {
         setError(null);
       } catch (err) {
         console.error("Error fetching books:", err);
-        setError('Failed to load books. Please try again later.');
+        setError("Failed to load books. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -52,7 +52,10 @@ const StudentLibraryPage = () => {
   );
 
   const renderErrorState = () => (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+    <div
+      className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+      role="alert"
+    >
       <strong className="font-bold">Error: </strong>
       <span className="block sm:inline">{error}</span>
     </div>
@@ -84,7 +87,7 @@ const StudentLibraryPage = () => {
                 renderEmptyState()
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                  {books.slice(3, 9).map((book, index) => (
+                  {books.map((book, index) => (
                     <BookCard key={`for-you-${book.id || index}`} book={book} />
                   ))}
                 </div>
@@ -101,8 +104,11 @@ const StudentLibraryPage = () => {
                 renderEmptyState()
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                  {books.slice(9, 11).map((book, index) => (
-                    <BookCard key={`continue-reading-${book.id || index}`} book={book} />
+                  {books.map((book, index) => (
+                    <BookCard
+                      key={`continue-reading-${book.id || index}`}
+                      book={book}
+                    />
                   ))}
                 </div>
               )}

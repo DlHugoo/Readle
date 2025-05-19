@@ -15,9 +15,9 @@ import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
 import StorySequencingPage from "./pages/activityPage/storySequencingPage/StorySequencingPage";
 import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
-import BookReaderPage from "./pages/studentPage/BookReaderPage"; // Add this
 import StudentProgressDashboard from './pages/studentPage/StudentProgressDashboard';
 import ClassroomProgress from "./pages/classroom/ClassroomProgress";
+
 
 function App() {
   return (
@@ -33,8 +33,14 @@ function App() {
         <Route path="/dashboard" element={<StudentProgressDashboard />} />
 
         {/* ⬇️ Differentiated content routes for teacher vs student */}
-        <Route path="/classroom-content/:classroomId" element={<ClassroomContent />} />
-        <Route path="/student/classroom-content/:classroomId" element={<ClassroomContentPage />} />
+        <Route
+          path="/classroom-content/:classroomId"
+          element={<ClassroomContent />}
+        />
+        <Route
+          path="/student/classroom-content/:classroomId"
+          element={<ClassroomContentPage />}
+        />
 
         <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
         <Route path="/classroom-students/:classroomId" element={<ClassroomStudents />} />
@@ -42,10 +48,12 @@ function App() {
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
         <Route path="/book/:bookId" element={<BookPage />} />
-        <Route path="/book/:bookId/sequencing" element={<StorySequencingPage />} />
+        <Route
+          path="/book/:bookId/sequencing"
+          element={<StorySequencingPage />}
+        />
         <Route path="/create-ssa" element={<CreateSSA />} />
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
-        <Route path="/book/:bookId" element={<BookReaderPage />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
       </Routes>
     </Router>
