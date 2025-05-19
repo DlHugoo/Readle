@@ -15,7 +15,9 @@ import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
 import StorySequencingPage from "./pages/activityPage/storySequencingPage/StorySequencingPage";
 import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
-import StudentProgressDashboard from "./pages/studentPage/StudentProgressDashboard";
+import StudentProgressDashboard from './pages/studentPage/StudentProgressDashboard';
+import ClassroomProgress from "./pages/classroom/ClassroomProgress";
+
 
 function App() {
   return (
@@ -41,10 +43,8 @@ function App() {
         />
 
         <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
-        <Route
-          path="/classroom-students/:classroomId"
-          element={<ClassroomStudents />}
-        />
+        <Route path="/classroom-students/:classroomId" element={<ClassroomStudents />} />
+        <Route path="/classroom-progress/:classroomId" element={<ClassroomProgress />} />
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
         <Route path="/book/:bookId" element={<BookPage />} />
