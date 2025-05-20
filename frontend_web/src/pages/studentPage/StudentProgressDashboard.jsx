@@ -15,6 +15,7 @@ const StudentProgressDashboard = () => {
     });
     const [completedBooks, setCompletedBooks] = useState([]);
     const [inProgressBooks, setInProgressBooks] = useState([]);
+    const [snakeGameAttempts, setSnakeGameAttempts] = useState({});
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
@@ -50,6 +51,26 @@ const StudentProgressDashboard = () => {
                 });
                 setCompletedBooks(completedBooksRes.data);
                 setInProgressBooks(inProgressBooksRes.data);
+                
+                // Fetch snake game attempts for all books
+                const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
+                const attemptsData = {};
+                
+                await Promise.all(allBooks.map(async (book) => {
+                    try {
+                        const bookId = book.book.bookID;
+                        const snakeAttemptsRes = await axios.get(
+                            `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
+                            { headers }
+                        );
+                        attemptsData[bookId] = snakeAttemptsRes.data;
+                    } catch (err) {
+                        console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
+                        attemptsData[book.book.bookID] = 0;
+                    }
+                }));
+                
+                setSnakeGameAttempts(attemptsData);
                 setError(null);
             } catch (error) {
                 console.error('Error fetching progress data:', error);
@@ -132,6 +153,20 @@ const StudentProgressDashboard = () => {
         );
     }
 
+    // Add a function to calculate score based on attempts
+    const calculateSnakeGameScore = (attempts) => {
+        if (!attempts || attempts <= 0) return 0;
+        
+        // Scoring logic: starts at 100, minus 2 points for each additional attempt
+        // 1 attempt = 100 points
+        // 2 attempts = 98 points
+        // 3 attempts = 96 points
+        // etc.
+        
+        const score = 100 - ((attempts - 1) * 2);
+        return Math.max(score, 0); // Ensure score doesn't go below 0
+    };
+
     return (
         <>
             <StudentNavbar />
@@ -182,9 +217,15 @@ const StudentProgressDashboard = () => {
                                             </div>
                                         )}
                                         <div>
+                                            <h3 className="font-semibold">{book.book.title}</h3>
                                             <div className="text-sm text-gray-500 mt-1">
                                                 Last read: {new Date(book.lastReadAt).toLocaleDateString()}<br />
                                                 Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                                {snakeGameAttempts[book.book.bookID] > 0 && (
+                                                    <div className="mt-1 text-green-600">
+                                                        <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -225,13 +266,21 @@ const StudentProgressDashboard = () => {
                                                 title={book.book.title}
                                             />
                                         ) : (
-                                            <div class="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
+                                            <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
                                                 <span className="text-xs text-gray-500">No image</span>
                                             </div>
                                         )}
-                                        <div className="text-sm text-gray-500 mt-1">
-                                            Completed on: {new Date(book.endTime).toLocaleDateString()}<br />
-                                            Total reading time: {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)}
+                                        <div>
+                                            <h3 className="font-semibold">{book.book.title}</h3>
+                                            <div className="text-sm text-gray-500 mt-1">
+                                                Completed on: {new Date(book.endTime).toLocaleDateString()}<br />
+                                                Total reading time: {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)}
+                                                {snakeGameAttempts[book.book.bookID] > 0 && (
+                                                    <div className="mt-1 text-green-600">
+                                                        <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
