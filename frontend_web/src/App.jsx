@@ -19,6 +19,9 @@ import StudentProgressDashboard from "./pages/studentPage/StudentProgressDashboa
 import StudentBadgeDashboard from "./pages/studentPage/StudentBadgeDashboard";
 import ClassroomProgress from "./pages/classroom/ClassroomProgress";
 import BookCompletionPage from "./pages/studentPage/BookCompletionPage";
+import AdminLoginPage from "./pages/loginPage/AdminLoginPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
 
 function App() {
   return (
@@ -65,6 +68,8 @@ function App() {
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
         <Route path="/student/badges" element={<StudentBadgeDashboard />} />
+        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );

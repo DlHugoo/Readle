@@ -20,6 +20,12 @@ public class BookEntity {
     private int difficultyLevel; // Changed from String to int
     private String imageURL;
 
+    @Column(nullable = false)
+    private boolean visibleToAll = false;
+
+    @Column
+    private Long createdByAdminId;
+
     @JsonManagedReference
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PageEntity> pages;
@@ -46,6 +52,22 @@ public class BookEntity {
     }
 
     // Getters and Setters
+    public boolean isVisibleToAll() {
+        return visibleToAll;
+    }
+
+    public void setVisibleToAll(boolean visibleToAll) {
+        this.visibleToAll = visibleToAll;
+    }
+
+    public Long getCreatedByAdminId() {
+        return createdByAdminId;
+    }
+
+    public void setCreatedByAdminId(Long createdByAdminId) {
+        this.createdByAdminId = createdByAdminId;
+    }
+
 
     public Long getBookID() {
         return bookID;

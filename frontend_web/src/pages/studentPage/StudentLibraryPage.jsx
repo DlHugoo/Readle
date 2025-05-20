@@ -3,7 +3,6 @@ import axios from "axios";
 import StudentNavbar from "../../components/StudentNavbar";
 import BookCard from "../../components/BookCard";
 import FeaturedCarousel from "../../components/FeaturedCarousel";
-import { fetchBooks } from "../../api/api";
 import Banner1 from "../../assets/Banner-1.jpg";
 import Banner2 from "../../assets/Banner-2.jpg";
 import Banner3 from "../../assets/Banner-3.jpg";
@@ -117,8 +116,11 @@ const StudentLibraryPage = () => {
           return;
         }
 
-        const data = await fetchBooks();
-        setBooks(data);
+        const response = await axios.get("/api/books/for-you", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setBooks(response.data);
         setError(null);
       } catch (err) {
         console.error("Error fetching books:", err);
@@ -131,7 +133,6 @@ const StudentLibraryPage = () => {
 
     // Show modal only once per first-time user
     const hasSeenPrompt = localStorage.getItem("hasSeenJoinPrompt");
-    console.log("Has seen join modal:", hasSeenPrompt);
     if (!hasSeenPrompt) {
       setShowJoinModal(true);
     }
@@ -196,7 +197,13 @@ const StudentLibraryPage = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {books.map((book, index) => (
-                <BookCard key={`for-you-${book.id || index}`} book={book} />
+                <div
+                  key={`for-you-${book.bookID || index}`}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/read/${book.bookID}/page/1`)}
+                >
+                  <BookCard book={book} />
+                </div>
               ))}
             </div>
           )}
@@ -215,10 +222,7 @@ const StudentLibraryPage = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {inProgressBooks.map((book, index) => (
-                <BookCard
-                  key={`continue-reading-${book.id || index}`}
-                  book={book}
-                />
+                <BookCard key={`continue-reading-${book.bookID || index}`} book={book} />
               ))}
             </div>
           )}

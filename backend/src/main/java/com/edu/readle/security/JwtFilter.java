@@ -9,7 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import com.edu.readle.service.CustomUserDetailsService;
 
 import java.io.IOException;
@@ -24,23 +23,36 @@ public class JwtFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
-    
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+        // ✅ Log for debug
+        System.out.println("JwtFilter invoked for: " + request.getRequestURI());
 
+        // ✅ 1. Skip filtering for authentication endpoints
+        if (request.getServletPath().startsWith("/api/auth")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ✅ 2. Extract and validate token
+        final String authHeader = request.getHeader("Authorization");
         String email = null;
         String jwt = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
-            email = jwtService.extractUsername(jwt);
+            try {
+                email = jwtService.extractUsername(jwt); // safely extract
+            } catch (Exception e) {
+                System.out.println("Invalid JWT format: " + e.getMessage());
+            }
         }
 
+        // ✅ 3. Authenticate and set context
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             var userDetails = userDetailsService.loadUserByUsername(email);
 
@@ -50,15 +62,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                System.out.println("JWT validated and context set for user: " + email);
+            } else {
+                System.out.println("Invalid JWT for user: " + email);
             }
         }
-
-                // Skip filter for auth endpoints
-        if (request.getServletPath().startsWith("/api/auth")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
 
         filterChain.doFilter(request, response);
     }

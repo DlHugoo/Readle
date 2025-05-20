@@ -9,4 +9,5 @@ import java.util.List;
 public interface BookRepository extends JpaRepository<BookEntity, Long> {
     // Optional: add custom queries here if needed
     List<BookEntity> findByClassroomIsNull();
+    List<BookEntity> findByVisibleToAllTrue();
 }
