@@ -117,46 +117,65 @@ const BookPage = () => {
     if (!storedUserId || !book?.bookID || !pages.length) return;
 
     const token = localStorage.getItem("token");
-    
-    console.log(`Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`);
-    
+
+    console.log(
+      `Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`
+    );
+
     // First try to get existing progress
-    axios.get(`http://localhost:8080/api/progress/book/${storedUserId}/${book.bookID}`, 
-      { headers: { Authorization: `Bearer ${token}` } })
+    axios
+      .get(
+        `http://localhost:8080/api/progress/book/${storedUserId}/${book.bookID}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
       .then((res) => {
         if (res.data?.id) {
           console.log("Found existing progress tracker with ID:", res.data.id);
           setTrackerId(res.data.id);
-          
+
           // If we have a last page read, set the current page index
           if (res.data.lastPageRead) {
-            const lastPage = Math.min(res.data.lastPageRead - 1, pages.length - 1);
+            const lastPage = Math.min(
+              res.data.lastPageRead - 1,
+              pages.length - 1
+            );
             setCurrentPageIndex(lastPage);
           }
         }
       })
       .catch((err) => {
         // If no progress exists (404), create a new one
-        if (err.response && (err.response.status === 404 || err.response.status === 400)) {
+        if (
+          err.response &&
+          (err.response.status === 404 || err.response.status === 400)
+        ) {
           console.log("No existing progress found, creating new tracker");
-          axios.post(
-            `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-          .then((res) => {
-            if (res.data?.id) {
-              console.log("Created new progress tracker with ID:", res.data.id);
-              setTrackerId(res.data.id);
-            }
-          })
-          .catch((createErr) => {
-            console.error("Error creating progress tracker:", 
-              createErr.response ? createErr.response.data : createErr.message);
-          });
+          axios
+            .post(
+              `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
+              {},
+              { headers: { Authorization: `Bearer ${token}` } }
+            )
+            .then((res) => {
+              if (res.data?.id) {
+                console.log(
+                  "Created new progress tracker with ID:",
+                  res.data.id
+                );
+                setTrackerId(res.data.id);
+              }
+            })
+            .catch((createErr) => {
+              console.error(
+                "Error creating progress tracker:",
+                createErr.response ? createErr.response.data : createErr.message
+              );
+            });
         } else {
-          console.error("Error fetching progress:", 
-            err.response ? err.response.data : err.message);
+          console.error(
+            "Error fetching progress:",
+            err.response ? err.response.data : err.message
+          );
         }
       });
   }, [book, pages]);
@@ -337,7 +356,7 @@ const BookPage = () => {
                 onClick={() => navigate(`/book/${bookId}/complete`)}
                 className="mt-4 px-6 py-3 bg-blue-600 text-white text-lg rounded-full shadow-lg hover:bg-blue-700 transition"
               >
-                ✅Finish Book
+                Finish Book
               </button>
             </>
           )}
