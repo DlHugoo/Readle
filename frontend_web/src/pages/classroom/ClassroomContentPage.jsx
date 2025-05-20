@@ -58,10 +58,24 @@ const ClassroomContentPage = () => {
   const getImageUrl = (path) =>
     path?.startsWith("/uploads") ? `http://localhost:8080${path}` : path;
 
-  const renderStars = (difficulty) => {
-    const level = Math.min(Math.max(parseInt(difficulty), 0), 3);
-    return "★".repeat(level) + "☆".repeat(3 - level);
+  const estimateReadTime = (pageCount) => {
+    const pages = parseInt(pageCount);
+    if (isNaN(pages) || pages <= 0) return "~1 min read";
+    return `~${pages} min read`;
   };
+
+  const sortedBooks = [...books].sort((a, b) => a.difficultyLevel - b.difficultyLevel);
+
+  const groupBooksByDifficulty = (books) => {
+    return books.reduce((acc, book) => {
+      const level = parseInt(book.difficultyLevel) || 0;
+      if (!acc[level]) acc[level] = [];
+      acc[level].push(book);
+      return acc;
+    }, {});
+  };
+
+  const groupedBooks = groupBooksByDifficulty(sortedBooks);
 
   return (
     <div className="classroom-content-page min-h-screen bg-[#f9fbfc]">
@@ -69,7 +83,7 @@ const ClassroomContentPage = () => {
 
       <div className="container mx-auto px-4 py-10">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-4">
           <Link
             to="/student-classrooms"
             title="Back to My Classrooms"
@@ -82,54 +96,67 @@ const ClassroomContentPage = () => {
           </h1>
         </div>
 
+        {/* Info */}
+        <p className="text-gray-600 mb-6">
+          {books.length} book{books.length !== 1 && "s"} available in this classroom.
+        </p>
+
         {/* Books */}
         {loading ? (
           <p className="text-gray-500">Loading books...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : books.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-            {books.map((book) => (
-              <Link
-                to={`/book/${book.bookID}`}
-                state={{ from: "CLASSROOM" }}
-                key={book.bookID}
-              >
-                <div className="relative group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition w-44 sm:w-48 mx-auto">
-                  {/* Book Cover */}
-                  <div className="w-full h-72 bg-gray-100 flex items-center justify-center">
-                    <img
-                      src={getImageUrl(book.imageURL)}
-                      alt={book.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = fallbackImage;
-                      }}
-                    />
-                  </div>
+          <div className="space-y-12">
+            {Object.entries(groupedBooks).map(([difficulty, booksAtLevel]) => (
+              <div key={difficulty}>
+                <h2 className="text-3xl font-extrabold text-yellow-500 mb-6">
+                  {"★".repeat(difficulty)}
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+                  {booksAtLevel.map((book) => (
+                    <Link
+                      to={`/book/${book.bookID}`}
+                      state={{ from: "CLASSROOM" }}
+                      key={book.bookID}
+                    >
+                      <div className="relative group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition ring-1 ring-gray-200 hover:ring-blue-300">
+                        {/* Genre Tag */}
+                        <div className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full z-10">
+                          {book.genre}
+                        </div>
 
-                  {/* Hover Overlay with Details */}
-                  <div className="absolute inset-0 bg-black bg-opacity-70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white">
-                    <div>
-                      <h2
-                        className="text-sm font-semibold truncate mb-1"
-                        title={book.title}
-                      >
-                        {book.title}
-                      </h2>
-                      <p className="text-xs">by {book.author}</p>
-                      <p className="text-xs italic text-gray-300">{book.genre}</p>
-                      <p className="text-xs mt-1">
-                        Difficulty:{" "}
-                        <span className="text-yellow-400">
-                          {renderStars(book.difficultyLevel)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
+                        {/* Book Cover */}
+                        <div className="w-full h-80 bg-gray-100 flex items-center justify-center">
+                          <img
+                            src={getImageUrl(book.imageURL)}
+                            alt={book.title}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = fallbackImage;
+                            }}
+                          />
+                        </div>
+
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-black bg-opacity-70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 text-white">
+                          <div>
+                            <h2 className="text-sm font-semibold truncate mb-1" title={book.title}>
+                              {book.title}
+                            </h2>
+                            <p className="text-xs">by {book.author}</p>
+                            <p className="text-xs italic text-gray-300">{book.genre}</p>
+                            <p className="text-[10px] text-gray-300 mt-1">
+                              {estimateReadTime(book.pageCount)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         ) : (
