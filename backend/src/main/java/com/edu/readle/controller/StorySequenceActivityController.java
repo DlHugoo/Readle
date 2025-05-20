@@ -32,9 +32,6 @@ public class StorySequenceActivityController {
     private BookRepository bookRepo;
 
     @Autowired
-    private SSAAttemptRepository attemptRepo;
-
-    @Autowired
     private StorySequenceService storySequenceService;
 
     /**
@@ -71,35 +68,17 @@ public class StorySequenceActivityController {
      */
     @PostMapping("/{ssaId}/check")
     public ResponseEntity<?> submitAnswer(@PathVariable Long ssaId,
-                                          @RequestBody Map<String, List<Long>> body,
-                                          Principal principal) {
-
+                                        @RequestBody Map<String, List<Long>> body,
+                                        Principal principal) {
         List<Long> attempted = body.get("attemptedSequence");
         if (attempted == null || attempted.isEmpty()) {
             return ResponseEntity.badRequest().body("No sequence submitted");
         }
 
-        Optional<StorySequenceActivityEntity> optionalSSA = ssaRepo.findById(ssaId);
-        if (optionalSSA.isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid SSA ID");
-        }
+        UserEntity user = userRepo.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        StorySequenceActivityEntity ssa = optionalSSA.get();
-
-        List<Long> correct = ssa.getSequenceImages().stream()
-                .sorted(Comparator.comparingInt(SequenceImageEntity::getCorrectPosition))
-                .map(SequenceImageEntity::getImageID)
-                .toList();
-
-        boolean isCorrect = attempted.equals(correct);
-
-        // Save attempt if user is authenticated
-        UserEntity user = userRepo.findByEmail(principal.getName()).orElse(null);
-        if (user != null) {
-            SSAAttemptEntity attempt = new SSAAttemptEntity(user, ssa, attempted, isCorrect);
-            attemptRepo.save(attempt);
-        }
-
+        boolean isCorrect = storySequenceService.checkSequence(ssaId, attempted, user);
         return ResponseEntity.ok(Map.of("correct", isCorrect));
     }
 

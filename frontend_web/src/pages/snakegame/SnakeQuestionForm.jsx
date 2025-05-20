@@ -14,6 +14,7 @@ const SnakeQuestionForm = () => {
   const [hasExistingQuestions, setHasExistingQuestions] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState(null);
   const [editFormData, setEditFormData] = useState({ text: '', answer: '' });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [questions, setQuestions] = useState([
     { text: '', answer: '' },
     { text: '', answer: '' },
@@ -156,28 +157,28 @@ const SnakeQuestionForm = () => {
     }
   };
 
- const handleEditClick = (question) => {
-    setEditingQuestionId(question.questionID);  // ✅ Use correct property
+  const handleEditClick = (question) => {
+    setEditingQuestionId(question.questionID);
     setEditFormData({
         text: question.text,
         answer: question.answers?.[0]?.answer || question.answer || ''
     });
-};
+  };
 
-const handleEditFormChange = (e) => {
+  const handleEditFormChange = (e) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({
         ...prev,
         [name]: value
     }));
-};
+  };
 
-const handleCancelEdit = () => {
+  const handleCancelEdit = () => {
     setEditingQuestionId(null);
     setEditFormData({ text: '', answer: '' });
-};
+  };
 
-const handleUpdateQuestion = async (questionID) => {  // ✅ Renamed parameter for clarity
+  const handleUpdateQuestion = async (questionID) => {
     try {
         if (!editFormData.text || !editFormData.answer) {
             alert('Please fill in both question and answer fields');
@@ -186,7 +187,6 @@ const handleUpdateQuestion = async (questionID) => {  // ✅ Renamed parameter f
 
         setLoading(true);
 
-        // ✅ Respect backend entity naming
         await axios.put(
             `http://localhost:8080/api/snake-questions/${questionID}`,
             {
@@ -199,15 +199,18 @@ const handleUpdateQuestion = async (questionID) => {  // ✅ Renamed parameter f
         const response = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
         setExistingQuestions(response.data);
         setEditingQuestionId(null);
-        alert('Question updated successfully!');
+        setShowSuccessModal(true); // Show modal instead of alert
     } catch (error) {
         console.error('Error updating question:', error);
         alert('Failed to update question: ' + (error.response?.data?.message || error.message));
     } finally {
         setLoading(false);
     }
-};
+  };
 
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+  };
 
   return (
     <div className="min-h-screen bg-blue-50">
@@ -364,6 +367,27 @@ const handleUpdateQuestion = async (questionID) => {  // ✅ Renamed parameter f
           </form>
         )}
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
+            <div className="flex flex-col items-center">
+              <CheckCircle className="text-green-500 w-12 h-12 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Success!</h3>
+              <p className="text-gray-600 mb-6 text-center">
+                The question has been updated successfully.
+              </p>
+              <button
+                onClick={closeSuccessModal}
+                className="bg-blue-500 text-white font-bold px-6 py-2 rounded-full hover:bg-blue-600 transition"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
