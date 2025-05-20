@@ -24,7 +24,10 @@ public class StorySequenceService {
     private SequenceImageRepository imageRepo;
 
     @Autowired
-    private SSAAttemptRepository attemptRepo;
+    private SSAAttemptService ssaAttemptService;
+
+    @Autowired
+    private SSAAttemptRepository attemptRepo;  // Add this field
 
     public StorySequenceActivityEntity getActivityByBookId(Long bookId) {
         return ssaRepo.findByBook_BookID(bookId)
@@ -42,8 +45,7 @@ public class StorySequenceService {
 
         boolean isCorrect = correctIds.equals(attemptedSequence);
 
-        SSAAttemptEntity attempt = new SSAAttemptEntity(user, ssa, attemptedSequence, isCorrect);
-        attemptRepo.save(attempt);
+        ssaAttemptService.saveAttempt(user, ssa, attemptedSequence, isCorrect);
 
         return isCorrect;
     }
