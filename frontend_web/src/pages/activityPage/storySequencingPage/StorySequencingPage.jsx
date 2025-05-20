@@ -14,7 +14,7 @@ const StorySequencingPage = () => {
   const [storyData, setStoryData] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-  const [attemptsLeft, setAttemptsLeft] = useState(3);
+  const [attemptsLeft, setAttemptsLeft] = useState(4);
   const [reshuffleTrigger, setReshuffleTrigger] = useState(0);
   const [resetCounter, setResetCounter] = useState(0);
   const [trackerId, setTrackerId] = useState(null);
@@ -24,11 +24,12 @@ const StorySequencingPage = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (userId && bookId && token) {
-      axios.get(`http://localhost:8080/api/progress/book/${userId}/${bookId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(res => setTrackerId(res.data.id))
-      .catch(err => console.error("Failed to fetch trackerId:", err));
+      axios
+        .get(`http://localhost:8080/api/progress/book/${userId}/${bookId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setTrackerId(res.data.id))
+        .catch((err) => console.error("Failed to fetch trackerId:", err));
     }
   }, [userId, bookId]);
 
@@ -106,11 +107,15 @@ const StorySequencingPage = () => {
       }
       // Mark book as completed if correct and trackerId is available
       if (res.data.correct && trackerId) {
-        axios.put(
-          `http://localhost:8080/api/progress/complete/${trackerId}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).catch(err => console.error("Failed to mark book as completed:", err));
+        axios
+          .put(
+            `http://localhost:8080/api/progress/complete/${trackerId}`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .catch((err) =>
+            console.error("Failed to mark book as completed:", err)
+          );
       }
     } catch (err) {
       console.error("Failed to submit sequence:", err);

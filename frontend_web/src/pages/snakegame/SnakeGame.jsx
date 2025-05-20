@@ -85,31 +85,40 @@ const SnakeGame = () => {
   useEffect(() => {
     console.log("Received bookId:", bookId);
     
-    const fetchQuestions = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:8080/api/snake-questions/book/${bookId}`
-        );
-        console.log("Fetched questions:", res.data);
-        
-        setQuestions(res.data);
-        const correctAnswers = res.data.map(
-          (q) => q.answers.find((a) => a.correct)?.answer
-        );
-        setSequence(correctAnswers);
-        const allAnswers = res.data.flatMap((q) =>
-          q.answers.map((a) => a.answer)
-        );
-        const positions = allAnswers.map((ans) => ({
-          text: ans,
-          x: Math.floor(Math.random() * gridSize),
-          y: Math.floor(Math.random() * gridSize),
-        }));
-        setAnswerPositions(positions);
-      } catch (err) {
-        console.error("Error fetching questions:", err);
-      }
-    };
+const fetchQuestions = async () => {
+  try {
+    const res = await axios.get(
+      `http://localhost:8080/api/snake-questions/book/${bookId}`
+    );
+    console.log("Fetched questions:", res.data);
+    
+    // Shuffle the questions array
+    const shuffledQuestions = [...res.data].sort(() => Math.random() - 0.5);
+    
+    setQuestions(shuffledQuestions);
+    const correctAnswers = shuffledQuestions.map(
+      (q) => q.answers.find((a) => a.correct)?.answer
+    );
+    setSequence(correctAnswers);
+    
+    // Get all answers (including incorrect ones) from all questions
+    const allAnswers = shuffledQuestions.flatMap((q) =>
+      q.answers.map((a) => a.answer)
+    );
+    
+    // Shuffle all answers for display on the board
+    const shuffledAllAnswers = [...allAnswers].sort(() => Math.random() - 0.5);
+    
+    const positions = shuffledAllAnswers.map((ans) => ({
+      text: ans,
+      x: Math.floor(Math.random() * gridSize),
+      y: Math.floor(Math.random() * gridSize),
+    }));
+    setAnswerPositions(positions);
+  } catch (err) {
+    console.error("Error fetching questions:", err);
+  }
+};
     
     fetchQuestions();
     fetchPages();
@@ -239,37 +248,46 @@ const SnakeGame = () => {
     setGameStarted(true);
   };
 
-  const resetGame = () => {
-    setSnake(initialSnake);
-    setDir(directions.ArrowRight);
-    setCurrentDirection("ArrowRight");
-    setCurrentIndex(0);
-    setGameOver(false);
-    setGameWon(false);
-    setScore(0);
-    setSpeed(300);
-    setGameStarted(false);
-    
-    axios
-      .get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
-      .then((res) => {
-        setQuestions(res.data);
-        const correctAnswers = res.data.map(
-          (q) => q.answers.find((a) => a.correct)?.answer
-        );
-        setSequence(correctAnswers);
-        const allAnswers = res.data.flatMap((q) =>
-          q.answers.map((a) => a.answer)
-        );
-        const positions = allAnswers.map((ans) => ({
-          text: ans,
-          x: Math.floor(Math.random() * gridSize),
-          y: Math.floor(Math.random() * gridSize),
-        }));
-        setAnswerPositions(positions);
-      })
-      .catch((err) => console.error(err));
-  };
+const resetGame = () => {
+  setSnake(initialSnake);
+  setDir(directions.ArrowRight);
+  setCurrentDirection("ArrowRight");
+  setCurrentIndex(0);
+  setGameOver(false);
+  setGameWon(false);
+  setScore(0);
+  setSpeed(300);
+  setGameStarted(false);
+  
+  axios
+    .get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
+    .then((res) => {
+      // Shuffle the questions array
+      const shuffledQuestions = [...res.data].sort(() => Math.random() - 0.5);
+      
+      setQuestions(shuffledQuestions);
+      const correctAnswers = shuffledQuestions.map(
+        (q) => q.answers.find((a) => a.correct)?.answer
+      );
+      setSequence(correctAnswers);
+      
+      // Get all answers (including incorrect ones) from all questions
+      const allAnswers = shuffledQuestions.flatMap((q) =>
+        q.answers.map((a) => a.answer)
+      );
+      
+      // Shuffle all answers for display on the board
+      const shuffledAllAnswers = [...allAnswers].sort(() => Math.random() - 0.5);
+      
+      const positions = shuffledAllAnswers.map((ans) => ({
+        text: ans,
+        x: Math.floor(Math.random() * gridSize),
+        y: Math.floor(Math.random() * gridSize),
+      }));
+      setAnswerPositions(positions);
+    })
+    .catch((err) => console.error(err));
+};
 
   const getSnakeSymbol = (segment, index, snakeArray) => {
     if (index === 0) {
@@ -324,7 +342,7 @@ const SnakeGame = () => {
                 {isCreatingAttempt ? 'Starting...' : 'Start Game'}
               </button>
               <button
-                onClick={() => navigate(`/book/${bookId}?page=${pages.length}`)}
+                onClick={() => navigate(`/book/${bookId}/complete`)}
                 className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
               >
                 Back to Book
@@ -356,7 +374,7 @@ const SnakeGame = () => {
                 Play Again
               </button>
               <button
-                onClick={() => navigate(`/book/${bookId}?page=${pages.length}`)}
+                onClick={() => navigate(`/book/${bookId}/complete`)}
                 className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
               >
                 Back to Book
