@@ -129,4 +129,9 @@ public class BookEntity {
         question.setBook(null);
         this.snakeQuestions.remove(question);
     }
+
+    @Transient
+    public int getPageCount() {
+        return pages != null ? pages.size() : 0;
+    }
 }
