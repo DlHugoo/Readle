@@ -60,4 +60,40 @@ public class BadgeController {
     public ResponseEntity<List<UserBadgeDTO>> checkAndAwardBookRelatedBadges(@PathVariable Long userId) {
         return ResponseEntity.ok(badgeService.checkAndAwardBookRelatedBadges(userId));
     }
+
+    @PostMapping("/user/{userId}/login")
+    public ResponseEntity<UserBadgeDTO> trackUserLogin(@PathVariable Long userId) {
+        return ResponseEntity.ok(badgeService.trackUserLogin(userId));
+    }
+
+    @PostMapping("/user/{userId}/book-completion")
+    public ResponseEntity<UserBadgeDTO> trackBookCompletion(@PathVariable Long userId) {
+        return ResponseEntity.ok(badgeService.trackBookCompletion(userId));
+    }
+
+    @PostMapping("/user/{userId}/genre-read")
+    public ResponseEntity<UserBadgeDTO> trackGenreRead(
+            @PathVariable Long userId,
+            @RequestParam String genre) {
+        return ResponseEntity.ok(badgeService.trackGenreRead(userId, genre));
+    }
+
+    @PostMapping("/user/{userId}/reading-time")
+    public ResponseEntity<UserBadgeDTO> trackReadingTime(
+            @PathVariable Long userId,
+            @RequestParam int minutes) {
+        return ResponseEntity.ok(badgeService.trackReadingTime(userId, minutes));
+    }
+
+    @PostMapping("/user/{userId}/pages-read")
+    public ResponseEntity<UserBadgeDTO> trackPagesRead(
+            @PathVariable Long userId,
+            @RequestParam int pages) {
+        return ResponseEntity.ok(badgeService.trackPagesRead(userId, pages));
+    }
+
+    @PostMapping("/user/{userId}/check-all")
+    public ResponseEntity<List<UserBadgeDTO>> checkAllBadgeProgress(@PathVariable Long userId) {
+        return ResponseEntity.ok(badgeService.checkAllBadgeProgress(userId));
+    }
 }

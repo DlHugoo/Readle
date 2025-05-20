@@ -14,13 +14,22 @@ const StudentBadgeDashboard = () => {
   const [inProgressBadges, setInProgressBadges] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
 
+  // Get user ID from token
   useEffect(() => {
-    // Get userId from token
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setUserId(decoded.userID || decoded.id);
+        console.log("Decoded token:", decoded);
+        
+        // Use userId directly from the token
+        setUserId(decoded.userId);
+        
+        // If userId is not available in the token, log an error
+        if (!decoded.userId) {
+          console.error("No userId found in token:", decoded);
+          setError("User ID not found in authentication token");
+        }
       } catch (e) {
         console.error("Failed to decode token", e);
         setError("Authentication error. Please log in again.");
@@ -30,59 +39,129 @@ const StudentBadgeDashboard = () => {
     }
   }, []);
 
+  // Fetch badges when userId is available
   useEffect(() => {
     const fetchBadges = async () => {
-      if (!userId) return;
+      if (!userId) {
+        console.log("No userId available, skipping fetch");
+        return;
+      }
       
+      console.log("Fetching badges for userId:", userId);
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
         
-        // Fetch all badges data in parallel
-        const [allBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, { headers }),
-          axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, { headers }),
-          axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, { headers })
+        const axiosOptions = { 
+          headers, 
+          timeout: 10000 // 10 seconds timeout
+        };
+        
+        // First fetch all available badges
+        const allBadgesRes = await axios.get(`${API_BASE_URL}/api/badges`, axiosOptions);
+        const availableBadges = allBadgesRes.data || [];
+        
+        // Then fetch user-specific badge progress
+        const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, axiosOptions),
+          axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, axiosOptions),
+          axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, axiosOptions)
         ]);
         
-        setAllBadges(allBadgesRes.data);
-        setEarnedBadges(earnedBadgesRes.data);
-        setInProgressBadges(inProgressBadgesRes.data);
+        // If user has no badges yet, create placeholder badges from all available badges
+        if ((userBadgesRes.data || []).length === 0 && availableBadges.length > 0) {
+          // Create placeholder user badges from available badges
+          const placeholderBadges = availableBadges.map(badge => ({
+            id: `placeholder-${badge.id}`,
+            badge: badge,
+            isEarned: false,
+            earnedAt: null,
+            currentProgress: 0,
+            requiredProgress: badge.thresholdValue,
+            progressPercentage: 0
+          }));
+          setAllBadges(placeholderBadges);
+        } else {
+          setAllBadges(userBadgesRes.data || []);
+        }
+        
+        setEarnedBadges(earnedBadgesRes.data || []);
+        setInProgressBadges(inProgressBadgesRes.data || []);
         setError(null);
       } catch (err) {
-        console.error("Error fetching badges:", err);
-        setError("Failed to load badges. Please try again later.");
+        console.error("Error fetching badges:", err.response || err);
+        let errorMessage = "Failed to load badges. Please try again later.";
+        
+        if (err.response) {
+          errorMessage = `Server error: ${err.response.status} - ${err.response.data.message || err.response.statusText}`;
+        } else if (err.request) {
+          errorMessage = "No response from server. Please check your connection.";
+        } else {
+          errorMessage = `Error: ${err.message}`;
+        }
+        
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
     };
-
+  
     if (userId) {
       fetchBadges();
     }
   }, [userId]);
 
-  // Helper function to get badge image or fallback
   const getBadgeImage = (badge) => {
-    if (badge?.badge?.imageUrl) {
-      return badge.badge.imageUrl.startsWith('http') 
-        ? badge.badge.imageUrl 
-        : `${API_BASE_URL}${badge.badge.imageUrl}`;
+    if (badge && badge.badge && badge.badge.imageUrl) {
+      if (badge.badge.imageUrl.startsWith('http')) {
+        return badge.badge.imageUrl;
+      }
+      return `${API_BASE_URL}${badge.badge.imageUrl}`;
     }
     
-    // Fallback images based on badge type
     const type = badge?.badge?.badgeType?.toLowerCase() || 'bronze';
-    if (type === 'gold') return '/src/assets/gold-badge.png';
-    if (type === 'silver') return '/src/assets/silver-badge.png';
-    return '/src/assets/bronze-badge.png';
+    if (type === 'gold') return '/src/assets/badges/trophy.png';
+    if (type === 'silver') return '/src/assets/badges/medal.png';
+    return '/src/assets/badges/medal.png'; // Bronze default
   };
 
-  // Render badge card
+  const getBadgeCategoryIcon = (criteria) => {
+    switch(criteria) {
+      case 'LOGIN_COUNT':
+        return '👋';
+      case 'BOOKS_COMPLETED':
+        return '📚';
+      case 'GENRES_READ':
+        return '🔍';
+      case 'READING_TIME':
+        return '⏱️';
+      case 'PAGES_READ':
+        return '📄';
+      default:
+        return '🏆';
+    }
+  };
+
   const BadgeCard = ({ badge, earned = false }) => {
+    if (!badge || !badge.badge) {
+      console.error("Invalid badge data:", badge);
+      return (
+        <div className="relative flex flex-col items-center p-4 rounded-lg shadow-md bg-red-50">
+          <p className="text-red-500">Invalid badge data</p>
+        </div>
+      );
+    }
+    
+    const criteria = badge.badge.achievementCriteria;
+    const categoryIcon = getBadgeCategoryIcon(criteria);
+    
     return (
       <div className={`relative flex flex-col items-center p-4 rounded-lg shadow-md transition-all duration-300 hover:shadow-lg ${earned ? 'bg-blue-50' : 'bg-white'}`}>
-        {/* Badge Image */}
+        <div className="absolute top-2 right-2 text-lg" title={criteria}>
+          {categoryIcon}
+        </div>
+        
         <div className="relative mb-3">
           <img 
             src={getBadgeImage(badge)} 
@@ -96,11 +175,9 @@ const StudentBadgeDashboard = () => {
           )}
         </div>
         
-        {/* Badge Info */}
         <h3 className="text-lg font-semibold text-center text-gray-800">{badge.badge.name}</h3>
         <p className="text-sm text-gray-600 text-center mb-3">{badge.badge.description}</p>
         
-        {/* Progress Bar for in-progress badges */}
         {!earned && (
           <div className="w-full mt-auto">
             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
@@ -117,7 +194,6 @@ const StudentBadgeDashboard = () => {
           </div>
         )}
         
-        {/* Earned Date */}
         {earned && badge.earnedAt && (
           <div className="mt-auto text-xs text-gray-500">
             Earned on {new Date(badge.earnedAt).toLocaleDateString()}
@@ -127,128 +203,74 @@ const StudentBadgeDashboard = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <>
-        <StudentNavbar />
-        <div className="flex justify-center items-center min-h-[80vh]">
-          <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <StudentNavbar />
-        <div className="max-w-5xl mx-auto mt-8 mb-8 px-4">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <strong className="font-bold">Error: </strong>
-            <span className="block sm:inline">{error}</span>
-            {error.includes('log in') && (
-              <button
-                onClick={() => window.location.href = '/login'}
-                className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-              >
-                Go to Login
-              </button>
-            )}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // Determine which badges to display based on active tab
-  const displayBadges = activeTab === 'all' 
-    ? allBadges 
-    : activeTab === 'earned' 
-      ? earnedBadges 
-      : inProgressBadges;
-
   return (
     <>
       <StudentNavbar />
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">My Achievement Badges</h1>
-          
-          {/* Badge Stats Summary */}
-          <div className="flex space-x-4">
-            <div className="bg-blue-100 rounded-lg px-4 py-2 text-center">
-              <span className="block text-2xl font-bold text-blue-700">{earnedBadges.length}</span>
-              <span className="text-sm text-blue-600">Earned</span>
-            </div>
-            <div className="bg-yellow-100 rounded-lg px-4 py-2 text-center">
-              <span className="block text-2xl font-bold text-yellow-700">{inProgressBadges.length}</span>
-              <span className="text-sm text-yellow-600">In Progress</span>
-            </div>
-          </div>
+      <div className="max-w-5xl mx-auto mt-8 mb-8 px-4">
+        <h1 className="text-3xl font-bold mb-8 text-gray-800">Achievements</h1>
+
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            All Badges
+          </button>
+          <button
+            onClick={() => setActiveTab('earned')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors mx-2 ${
+              activeTab === 'earned' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            Earned Badges
+          </button>
+          <button
+            onClick={() => setActiveTab('in-progress')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              activeTab === 'in-progress' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            In Progress
+          </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="flex space-x-8">
-            <button 
-              onClick={() => setActiveTab('all')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'all' 
-                  ? 'border-blue-500 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              All Badges
-            </button>
-            <button 
-              onClick={() => setActiveTab('earned')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'earned' 
-                  ? 'border-green-500 text-green-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Earned
-            </button>
-            <button 
-              onClick={() => setActiveTab('inProgress')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'inProgress' 
-                  ? 'border-yellow-500 text-yellow-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              In Progress
-            </button>
-          </nav>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {loading ? (
+            <p className="text-center col-span-full">Loading badges...</p>
+          ) : error ? (
+            <p className="text-center col-span-full text-red-500">{error}</p>
+          ) : activeTab === 'all' ? (
+            allBadges.length > 0 ? (
+              allBadges.map((badge) => (
+                <BadgeCard 
+                  key={badge.id} 
+                  badge={badge} 
+                  earned={earnedBadges.some((eb) => eb.badge?.id === badge.badge?.id)} 
+                />
+              ))
+            ) : (
+              <p className="text-center col-span-full text-gray-500">No badges available yet.</p>
+            )
+          ) : activeTab === 'earned' ? (
+            earnedBadges.length > 0 ? (
+              earnedBadges.map((badge) => (
+                <BadgeCard key={badge.id} badge={badge} earned />
+              ))
+            ) : (
+              <p className="text-center col-span-full text-gray-500">You haven't earned any badges yet.</p>
+            )
+          ) : (
+            inProgressBadges.length > 0 ? (
+              inProgressBadges.map((badge) => (
+                <BadgeCard key={badge.id} badge={badge} />
+              ))
+            ) : (
+              <p className="text-center col-span-full text-gray-500">No badges in progress.</p>
+            )
+          )}
         </div>
-
-        {/* Badge Grid */}
-        {displayBadges.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No badges found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {activeTab === 'earned' 
-                ? "You haven't earned any badges yet. Keep reading to earn your first badge!" 
-                : activeTab === 'inProgress' 
-                  ? "No badges in progress. Start reading to unlock new achievements!" 
-                  : "No badges available at the moment."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {displayBadges.map(badge => (
-              <BadgeCard 
-                key={badge.id} 
-                badge={badge} 
-                earned={badge.earned || activeTab === 'earned'}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </>
   );

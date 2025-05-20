@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -169,5 +170,59 @@ public class BadgeService {
                 userBadge.getCurrentProgress(),
                 userBadge.getBadge().getThresholdValue()
         );
+    }
+
+    // Track user login and award "Welcome Aboard" badge
+    @Transactional
+    public UserBadgeDTO trackUserLogin(Long userId) {
+        return updateUserBadgeProgress(userId, "LOGIN_COUNT", 1);
+    }
+
+    // Track book completion and award "Bookworm" badge
+    @Transactional
+    public UserBadgeDTO trackBookCompletion(Long userId) {
+        return updateUserBadgeProgress(userId, "BOOKS_COMPLETED", 1);
+    }
+
+    // Track genres read and award "Genre Explorer" badge
+    @Transactional
+    public UserBadgeDTO trackGenreRead(Long userId, String genre) {
+        // This would need to be enhanced to track unique genres
+        // For now, we'll just increment the counter
+        return updateUserBadgeProgress(userId, "GENRES_READ", 1);
+    }
+
+    // Track reading time and award "Reading Marathoner" badge
+    @Transactional
+    public UserBadgeDTO trackReadingTime(Long userId, int minutesRead) {
+        return updateUserBadgeProgress(userId, "READING_TIME", minutesRead);
+    }
+
+    // Track pages read and award "Page Turner" badge
+    @Transactional
+    public UserBadgeDTO trackPagesRead(Long userId, int pagesRead) {
+        return updateUserBadgeProgress(userId, "PAGES_READ", pagesRead);
+    }
+
+    // Check all badge progress for a user
+    @Transactional
+    public List<UserBadgeDTO> checkAllBadgeProgress(Long userId) {
+        List<UserBadgeDTO> updatedBadges = new ArrayList<>();
+        
+        // Check each achievement criteria
+        // In a real implementation, you would get these values from other services
+        int loginCount = 1; // Example value
+        int booksCompleted = 0; // Example value
+        int genresRead = 0; // Example value
+        int readingTimeMinutes = 0; // Example value
+        int pagesRead = 0; // Example value
+        
+        updatedBadges.add(updateUserBadgeProgress(userId, "LOGIN_COUNT", loginCount));
+        updatedBadges.add(updateUserBadgeProgress(userId, "BOOKS_COMPLETED", booksCompleted));
+        updatedBadges.add(updateUserBadgeProgress(userId, "GENRES_READ", genresRead));
+        updatedBadges.add(updateUserBadgeProgress(userId, "READING_TIME", readingTimeMinutes));
+        updatedBadges.add(updateUserBadgeProgress(userId, "PAGES_READ", pagesRead));
+        
+        return updatedBadges;
     }
 }
