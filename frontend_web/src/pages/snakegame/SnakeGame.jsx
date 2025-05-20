@@ -101,20 +101,64 @@ const fetchQuestions = async () => {
     );
     setSequence(correctAnswers);
     
-    // Get all answers (including incorrect ones) from all questions
+    // Get all unique answers (including incorrect ones) from all questions
     const allAnswers = shuffledQuestions.flatMap((q) =>
       q.answers.map((a) => a.answer)
     );
+    const uniqueAnswers = [...new Set(allAnswers)]; // Remove duplicates
     
-    // Shuffle all answers for display on the board
-    const shuffledAllAnswers = [...allAnswers].sort(() => Math.random() - 0.5);
+    // Select exactly 5 unique answers (all correct ones plus some incorrect)
+    const selectedAnswers = [];
     
-    const positions = shuffledAllAnswers.map((ans) => ({
-      text: ans,
-      x: Math.floor(Math.random() * gridSize),
-      y: Math.floor(Math.random() * gridSize),
+    // First add all correct answers
+    selectedAnswers.push(...correctAnswers);
+    
+    // Then add incorrect answers until we have 5 total
+    const incorrectAnswers = uniqueAnswers.filter(
+      answer => !correctAnswers.includes(answer)
+    );
+    
+    while (selectedAnswers.length < 5 && incorrectAnswers.length > 0) {
+      const randomIndex = Math.floor(Math.random() * incorrectAnswers.length);
+      selectedAnswers.push(incorrectAnswers[randomIndex]);
+      incorrectAnswers.splice(randomIndex, 1); // Remove to avoid duplicates
+    }
+    
+    // Generate positions that don't collide with snake or other answers
+    const generateNonCollidingPositions = (count) => {
+      const positions = [];
+      const occupied = new Set();
+      
+      // Mark snake positions as occupied
+      initialSnake.forEach(segment => {
+        occupied.add(`${segment.x},${segment.y}`);
+      });
+      
+      while (positions.length < count) {
+        const x = Math.floor(Math.random() * gridSize);
+        const y = Math.floor(Math.random() * gridSize);
+        const key = `${x},${y}`;
+        
+        if (!occupied.has(key)) {
+          occupied.add(key);
+          positions.push({ x, y });
+        }
+      }
+      
+      return positions;
+    };
+    
+    // Generate positions for exactly 5 answers
+    const positions = generateNonCollidingPositions(5);
+    
+    // Assign answers to positions
+    const answerPositions = positions.map((pos, index) => ({
+      text: selectedAnswers[index],
+      x: pos.x,
+      y: pos.y
     }));
-    setAnswerPositions(positions);
+    
+    setAnswerPositions(answerPositions);
   } catch (err) {
     console.error("Error fetching questions:", err);
   }
@@ -247,7 +291,6 @@ const fetchQuestions = async () => {
     await createAttempt(0);
     setGameStarted(true);
   };
-
 const resetGame = () => {
   setSnake(initialSnake);
   setDir(directions.ArrowRight);
@@ -271,20 +314,64 @@ const resetGame = () => {
       );
       setSequence(correctAnswers);
       
-      // Get all answers (including incorrect ones) from all questions
+      // Get all unique answers (including incorrect ones) from all questions
       const allAnswers = shuffledQuestions.flatMap((q) =>
         q.answers.map((a) => a.answer)
       );
+      const uniqueAnswers = [...new Set(allAnswers)]; // Remove duplicates
       
-      // Shuffle all answers for display on the board
-      const shuffledAllAnswers = [...allAnswers].sort(() => Math.random() - 0.5);
+      // Select exactly 5 unique answers (all correct ones plus some incorrect)
+      const selectedAnswers = [];
       
-      const positions = shuffledAllAnswers.map((ans) => ({
-        text: ans,
-        x: Math.floor(Math.random() * gridSize),
-        y: Math.floor(Math.random() * gridSize),
+      // First add all correct answers
+      selectedAnswers.push(...correctAnswers);
+      
+      // Then add incorrect answers until we have 5 total
+      const incorrectAnswers = uniqueAnswers.filter(
+        answer => !correctAnswers.includes(answer)
+      );
+      
+      while (selectedAnswers.length < 5 && incorrectAnswers.length > 0) {
+        const randomIndex = Math.floor(Math.random() * incorrectAnswers.length);
+        selectedAnswers.push(incorrectAnswers[randomIndex]);
+        incorrectAnswers.splice(randomIndex, 1); // Remove to avoid duplicates
+      }
+      
+      // Generate positions that don't collide with snake or other answers
+      const generateNonCollidingPositions = (count) => {
+        const positions = [];
+        const occupied = new Set();
+        
+        // Mark snake positions as occupied
+        initialSnake.forEach(segment => {
+          occupied.add(`${segment.x},${segment.y}`);
+        });
+        
+        while (positions.length < count) {
+          const x = Math.floor(Math.random() * gridSize);
+          const y = Math.floor(Math.random() * gridSize);
+          const key = `${x},${y}`;
+          
+          if (!occupied.has(key)) {
+            occupied.add(key);
+            positions.push({ x, y });
+          }
+        }
+        
+        return positions;
+      };
+      
+      // Generate positions for exactly 5 answers
+      const positions = generateNonCollidingPositions(5);
+      
+      // Assign answers to positions
+      const answerPositions = positions.map((pos, index) => ({
+        text: selectedAnswers[index],
+        x: pos.x,
+        y: pos.y
       }));
-      setAnswerPositions(positions);
+      
+      setAnswerPositions(answerPositions);
     })
     .catch((err) => console.error(err));
 };
@@ -426,11 +513,6 @@ const resetGame = () => {
                       <span className="font-medium">
                         {i + 1}. {q.text}
                       </span>
-                      {i === currentIndex && (
-                        <span className="block mt-1 text-sm text-blue-600">
-                          Find: <span className="font-bold">{sequence[i]}</span>
-                        </span>
-                      )}
                     </li>
                   ))}
                 </ol>

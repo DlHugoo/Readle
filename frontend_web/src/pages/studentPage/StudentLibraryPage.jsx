@@ -49,9 +49,8 @@ const JoinClassroomModal = ({ onClose }) => {
 
       const data = await response.json();
       if (response.ok) {
-        // mark modal as shown so it doesn't repeat
         localStorage.setItem("hasSeenJoinPrompt", "true");
-        window.location.reload(); // reload to reflect new class
+        window.location.reload();
       } else {
         setError(data?.error || "Failed to join classroom.");
       }
@@ -130,8 +129,9 @@ const StudentLibraryPage = () => {
       }
     };
 
-    // Show the join modal only once for new users
+    // Show modal only once per first-time user
     const hasSeenPrompt = localStorage.getItem("hasSeenJoinPrompt");
+    console.log("Has seen join modal:", hasSeenPrompt);
     if (!hasSeenPrompt) {
       setShowJoinModal(true);
     }
@@ -139,13 +139,12 @@ const StudentLibraryPage = () => {
     getBooks();
   }, []);
 
-  // Fetch in-progress books for the Continue Reading section
   useEffect(() => {
     const fetchInProgressBooks = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const userId = localStorage.getItem('userId');
-        
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
+
         if (!token || !userId) {
           setInProgressLoading(false);
           return;
@@ -153,12 +152,11 @@ const StudentLibraryPage = () => {
 
         const headers = { Authorization: `Bearer ${token}` };
         const response = await axios.get(
-          `http://localhost:8080/api/progress/in-progress/${userId}`, 
+          `http://localhost:8080/api/progress/in-progress/${userId}`,
           { headers }
         );
-        
-        // Extract the book objects from the progress data
-        const progressBooks = response.data.map(progress => progress.book);
+
+        const progressBooks = response.data.map((progress) => progress.book);
         setInProgressBooks(progressBooks);
       } catch (err) {
         console.error("Error fetching in-progress books:", err);
@@ -232,10 +230,12 @@ const StudentLibraryPage = () => {
       )}
 
       {showJoinModal && (
-        <JoinClassroomModal onClose={() => {
-          localStorage.setItem("hasSeenJoinPrompt", "true");
-          setShowJoinModal(false);
-        }} />
+        <JoinClassroomModal
+          onClose={() => {
+            localStorage.setItem("hasSeenJoinPrompt", "true");
+            setShowJoinModal(false);
+          }}
+        />
       )}
     </div>
   );
