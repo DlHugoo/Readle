@@ -246,6 +246,7 @@ const ClassroomContentManager = () => {
     }
 
     try {
+      // First attempt to delete the book
       await axios.delete(`/api/books/${selectedBook.bookID}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -259,7 +260,13 @@ const ClassroomContentManager = () => {
       setShowDeleteModal(false);
     } catch (error) {
       console.error("Error deleting book:", error);
-      showAlertModal("error", "An error occurred while deleting the book.");
+      
+      // Show a more specific error message
+      if (error.response && error.response.status === 500) {
+        showAlertModal("error", "Cannot delete this book because it has associated content (pages or questions). Please remove the content first.");
+      } else {
+        showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "An unknown error occurred"}`);
+      }
     }
   };
 
