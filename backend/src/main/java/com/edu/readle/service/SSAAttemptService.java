@@ -33,4 +33,18 @@ public class SSAAttemptService {
     public Optional<SSAAttemptEntity> getLatestAttempt(Long userId, Long ssaId) {
         return attemptRepository.findTopByUser_UserIdAndSsa_SsaIDOrderByAttemptedAtDesc(userId, ssaId);
     }
+    
+    public int getAttemptCountForBook(Long userId, Long bookId) {
+        // First find the SSA for this book
+        Optional<StorySequenceActivityEntity> ssaOpt = ssaRepository.findByBook_BookID(bookId);
+        
+        if (ssaOpt.isEmpty()) {
+            return 0; // No SSA exists for this book
+        }
+        
+        StorySequenceActivityEntity ssa = ssaOpt.get();
+        
+        // Count attempts for this user and SSA
+        return attemptRepository.countByUser_UserIdAndSsa_SsaID(userId, ssa.getSsaID());
+    }
 }

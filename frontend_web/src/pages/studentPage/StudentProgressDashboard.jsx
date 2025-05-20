@@ -16,6 +16,7 @@ const StudentProgressDashboard = () => {
     const [completedBooks, setCompletedBooks] = useState([]);
     const [inProgressBooks, setInProgressBooks] = useState([]);
     const [snakeGameAttempts, setSnakeGameAttempts] = useState({});
+    const [ssaAttempts, setSSAAttempts] = useState({});
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
@@ -54,7 +55,8 @@ const StudentProgressDashboard = () => {
                 
                 // Fetch snake game attempts for all books
                 const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
-                const attemptsData = {};
+                const snakeAttemptsData = {};
+                const ssaAttemptsData = {};
                 
                 await Promise.all(allBooks.map(async (book) => {
                     try {
@@ -63,14 +65,27 @@ const StudentProgressDashboard = () => {
                             `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
                             { headers }
                         );
-                        attemptsData[bookId] = snakeAttemptsRes.data;
+                        snakeAttemptsData[bookId] = snakeAttemptsRes.data;
+                        
+                        // Fetch SSA attempts for this book
+                        try {
+                            const ssaAttemptsRes = await axios.get(
+                                `${API_BASE_URL}/api/ssa-attempts/user/${userId}/book/${bookId}/count`,
+                                { headers }
+                            );
+                            ssaAttemptsData[bookId] = ssaAttemptsRes.data;
+                        } catch (err) {
+                            console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
+                            ssaAttemptsData[bookId] = 0;
+                        }
                     } catch (err) {
                         console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
-                        attemptsData[book.book.bookID] = 0;
+                        snakeAttemptsData[book.book.bookID] = 0;
                     }
                 }));
                 
-                setSnakeGameAttempts(attemptsData);
+                setSnakeGameAttempts(snakeAttemptsData);
+                setSSAAttempts(ssaAttemptsData);
                 setError(null);
             } catch (error) {
                 console.error('Error fetching progress data:', error);
@@ -166,6 +181,20 @@ const StudentProgressDashboard = () => {
         const score = 100 - ((attempts - 1) * 2);
         return Math.max(score, 0); // Ensure score doesn't go below 0
     };
+    
+    // Add a function to calculate SSA score based on attempts
+    const calculateSSAScore = (attempts) => {
+        if (!attempts || attempts <= 0) return 0;
+        
+        // Scoring logic: starts at 100, minus 25 points for each additional attempt
+        // 1 attempt = 100 points
+        // 2 attempts = 75 points
+        // 3 attempts = 50 points
+        // etc.
+        
+        const score = 100 - ((attempts - 1) * 25);
+        return Math.max(score, 0); // Ensure score doesn't go below 0
+    };
 
     return (
         <>
@@ -226,6 +255,11 @@ const StudentProgressDashboard = () => {
                                                         <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
                                                     </div>
                                                 )}
+                                                {ssaAttempts[book.book.bookID] > 0 && (
+                                                    <div className="mt-1 text-blue-600">
+                                                        <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -278,6 +312,11 @@ const StudentProgressDashboard = () => {
                                                 {snakeGameAttempts[book.book.bookID] > 0 && (
                                                     <div className="mt-1 text-green-600">
                                                         <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
+                                                    </div>
+                                                )}
+                                                {ssaAttempts[book.book.bookID] > 0 && (
+                                                    <div className="mt-1 text-blue-600">
+                                                        <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
                                                     </div>
                                                 )}
                                             </div>
