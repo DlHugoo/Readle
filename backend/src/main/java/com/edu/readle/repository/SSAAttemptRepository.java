@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface SSAAttemptRepository extends JpaRepository<SSAAttemptEntity, Long> {
     List<SSAAttemptEntity> findByUser_UserId(Long userId);
     Optional<SSAAttemptEntity> findTopByUser_UserIdAndSsa_SsaIDOrderByAttemptedAtDesc(Long userId, Long ssaId);
+    int countByUser_UserIdAndSsa_SsaID(Long userId, Long ssaId);
 }
