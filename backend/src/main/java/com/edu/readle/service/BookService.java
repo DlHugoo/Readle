@@ -69,8 +69,33 @@ public class BookService {
         });
     }
 
+    @Transactional
     public void deleteBook(Long bookID) {
-        bookRepository.deleteById(bookID);
+        Optional<BookEntity> bookOptional = bookRepository.findById(bookID);
+        if (bookOptional.isPresent()) {
+            BookEntity book = bookOptional.get();
+            
+            // Remove classroom association if exists
+            if (book.getClassroom() != null) {
+                book.setClassroom(null);
+            }
+            
+            // Clear pages (should be handled by cascade, but ensuring it's clean)
+            if (book.getPages() != null) {
+                book.getPages().clear();
+            }
+            
+            // Clear snake questions (should be handled by cascade, but ensuring it's clean)
+            if (book.getSnakeQuestions() != null) {
+                book.getSnakeQuestions().clear();
+            }
+            
+            // Save the changes before deletion
+            bookRepository.save(book);
+            
+            // Now delete the book
+            bookRepository.deleteById(bookID);
+        }
     }
 
     public List<BookEntity> getBooksByClassroomId(Long classroomId) {
@@ -82,5 +107,4 @@ public class BookService {
     public List<BookEntity> getBooksWithoutClassroom() {
         return bookRepository.findByClassroomIsNull();
     }
-
 }
