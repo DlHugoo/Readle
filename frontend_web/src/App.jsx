@@ -16,6 +16,7 @@ import StorySequencingPage from "./pages/activityPage/storySequencingPage/StoryS
 import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
 import StudentProgressDashboard from './pages/studentPage/StudentProgressDashboard';
+import StudentBadgeDashboard from './pages/studentPage/StudentBadgeDashboard';
 import ClassroomProgress from "./pages/classroom/ClassroomProgress";
 
 
@@ -55,6 +56,7 @@ function App() {
         <Route path="/create-ssa" element={<CreateSSA />} />
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
+        <Route path="/student/badges" element={<StudentBadgeDashboard />} />
       </Routes>
     </Router>
   );

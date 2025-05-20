@@ -31,13 +31,13 @@ public class AuthService {
     public String register(UserEntity user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
-        return jwtService.generateToken(user.getEmail()); // You can use getUsername() if preferred
+        return jwtService.generateToken(user.getEmail(), user.getId());
     }
 
     public String authenticate(String email, String password) {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
         Optional<UserEntity> user = userRepository.findByEmail(email);
-        return user.map(u -> jwtService.generateToken(u.getEmail()))
+        return user.map(u -> jwtService.generateToken(u.getEmail(), u.getId()))
                    .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
