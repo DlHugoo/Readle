@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import mascot from "../../assets/mascot.png";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { CalendarDays, Users, BookOpen, Copy } from "lucide-react";
 
 const StudentClassroomPage = () => {
   const [classrooms, setClassrooms] = useState([]);
   const [classroomCode, setClassroomCode] = useState("");
   const [showJoin, setShowJoin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const studentId = localStorage.getItem("userId");
   const navigate = useNavigate();
 
@@ -25,10 +28,9 @@ const StudentClassroomPage = () => {
         if (!response.ok) throw new Error("Failed to fetch classrooms");
         const data = await response.json();
         setClassrooms(data);
-        setError(null);
       } catch (err) {
         console.error(err);
-        setError("Error fetching classrooms");
+        toast.error("Error fetching classrooms");
       } finally {
         setLoading(false);
       }
@@ -39,7 +41,7 @@ const StudentClassroomPage = () => {
 
   const handleJoinClassroom = async () => {
     if (!classroomCode) {
-      setError("Please enter a classroom code");
+      toast.error("Please enter a classroom code");
       return;
     }
 
@@ -58,10 +60,9 @@ const StudentClassroomPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(data.message);
-        setError(null);
         setShowJoin(false);
         setClassroomCode("");
+        toast.success("Successfully joined classroom!");
 
         const refresh = await fetch(`/api/classrooms/student/${studentId}`, {
           headers: {
@@ -81,14 +82,23 @@ const StudentClassroomPage = () => {
           }
         }
       } else {
-        setError(data.error || "Unknown error joining classroom");
+        toast.error(data.error || "Unknown error joining classroom");
       }
     } catch (err) {
       console.error("Error joining classroom:", err);
-      setError("Error joining the classroom");
+      toast.error("Error joining the classroom");
     } finally {
       setLoading(false);
     }
+  };
+
+  const filteredClassrooms = classrooms.filter((classroom) =>
+    classroom.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCopy = (code) => {
+    navigator.clipboard.writeText(code);
+    toast.success("Classroom code copied!");
   };
 
   return (
@@ -96,18 +106,27 @@ const StudentClassroomPage = () => {
       <StudentNavbar />
 
       <div className="container mx-auto px-4 py-10 relative">
-        {/* Top-right Join Button */}
-        <div className="flex justify-between items-center mb-6">
+        {/* Header & Controls */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <h1 className="text-4xl font-bold text-gray-800">My Classrooms</h1>
-          <button
-            onClick={() => setShowJoin(true)}
-            className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow-sm"
-          >
-            Join Classroom
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              placeholder="Search classrooms..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button
+              onClick={() => setShowJoin(true)}
+              className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg shadow-sm"
+            >
+              Join Classroom
+            </button>
+          </div>
         </div>
 
-        {/* Modal Join Form */}
+        {/* Join Modal */}
         {showJoin && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
             <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-sm relative">
@@ -131,17 +150,16 @@ const StudentClassroomPage = () => {
               >
                 Submit
               </button>
-              {error && <p className="text-red-500 mt-3">{error}</p>}
             </div>
           </div>
         )}
 
-        {/* Classroom Cards */}
+        {/* Classroom Grid */}
         {loading ? (
           <p className="text-center">Loading...</p>
-        ) : classrooms.length > 0 ? (
+        ) : filteredClassrooms.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classrooms.map((classroom, index) => {
+            {filteredClassrooms.map((classroom, index) => {
               const bgColors = [
                 "bg-orange-400",
                 "bg-indigo-400",
@@ -155,35 +173,56 @@ const StudentClassroomPage = () => {
               return (
                 <div
                   key={classroom.id}
-                  className="flex shadow-md rounded-xl overflow-hidden bg-white max-w-md w-full h-36 mx-auto"
+                  className="group relative transform transition-transform hover:scale-105 hover:shadow-xl flex shadow-md rounded-xl overflow-hidden bg-white max-w-md w-full h-56 mx-auto"
                 >
-                  {/* Colored side with initial */}
+                  {/* Colored Icon Side */}
                   <div className={`${color} w-24 flex justify-center items-center`}>
-                    <span className="text-white text-4xl font-extrabold">
-                      {classroom.name?.charAt(0).toUpperCase()}
-                    </span>
+                    <BookOpen size={36} className="text-white" />
                   </div>
 
-                  {/* Content section */}
-                  <div className="flex-1 px-6 py-4 flex flex-col">
+                  {/* Info Side */}
+                  <div className="flex-1 px-6 py-4 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
+                      <h3 className="text-lg font-semibold text-gray-800 truncate">
                         {classroom.name}
                       </h3>
-                      <p className="text-sm text-gray-500">{classroom.description}</p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {classroom.description || "No description provided."}
+                      </p>
+                      <div className="mt-2 flex flex-wrap text-xs gap-2 text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Users size={14} /> {classroom.studentEmails?.length || 0} students
+                        </span>
+                        {classroom.createdAt && (
+                          <span className="flex items-center gap-1">
+                            <CalendarDays size={14} /> {new Date(classroom.createdAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      {classroom.classroomCode && (
+                        <div className="flex items-center text-xs mt-2 gap-2 text-gray-700">
+                          <span className="bg-gray-100 px-2 py-1 rounded font-mono">
+                            Code: {classroom.classroomCode}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(classroom.classroomCode)}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Copy code"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <button
-                      onClick={() =>
-                        navigate(`/student/classroom-content/${classroom.id}`)
-                      }
-                      className="mt-auto self-end bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded text-sm font-semibold"
+                      onClick={() => navigate(`/student/classroom-content/${classroom.id}`)}
+                      className="mt-2 self-end bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded text-sm font-semibold"
                     >
                       View Classroom
                     </button>
                   </div>
                 </div>
-
               );
             })}
           </div>
@@ -195,7 +234,9 @@ const StudentClassroomPage = () => {
               className="w-48 h-auto mb-4 object-contain"
             />
             <h2 className="text-lg font-semibold">No classrooms joined yet</h2>
-            <p className="text-sm text-gray-500">Join a class using the button above to get started!</p>
+            <p className="text-sm text-gray-500">
+              Join a class using the button above to get started!
+            </p>
           </div>
         )}
       </div>
