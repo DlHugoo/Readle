@@ -50,10 +50,11 @@ const BookPage = () => {
 
         // Get page number from URL query params first
         const searchParams = new URLSearchParams(window.location.search);
-        const pageParam = searchParams.get('page');
-        
+        const pageParam = searchParams.get("page");
+
         if (pageParam) {
-          const initialPage = Math.min(parseInt(pageParam), pagesData.length) - 1;
+          const initialPage =
+            Math.min(parseInt(pageParam), pagesData.length) - 1;
           setCurrentPageIndex(initialPage);
         } else {
           // If no page param, check for user's last read page
@@ -65,16 +66,21 @@ const BookPage = () => {
                 `http://localhost:8080/api/progress/book/${storedUserId}/${bookRes.data.bookID}`,
                 { headers: { Authorization: `Bearer ${token}` } }
               );
-              
+
               if (progressRes.data && progressRes.data.lastPageRead) {
                 // Set to last read page (subtract 1 for zero-based index)
-                const lastPage = Math.min(progressRes.data.lastPageRead - 1, pagesData.length - 1);
+                const lastPage = Math.min(
+                  progressRes.data.lastPageRead - 1,
+                  pagesData.length - 1
+                );
                 setCurrentPageIndex(lastPage);
                 if (progressRes.data.id) setTrackerId(progressRes.data.id);
               }
             } catch (err) {
               // If no progress found or error, default to first page
-              console.log("No previous reading progress found, starting from page 1");
+              console.log(
+                "No previous reading progress found, starting from page 1"
+              );
               setCurrentPageIndex(0);
             }
           }
@@ -93,7 +99,7 @@ const BookPage = () => {
   useEffect(() => {
     const handleLocationChange = () => {
       const searchParams = new URLSearchParams(window.location.search);
-      const pageParam = searchParams.get('page');
+      const pageParam = searchParams.get("page");
       if (pageParam) {
         const newPage = Math.min(parseInt(pageParam), pages.length) - 1;
         if (newPage !== currentPageIndex) {
@@ -102,8 +108,8 @@ const BookPage = () => {
       }
     };
 
-    window.addEventListener('popstate', handleLocationChange);
-    return () => window.removeEventListener('popstate', handleLocationChange);
+    window.addEventListener("popstate", handleLocationChange);
+    return () => window.removeEventListener("popstate", handleLocationChange);
   }, [pages.length, currentPageIndex]);
 
   useEffect(() => {
@@ -111,46 +117,65 @@ const BookPage = () => {
     if (!storedUserId || !book?.bookID || !pages.length) return;
 
     const token = localStorage.getItem("token");
-    
-    console.log(`Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`);
-    
+
+    console.log(
+      `Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`
+    );
+
     // First try to get existing progress
-    axios.get(`http://localhost:8080/api/progress/book/${storedUserId}/${book.bookID}`, 
-      { headers: { Authorization: `Bearer ${token}` } })
+    axios
+      .get(
+        `http://localhost:8080/api/progress/book/${storedUserId}/${book.bookID}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
       .then((res) => {
         if (res.data?.id) {
           console.log("Found existing progress tracker with ID:", res.data.id);
           setTrackerId(res.data.id);
-          
+
           // If we have a last page read, set the current page index
           if (res.data.lastPageRead) {
-            const lastPage = Math.min(res.data.lastPageRead - 1, pages.length - 1);
+            const lastPage = Math.min(
+              res.data.lastPageRead - 1,
+              pages.length - 1
+            );
             setCurrentPageIndex(lastPage);
           }
         }
       })
       .catch((err) => {
         // If no progress exists (404), create a new one
-        if (err.response && (err.response.status === 404 || err.response.status === 400)) {
+        if (
+          err.response &&
+          (err.response.status === 404 || err.response.status === 400)
+        ) {
           console.log("No existing progress found, creating new tracker");
-          axios.post(
-            `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-          .then((res) => {
-            if (res.data?.id) {
-              console.log("Created new progress tracker with ID:", res.data.id);
-              setTrackerId(res.data.id);
-            }
-          })
-          .catch((createErr) => {
-            console.error("Error creating progress tracker:", 
-              createErr.response ? createErr.response.data : createErr.message);
-          });
+          axios
+            .post(
+              `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
+              {},
+              { headers: { Authorization: `Bearer ${token}` } }
+            )
+            .then((res) => {
+              if (res.data?.id) {
+                console.log(
+                  "Created new progress tracker with ID:",
+                  res.data.id
+                );
+                setTrackerId(res.data.id);
+              }
+            })
+            .catch((createErr) => {
+              console.error(
+                "Error creating progress tracker:",
+                createErr.response ? createErr.response.data : createErr.message
+              );
+            });
         } else {
-          console.error("Error fetching progress:", 
-            err.response ? err.response.data : err.message);
+          console.error(
+            "Error fetching progress:",
+            err.response ? err.response.data : err.message
+          );
         }
       });
   }, [book, pages]);
@@ -160,7 +185,9 @@ const BookPage = () => {
       const token = localStorage.getItem("token");
       axios
         .put(
-          `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeMinutes=1`,
+          `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${
+            currentPageIndex + 1
+          }&readingTimeMinutes=1`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         )
@@ -326,16 +353,10 @@ const BookPage = () => {
           {currentPageIndex === pages.length - 1 && (
             <>
               <button
-                onClick={() => navigate(`/book/${bookId}/sequencing`)}
-                className="mt-4 px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow-lg hover:bg-green-700 transition"
+                onClick={() => navigate(`/book/${bookId}/complete`)}
+                className="mt-4 px-6 py-3 bg-blue-600 text-white text-lg rounded-full shadow-lg hover:bg-blue-700 transition"
               >
-                🎯 Start Story Sequencing Activity
-              </button>
-              <button
-                onClick={() => navigate(`/book/${bookId}/snake-game`)}
-                className="mt-4 px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow-lg hover:bg-purple-700 transition"
-              >
-                🐍 Play Snake Game
+                Finish Book
               </button>
             </>
           )}
