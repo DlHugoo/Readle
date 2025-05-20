@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye } from "lucide-react";
+import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye, Download } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from "axios";
 
@@ -9,6 +9,7 @@ const API_BASE_URL = 'http://localhost:8080';
 
 const ClassroomProgress = () => {
   const { classroomId } = useParams();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [classroomName, setClassroomName] = useState("");
   const [students, setStudents] = useState([]);
@@ -50,6 +51,11 @@ const ClassroomProgress = () => {
   const closeStudentModal = () => {
     setIsModalOpen(false);
     setSelectedStudent(null);
+  };
+  
+  // Navigate to visualization dashboard
+  const navigateToVisualization = () => {
+    navigate(`/classroom-visualization/${classroomId}`);
   };
 
   // Fetch classroom details and students
@@ -373,6 +379,54 @@ const ClassroomProgress = () => {
     return true;
   });
 
+  // Add new function to handle CSV export
+  const exportToCSV = () => {
+    // Create CSV header
+    const headers = [
+      'Student Name',
+      'Email',
+      'Books Completed',
+      'Books In Progress',
+      'Total Reading Time',
+      'Average Comprehension Score',
+      'Last Activity',
+      'Status'
+    ].join(',');
+
+    // Create CSV rows from filtered students data
+    const csvRows = filteredStudents.map(student => {
+      const readingTime = student.progressData?.totalReadingTimeMinutes || 0;
+      const formattedTime = formatTime(readingTime);
+      const lastActivity = student.progressData?.lastActivityDate 
+        ? new Date(student.progressData.lastActivityDate).toLocaleDateString()
+        : 'Never';
+
+      return [
+        `${student.firstName} ${student.lastName}`,
+        student.email,
+        student.progressData?.completedCount || 0,
+        student.progressData?.inProgressCount || 0,
+        formattedTime,
+        student.progressData?.avgComprehensionScore || 0,
+        lastActivity,
+        student.progressData?.status || 'Unknown'
+      ].join(',');
+    });
+
+    // Combine headers and rows
+    const csvContent = [headers, ...csvRows].join('\n');
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${classroomName}_progress_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <TeahcerNav />
@@ -393,6 +447,25 @@ const ClassroomProgress = () => {
                 <Menu size={24} />
               </button>
               <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Progress Dashboard</h1>
+            </div>
+            
+            <div className="flex gap-2">
+              {/* Add Export CSV Button */}
+              <button
+                onClick={exportToCSV}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                <Download size={18} />
+                Export CSV
+              </button>
+              
+              <button
+                onClick={navigateToVisualization}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <BarChart size={18} />
+                View Visualizations
+              </button>
             </div>
           </div>
           
@@ -613,7 +686,7 @@ const ClassroomProgress = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {student.progressData?.lastActivityDate 
-                              ? new Date(student.progressData.lastActivityDate).toLocaleDateString() 
+                              ? new Date(student.progressData.lastActivityDate).toLocaleDateString()
                               : 'Never'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
