@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import StudentNavbar from '../../components/StudentNavbar';
 
 const API_BASE_URL = 'http://localhost:8080';
@@ -15,6 +16,7 @@ const StudentProgressDashboard = () => {
     const [completedBooks, setCompletedBooks] = useState([]);
     const [inProgressBooks, setInProgressBooks] = useState([]);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchProgressData = async () => {
@@ -134,7 +136,15 @@ const StudentProgressDashboard = () => {
         <>
             <StudentNavbar />
             <div className="max-w-5xl mx-auto mt-8 mb-8 px-4">
-                <h1 className="text-3xl font-bold mb-8 text-gray-800">Reading Progress Dashboard</h1>
+                <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-3xl font-bold text-gray-800">Reading Progress Dashboard</h1>
+                    <button
+                        onClick={() => navigate('/student/badges')}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                    >
+                        View Achievements
+                    </button>
+                </div>
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -215,7 +225,7 @@ const StudentProgressDashboard = () => {
                                                 title={book.book.title}
                                             />
                                         ) : (
-                                            <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
+                                            <div class="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
                                                 <span className="text-xs text-gray-500">No image</span>
                                             </div>
                                         )}

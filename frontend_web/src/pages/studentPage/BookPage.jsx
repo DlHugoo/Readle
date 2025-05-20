@@ -110,21 +110,50 @@ const BookPage = () => {
     const storedUserId = localStorage.getItem("userId");
     if (!storedUserId || !book?.bookID || !pages.length) return;
 
-    // Only create a new tracker if we don't already have one
-    if (!trackerId) {
-      const token = localStorage.getItem("token");
-      axios
-        .post(
-          `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-        .then((res) => {
-          if (res.data?.id) setTrackerId(res.data.id);
-        })
-        .catch((err) => console.error("Error starting book progress:", err));
-    }
-  }, [book, pages, trackerId]);
+    const token = localStorage.getItem("token");
+    
+    console.log(`Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`);
+    
+    // First try to get existing progress
+    axios.get(`http://localhost:8080/api/progress/book/${storedUserId}/${book.bookID}`, 
+      { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (res.data?.id) {
+          console.log("Found existing progress tracker with ID:", res.data.id);
+          setTrackerId(res.data.id);
+          
+          // If we have a last page read, set the current page index
+          if (res.data.lastPageRead) {
+            const lastPage = Math.min(res.data.lastPageRead - 1, pages.length - 1);
+            setCurrentPageIndex(lastPage);
+          }
+        }
+      })
+      .catch((err) => {
+        // If no progress exists (404), create a new one
+        if (err.response && (err.response.status === 404 || err.response.status === 400)) {
+          console.log("No existing progress found, creating new tracker");
+          axios.post(
+            `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .then((res) => {
+            if (res.data?.id) {
+              console.log("Created new progress tracker with ID:", res.data.id);
+              setTrackerId(res.data.id);
+            }
+          })
+          .catch((createErr) => {
+            console.error("Error creating progress tracker:", 
+              createErr.response ? createErr.response.data : createErr.message);
+          });
+        } else {
+          console.error("Error fetching progress:", 
+            err.response ? err.response.data : err.message);
+        }
+      });
+  }, [book, pages]);
 
   useEffect(() => {
     if (trackerId && pages.length > 0) {
