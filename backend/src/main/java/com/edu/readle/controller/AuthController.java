@@ -5,6 +5,7 @@ import com.edu.readle.dto.LoginRequest;
 import com.edu.readle.entity.UserEntity;
 import com.edu.readle.repository.UserRepository;
 import com.edu.readle.service.AuthService;
+import com.edu.readle.service.BadgeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +15,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final BadgeService badgeService;
 
-    public AuthController(AuthService authService, UserRepository userRepository) {
+    public AuthController(AuthService authService, UserRepository userRepository, BadgeService badgeService) {
         this.authService = authService;
         this.userRepository = userRepository;
+        this.badgeService = badgeService;
     }
 
     @PostMapping("/register")
@@ -32,6 +35,9 @@ public class AuthController {
 
         UserEntity user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getEmail()));
+        
+        // Track user login for badge progress
+        badgeService.trackUserLogin(user.getId());
 
         return ResponseEntity.ok(new AuthResponse(token, user.getRole().name(), user.getId()));
     }

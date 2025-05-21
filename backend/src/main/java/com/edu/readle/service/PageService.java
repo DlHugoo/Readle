@@ -14,10 +14,12 @@ public class PageService {
 
     private final PageRepository pageRepository;
     private final BookRepository bookRepository;
+    private final BadgeService badgeService;
 
-    public PageService(PageRepository pageRepository, BookRepository bookRepository) {
+    public PageService(PageRepository pageRepository, BookRepository bookRepository, BadgeService badgeService) {
         this.pageRepository = pageRepository;
         this.bookRepository = bookRepository;
+        this.badgeService = badgeService;
     }
 
     public PageEntity addPageToBook(Long bookID, PageEntity page) {
@@ -73,5 +75,25 @@ public class PageService {
         }
 
         pageRepository.delete(page);
+    }
+
+    /**
+     * Track that a user has read a specific page
+     * @param userId The ID of the user who read the page
+     * @param bookId The ID of the book containing the page
+     * @param pageNumber The page number that was read
+     */
+    public void trackPageRead(Long userId, Long bookId, int pageNumber) {
+        // Verify the page exists
+        Optional<BookEntity> optionalBook = bookRepository.findById(bookId);
+        if (optionalBook.isPresent()) {
+            BookEntity book = optionalBook.get();
+            PageEntity page = pageRepository.findByBookAndPageNumber(book, pageNumber);
+            
+            if (page != null) {
+                // Track this page read for badge progress
+                badgeService.trackPagesRead(userId, 1);
+            }
+        }
     }
 }

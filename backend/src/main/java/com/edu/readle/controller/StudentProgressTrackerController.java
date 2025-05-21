@@ -1,6 +1,7 @@
 package com.edu.readle.controller;
 
 import com.edu.readle.dto.StudentProgressDTO;
+import com.edu.readle.service.BadgeService;
 import com.edu.readle.service.StudentProgressTrackerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,13 @@ import java.util.List;
 public class StudentProgressTrackerController {
     private static final Logger logger = LoggerFactory.getLogger(StudentProgressTrackerController.class);
     private final StudentProgressTrackerService progressTrackerService;
+    private final BadgeService badgeService;
 
     @Autowired
-    public StudentProgressTrackerController(StudentProgressTrackerService progressTrackerService) {
+    public StudentProgressTrackerController(StudentProgressTrackerService progressTrackerService, 
+                                           com.edu.readle.service.BadgeService badgeService) {
         this.progressTrackerService = progressTrackerService;
+        this.badgeService = badgeService;
     }
 
     @PostMapping("/start/{userId}/{bookId}")
@@ -41,7 +45,27 @@ public class StudentProgressTrackerController {
 
     @PutMapping("/complete/{trackerId}")
     public ResponseEntity<StudentProgressDTO> completeBook(@PathVariable Long trackerId) {
-        return ResponseEntity.ok(progressTrackerService.completeBook(trackerId));
+        // Complete the book and get the progress
+        StudentProgressDTO progress = progressTrackerService.completeBook(trackerId);
+        
+        try {
+            // Get the user ID from the service
+            Long userId = progressTrackerService.getUserIdByTrackerId(trackerId);
+            if (userId != null) {
+                logger.info("Awarding book completion badge to user: {}", userId);
+                badgeService.trackBookCompletion(userId);
+                
+                // Note: We don't need to explicitly call trackGenreRead here
+                // as it's now handled in the StudentProgressTrackerService
+            } else {
+                logger.warn("User ID not found for tracker: {}", trackerId);
+            }
+        } catch (Exception e) {
+            logger.error("Error awarding book completion badge", e);
+            // We don't want to fail the book completion if badge awarding fails
+        }
+        
+        return ResponseEntity.ok(progress);
     }
 
     @GetMapping("/completed/{userId}")
@@ -86,4 +110,4 @@ public class StudentProgressTrackerController {
             @PathVariable Long bookId) {
         return ResponseEntity.ok(progressTrackerService.getBookProgress(userId, bookId));
     }
-} 
+}
