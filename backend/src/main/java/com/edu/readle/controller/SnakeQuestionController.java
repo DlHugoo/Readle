@@ -40,7 +40,7 @@ public class SnakeQuestionController {
     }
 
     // 🔐 Get questions by book ID
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER', 'STUDENT')")
     @GetMapping("/book/{bookId}")
     public ResponseEntity<List<SnakeQuestionEntity>> getQuestionsByBookId(@PathVariable Long bookId) {
         return ResponseEntity.ok(snakeQuestionService.getQuestionsByBookId(bookId));
