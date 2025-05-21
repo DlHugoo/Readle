@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, UserPlus, X, BookOpen, Clock, CheckCircle, UserMinus, Mail, Copy, Check, Users } from "lucide-react";
+import { Menu, UserPlus, X, Search, BookOpen, Clock, CheckCircle, UserMinus, Mail, Copy, Check, Users } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
+import StudentProgressModal from './StudentProgressModal';
 import axios from "axios";
 
 const API_BASE_URL = 'http://localhost:8080';
@@ -42,6 +43,10 @@ const ClassroomStudents = () => {
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
   const [studentToRemove, setStudentToRemove] = useState(null);
   const [removingStudent, setRemovingStudent] = useState(false);
+
+  // Add these state variables at the top with other state declarations
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: 'firstName', direction: 'asc' });
 
   // Toggle sidebar function
   const toggleSidebar = () => {
@@ -278,10 +283,6 @@ const ClassroomStudents = () => {
     if (!attempts || attempts <= 0) return 0;
     
     // Scoring logic: starts at 100, minus 2 points for each additional attempt
-    // 1 attempt = 100 points
-    // 2 attempts = 98 points
-    // 3 attempts = 96 points
-    // etc.
     
     const score = 100 - ((attempts - 1) * 2);
     return Math.max(score, 0); // Ensure score doesn't go below 0
@@ -292,10 +293,6 @@ const ClassroomStudents = () => {
     if (!attempts || attempts <= 0) return 0;
     
     // Scoring logic: starts at 100, minus 25 points for each additional attempt
-    // 1 attempt = 100 points
-    // 2 attempts = 75 points
-    // 3 attempts = 50 points
-    // etc.
     
     const score = 100 - ((attempts - 1) * 25);
     return Math.max(score, 0); // Ensure score doesn't go below 0
@@ -454,162 +451,39 @@ const ClassroomStudents = () => {
     }
   };
 
-  // Progress Modal Component
-  const ProgressModal = () => {
-    if (!progressModalOpen) return null;
-    
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          {/* Modal Header */}
-          <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-white">
-            <h2 className="text-xl font-bold text-gray-800">
-              Student Progress: {selectedStudent?.firstName || ''} {selectedStudent?.lastName || ''}
-            </h2>
-            <button 
-              onClick={() => setProgressModalOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          
-          {/* Modal Content */}
-          <div className="p-6">
-            {progressLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : progressError ? (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <strong className="font-bold">Error: </strong>
-                <span className="block sm:inline">{progressError}</span>
-              </div>
-            ) : (
-              <>
-                {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-                    <span className="text-gray-500 text-lg mb-2">Completed Books</span>
-                    <span className="text-4xl font-bold text-blue-600">{progressStats.completedCount}</span>
-                  </div>
-                  <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-                    <span className="text-gray-500 text-lg mb-2">Books in Progress</span>
-                    <span className="text-4xl font-bold text-yellow-500">{progressStats.inProgressCount}</span>
-                  </div>
-                </div>
-
-                {/* Books in Progress */}
-                <div className="bg-white rounded-lg shadow p-6 mb-8">
-                  <h2 className="text-2xl font-semibold mb-4 text-gray-700">Books in Progress</h2>
-                  <ul>
-                    {inProgressBooks.length === 0 && (
-                      <li className="text-gray-400 italic">No books in progress.</li>
-                    )}
-                    {inProgressBooks.map((book) => (
-                      <li key={`in-progress-${book.id}`} className="mb-6">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div className="flex items-center">
-                            {book.book.imageURL ? (
-                              <img 
-                                src={book.book.imageURL.startsWith('http') ? book.book.imageURL : `${API_BASE_URL}${book.book.imageURL}`} 
-                                alt={book.book.title}
-                                className="w-16 h-20 object-cover rounded mr-4"
-                                title={book.book.title}
-                              />
-                            ) : (
-                              <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
-                                <span className="text-xs text-gray-500">No image</span>
-                              </div>
-                            )}
-                            <div>
-                              <span className="font-semibold text-lg text-blue-700">{book.book.title}</span>
-                              <div className="text-sm text-gray-500 mt-1">
-                                Last read: {new Date(book.lastReadAt).toLocaleDateString()}<br />
-                                Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
-                                {snakeGameAttempts[book.book.bookID] > 0 && (
-                                  <div className="mt-1 text-green-600">
-                                    <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
-                                  </div>
-                                )}
-                                {ssaAttempts[book.book.bookID] > 0 && (
-                                  <div className="mt-1 text-blue-600">
-                                    <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="w-full md:w-1/2 mt-2 md:mt-0">
-                            <div className="w-full bg-gray-200 rounded-full h-3">
-                              <div
-                                className="bg-blue-500 h-3 rounded-full"
-                                style={{ width: `${book.book.pageIds && book.lastPageRead ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}%` }}
-                              ></div>
-                            </div>
-                            <div className="text-xs text-gray-400 mt-1 text-right">
-                              {book.book.pageIds ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}% complete
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Completed Books */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-2xl font-semibold mb-4 text-gray-700">Completed Books</h2>
-                  <ul>
-                    {completedBooks.length === 0 && (
-                      <li className="text-gray-400 italic">No completed books yet.</li>
-                    )}
-                    {completedBooks.map((book) => (
-                      <li key={`completed-${book.id}`} className="mb-6">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div className="flex items-center">
-                            {book.book.imageURL ? (
-                              <img 
-                                src={book.book.imageURL.startsWith('http') ? book.book.imageURL : `${API_BASE_URL}${book.book.imageURL}`} 
-                                alt={book.book.title}
-                                className="w-16 h-20 object-cover rounded mr-4"
-                                title={book.book.title}
-                              />
-                            ) : (
-                              <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
-                                <span className="text-xs text-gray-500">No image</span>
-                              </div>
-                            )}
-                            <div>
-                              <span className="font-semibold text-lg text-green-700">{book.book.title}</span>
-                              <div className="text-sm text-gray-500 mt-1">
-                                Completed on: {new Date(book.endTime).toLocaleDateString()}<br />
-                                Total reading time: {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)}
-                                {snakeGameAttempts[book.book.bookID] > 0 && (
-                                  <div className="mt-1 text-green-600">
-                                    <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
-                                  </div>
-                                )}
-                                {ssaAttempts[book.book.bookID] > 0 && (
-                                  <div className="mt-1 text-blue-600">
-                                    <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+  // Add this function before the return statement
+  const sortStudents = (studentsArray) => {
+    return [...studentsArray].sort((a, b) => {
+      if (sortConfig.key === 'name') {
+        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+        return sortConfig.direction === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      }
+      if (sortConfig.key === 'email') {
+        return sortConfig.direction === 'asc' 
+          ? a.email.localeCompare(b.email) 
+          : b.email.localeCompare(a.email);
+      }
+      return 0;
+    });
   };
+
+// Add this function to filter students
+const filterStudents = (studentsArray) => {
+  return studentsArray.filter(student => {
+    const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+    const searchLower = searchQuery.toLowerCase();
+    return fullName.includes(searchLower) || student.email.toLowerCase().includes(searchLower);
+  });
+};
+
+// Add this function to handle sort changes
+const handleSort = (key) => {
+  setSortConfig(prevConfig => ({
+    key,
+    direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+  }));
+};
 
   // Add Student Modal Component
   const AddStudentModal = () => {
@@ -837,6 +711,34 @@ const ClassroomStudents = () => {
             </button>
           </div>
 
+          {/* Search and Sort Controls */}
+          <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full sm:w-96">
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              />
+              <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSort('name')}
+                className={`px-4 py-2 rounded-lg border ${sortConfig.key === 'name' ? 'bg-blue-50 border-blue-500' : 'border-gray-300'}`}
+              >
+                Sort by Name {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </button>
+              <button
+                onClick={() => handleSort('email')}
+                className={`px-4 py-2 rounded-lg border ${sortConfig.key === 'email' ? 'bg-blue-50 border-blue-500' : 'border-gray-300'}`}
+              >
+                Sort by Email {sortConfig.key === 'email' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </button>
+            </div>
+          </div>
+
           {/* Students List */}
           <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
             {/* Header for the students list component */}
@@ -886,7 +788,7 @@ const ClassroomStudents = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {students.map((student, index) => (
+                    {sortStudents(filterStudents(students)).map((student, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -938,7 +840,22 @@ const ClassroomStudents = () => {
       </div>
 
       {/* Progress Modal */}
-      <ProgressModal />
+      <StudentProgressModal
+        isOpen={progressModalOpen}
+        onClose={() => setProgressModalOpen(false)}
+        selectedStudent={selectedStudent}
+        progressLoading={progressLoading}
+        progressError={progressError}
+        progressStats={progressStats}
+        completedBooks={completedBooks}
+        inProgressBooks={inProgressBooks}
+        snakeGameAttempts={snakeGameAttempts}
+        ssaAttempts={ssaAttempts}
+        formatDuration={formatDuration}
+        calculateSnakeGameScore={calculateSnakeGameScore}
+        calculateSSAScore={calculateSSAScore}
+        API_BASE_URL={API_BASE_URL}
+      />
 
       {/* Add Student Modal */}
       <AddStudentModal />
