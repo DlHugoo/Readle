@@ -8,6 +8,7 @@ import com.edu.readle.dto.StorySequenceProgressDTO;
 import com.edu.readle.service.StorySequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -35,8 +36,9 @@ public class StorySequenceActivityController {
     private StorySequenceService storySequenceService;
 
     /**
-     * GET /api/ssa/by-book/{bookId}
+     * 🔐 GET /api/ssa/by-book/{bookId} — Admin & Teacher can view SSA setup
      */
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER')")
     @GetMapping("/by-book/{bookId}")
     public ResponseEntity<?> getSSAByBook(@PathVariable Long bookId) {
         Optional<StorySequenceActivityEntity> optionalSSA = ssaRepo.findByBook_BookID(bookId);
@@ -64,12 +66,13 @@ public class StorySequenceActivityController {
     }
 
     /**
-     * POST /api/ssa/{ssaId}/check
+     * 🔐 POST /api/ssa/{ssaId}/check — Only Students can submit answers
      */
+    @PreAuthorize("hasAuthority('STUDENT')")
     @PostMapping("/{ssaId}/check")
     public ResponseEntity<?> submitAnswer(@PathVariable Long ssaId,
-                                        @RequestBody Map<String, List<Long>> body,
-                                        Principal principal) {
+                                          @RequestBody Map<String, List<Long>> body,
+                                          Principal principal) {
         List<Long> attempted = body.get("attemptedSequence");
         if (attempted == null || attempted.isEmpty()) {
             return ResponseEntity.badRequest().body("No sequence submitted");
@@ -83,8 +86,9 @@ public class StorySequenceActivityController {
     }
 
     /**
-     * POST /api/ssa/create
+     * 🔐 POST /api/ssa/create — Only Admin & Teacher can create SSA
      */
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER')")
     @PostMapping("/create")
     public ResponseEntity<?> createSSA(@RequestBody StorySequenceDTO dto) {
         Optional<BookEntity> optionalBook = bookRepo.findById(dto.getBookId());
@@ -105,8 +109,9 @@ public class StorySequenceActivityController {
     }
 
     /**
-     * GET /api/ssa/progress/{userId}
+     * 🔐 GET /api/ssa/progress/{userId} — Only Students can view their progress
      */
+    @PreAuthorize("hasAuthority('STUDENT')")
     @GetMapping("/progress/{userId}")
     public ResponseEntity<List<StorySequenceProgressDTO>> getStudentSSAProgress(@PathVariable Long userId) {
         List<StorySequenceProgressDTO> progress = storySequenceService.getStudentSSAProgress(userId);

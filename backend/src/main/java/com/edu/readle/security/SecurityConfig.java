@@ -2,6 +2,7 @@ package com.edu.readle.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -30,32 +31,41 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors() // ⬅️ Add this line to enable Spring’s global CORS config
-                .and()
-                .csrf().disable()
-                .authorizeHttpRequests()
-                // Allow public access to authentication and error endpoints
-                .requestMatchers("/api/auth/**", "/error").permitAll()
+            .cors()
+            .and()
+            .csrf().disable()
+            .authorizeHttpRequests()
 
-                // Allow public access to books, pages, and other public endpoints
-                .requestMatchers("/api/books/**", "/api/pages/**", "/uploads/**", "/api/snake-questions/**",
-                        "/api/stories/**", "/api/ssa/**", "/api/snake-attempts/**")
-                .permitAll()
-                .requestMatchers("/api/books/**").hasAnyAuthority("STUDENT", "TEACHER")
-                // Allow authenticated access to join classrooms (students need to join
-                // classrooms)
-                .requestMatchers("/api/classrooms/join").hasAuthority("STUDENT") // Only allow students to join
-                                                                                 // classrooms
-                // Allow authenticated access to the classrooms of students
-                .requestMatchers("/api/classrooms/student/**").hasAuthority("STUDENT") // Students can access their
-                                                                                       // classrooms
-                // Protect all other requests, allowing access only to authenticated users
+            // ✅ Allow public access to authentication & error endpoints
+            .requestMatchers("/api/auth/**", "/error").permitAll()
 
-                .anyRequest().authenticated()
-                .and()
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); // Add the JWT filter before
-                                                                                         // the
-                                                                                         // UsernamePasswordAuthenticationFilter
+            // ✅ Allow admin/teacher registration if needed
+            .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+
+            // ✅ Allow public access to read books and resources
+            .requestMatchers(HttpMethod.GET, "/api/books/**").permitAll()
+            .requestMatchers("/api/pages/**", "/uploads/**", "/api/snake-questions/**",
+                             "/api/stories/**", "/api/ssa/**", "/api/snake-attempts/**").permitAll()
+
+            // ✅ Classroom-specific access control
+            .requestMatchers("/api/classrooms/join").hasAuthority("STUDENT")
+            .requestMatchers("/api/classrooms/student/**").hasAuthority("STUDENT")
+
+            // ✅ Book creation (standard teacher/admin book)
+            .requestMatchers(HttpMethod.POST, "/api/books").hasAnyAuthority("ADMIN", "TEACHER")
+
+            // ✅ 🔐 Add admin-only book creation/update endpoints
+            .requestMatchers("/api/books/admin/**").hasAuthority("ADMIN")
+
+            // ✅ 🔐 Secure image upload for admins and teachers
+            .requestMatchers(HttpMethod.POST, "/api/books/upload-image").hasAnyAuthority("ADMIN", "TEACHER")
+
+            // ✅ All other requests must be authenticated
+            .anyRequest().authenticated()
+            .and()
+
+            // ✅ Plug in JWT filter BEFORE Spring's login filter
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

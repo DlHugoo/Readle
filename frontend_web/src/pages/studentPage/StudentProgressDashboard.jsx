@@ -8,6 +8,7 @@ const API_BASE_URL = 'http://localhost:8080';
 const StudentProgressDashboard = () => {
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         completedCount: 0,
@@ -19,6 +20,23 @@ const StudentProgressDashboard = () => {
     const [ssaAttempts, setSSAAttempts] = useState({});
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+
+    // 🔒 Redirect admins trying to access this dashboard
+    useEffect(() => {
+        if (role === 'ADMIN') {
+            navigate('/admin-dashboard');
+        }
+    }, [role, navigate]);
+
+    useEffect(() => {
+        const fetchProgressData = async () => {
+            // ... your original logic
+        };
+
+        if (userId) {
+            fetchProgressData();
+        }
+    }, [userId, token]);
 
     useEffect(() => {
         const fetchProgressData = async () => {
