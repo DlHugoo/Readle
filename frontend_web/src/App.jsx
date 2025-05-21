@@ -19,8 +19,12 @@ import StudentProgressDashboard from "./pages/studentPage/StudentProgressDashboa
 import StudentBadgeDashboard from "./pages/studentPage/StudentBadgeDashboard";
 import ClassroomProgress from "./pages/classroom/ClassroomProgress";
 import BookCompletionPage from "./pages/studentPage/BookCompletionPage";
+import ClassroomVisualization from "./pages/classroom/ClassroomVisualization";
+import AdminLoginPage from "./pages/loginPage/AdminLoginPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import PredictionCheckpointPage from "./pages/activityPage/predictionCheckpoint/PredictionCheckpointPage";
 import CreatePredictionCheckpoint from "./pages/activityPage/predictionCheckpoint/CreatePredictionCheckpoint";
+
 
 function App() {
   return (
@@ -58,6 +62,10 @@ function App() {
           path="/classroom-progress/:classroomId"
           element={<ClassroomProgress />}
         />
+        <Route
+          path="/classroom-visualization/:classroomId"
+          element={<ClassroomVisualization />}
+        />
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
         <Route path="/book/:bookId" element={<BookPage />} />
@@ -71,10 +79,13 @@ function App() {
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
         <Route path="/student/badges" element={<StudentBadgeDashboard />} />
-        <Route
+        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route
           path="/create-prediction"
           element={<CreatePredictionCheckpoint />}
         />
+
       </Routes>
     </Router>
   );

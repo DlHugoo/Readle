@@ -22,6 +22,44 @@ public class BookService {
         this.classroomRepository = classroomRepository;
     }
 
+    // 🔹 For student "For You" section
+    public List<BookEntity> getGlobalBooksForStudents() {
+        return bookRepository.findByVisibleToAllTrue();
+    }
+
+    // 🔹 Admin creates global book
+    @Transactional
+    public BookEntity addBookAsAdmin(BookDTO bookDTO, Long adminId) {
+        BookEntity book = new BookEntity();
+        book.setTitle(bookDTO.getTitle());
+        book.setAuthor(bookDTO.getAuthor());
+        book.setGenre(bookDTO.getGenre());
+        book.setDifficultyLevel(bookDTO.getDifficultyLevel());
+        book.setImageURL(bookDTO.getImageURL());
+
+        book.setVisibleToAll(true); // Global visibility
+        book.setCreatedByAdminId(adminId); // Optional tracking
+
+        return bookRepository.save(book);
+    }
+
+    // 🔹 Admin updates global book
+    @Transactional
+    public Optional<BookEntity> updateBookAsAdmin(Long bookID, BookDTO updatedBookDTO) {
+        return bookRepository.findById(bookID).map(book -> {
+            book.setTitle(updatedBookDTO.getTitle());
+            book.setAuthor(updatedBookDTO.getAuthor());
+            book.setGenre(updatedBookDTO.getGenre());
+            book.setDifficultyLevel(updatedBookDTO.getDifficultyLevel());
+            book.setImageURL(updatedBookDTO.getImageURL());
+
+            book.setVisibleToAll(true); // Always retain global visibility
+
+            return bookRepository.save(book);
+        });
+    }
+
+    // 🔹 Admin/Teacher shared
     public List<BookEntity> getAllBooks() {
         return bookRepository.findAll();
     }
@@ -69,8 +107,33 @@ public class BookService {
         });
     }
 
+    @Transactional
     public void deleteBook(Long bookID) {
-        bookRepository.deleteById(bookID);
+        Optional<BookEntity> bookOptional = bookRepository.findById(bookID);
+        if (bookOptional.isPresent()) {
+            BookEntity book = bookOptional.get();
+            
+            // Remove classroom association if exists
+            if (book.getClassroom() != null) {
+                book.setClassroom(null);
+            }
+            
+            // Clear pages (should be handled by cascade, but ensuring it's clean)
+            if (book.getPages() != null) {
+                book.getPages().clear();
+            }
+            
+            // Clear snake questions (should be handled by cascade, but ensuring it's clean)
+            if (book.getSnakeQuestions() != null) {
+                book.getSnakeQuestions().clear();
+            }
+            
+            // Save the changes before deletion
+            bookRepository.save(book);
+            
+            // Now delete the book
+            bookRepository.deleteById(bookID);
+        }
     }
 
     public List<BookEntity> getBooksByClassroomId(Long classroomId) {
@@ -82,5 +145,4 @@ public class BookService {
     public List<BookEntity> getBooksWithoutClassroom() {
         return bookRepository.findByClassroomIsNull();
     }
-
 }
