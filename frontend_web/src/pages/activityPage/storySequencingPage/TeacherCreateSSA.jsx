@@ -220,7 +220,10 @@ const TeacherCreateSSA = () => {
           try {
             const res = await axios.post(
               "http://localhost:8080/api/books/upload-image",
-              formData
+              formData,
+              {
+                headers: { Authorization: `Bearer ${token}` }, // Include token in headers
+              }
             );
             return { imageUrl: res.data, correctPosition: idx + 1 };
           } catch (error) {
@@ -283,6 +286,7 @@ const TeacherCreateSSA = () => {
       setLoading(false);
     }
   };
+
 
   const goBack = () => {
     navigate(-1);
