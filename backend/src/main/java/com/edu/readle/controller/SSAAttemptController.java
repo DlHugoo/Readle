@@ -28,4 +28,10 @@ public class SSAAttemptController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    
+    @GetMapping("/user/{userId}/book/{bookId}/count")
+    public ResponseEntity<Integer> getAttemptCountForBook(@PathVariable Long userId, @PathVariable Long bookId) {
+        int count = ssaAttemptService.getAttemptCountForBook(userId, bookId);
+        return ResponseEntity.ok(count);
+    }
 }

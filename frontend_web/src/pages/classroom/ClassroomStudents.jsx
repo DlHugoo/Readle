@@ -28,6 +28,8 @@ const ClassroomStudents = () => {
   });
   const [completedBooks, setCompletedBooks] = useState([]);
   const [inProgressBooks, setInProgressBooks] = useState([]);
+  const [snakeGameAttempts, setSnakeGameAttempts] = useState({});
+  const [ssaAttempts, setSSAAttempts] = useState({});
 
   // Add student state
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
@@ -193,6 +195,40 @@ const ClassroomStudents = () => {
       setCompletedBooks(completedBooksRes.data);
       setInProgressBooks(inProgressBooksRes.data);
       
+      // Fetch snake game attempts and SSA attempts for all books
+      const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
+      const snakeAttemptsData = {};
+      const ssaAttemptsData = {};
+      
+      await Promise.all(allBooks.map(async (book) => {
+        try {
+          const bookId = book.book.bookID;
+          const snakeAttemptsRes = await axios.get(
+            `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
+            { headers }
+          );
+          snakeAttemptsData[bookId] = snakeAttemptsRes.data;
+          
+          // Fetch SSA attempts for this book
+          try {
+            const ssaAttemptsRes = await axios.get(
+              `${API_BASE_URL}/api/ssa-attempts/user/${userId}/book/${bookId}/count`,
+              { headers }
+            );
+            ssaAttemptsData[bookId] = ssaAttemptsRes.data;
+          } catch (err) {
+            console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
+            ssaAttemptsData[bookId] = 0;
+          }
+        } catch (err) {
+          console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
+          snakeAttemptsData[book.book.bookID] = 0;
+        }
+      }));
+      
+      setSnakeGameAttempts(snakeAttemptsData);
+      setSSAAttempts(ssaAttemptsData);
+      
     } catch (error) {
       console.error('Error fetching student progress:', error);
       if (error.response) {
@@ -221,6 +257,7 @@ const ClassroomStudents = () => {
   
   // Helper function to format reading time
   const formatDuration = (minutes, fallbackDuration) => {
+    // If minutes is undefined, try to use fallbackDuration (old field)
     let mins = minutes;
     if (typeof mins !== 'number' || isNaN(mins)) {
       if (typeof fallbackDuration === 'object' && fallbackDuration !== null && 'seconds' in fallbackDuration) {
@@ -234,6 +271,34 @@ const ClassroomStudents = () => {
     const hours = Math.floor(mins / 60);
     const remainingMinutes = mins % 60;
     return `${hours}h ${remainingMinutes}m`;
+  };
+
+  // Add functions to calculate scores based on attempts
+  const calculateSnakeGameScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    
+    // Scoring logic: starts at 100, minus 2 points for each additional attempt
+    // 1 attempt = 100 points
+    // 2 attempts = 98 points
+    // 3 attempts = 96 points
+    // etc.
+    
+    const score = 100 - ((attempts - 1) * 2);
+    return Math.max(score, 0); // Ensure score doesn't go below 0
+  };
+  
+  // Function to calculate SSA score based on attempts
+  const calculateSSAScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    
+    // Scoring logic: starts at 100, minus 25 points for each additional attempt
+    // 1 attempt = 100 points
+    // 2 attempts = 75 points
+    // 3 attempts = 50 points
+    // etc.
+    
+    const score = 100 - ((attempts - 1) * 25);
+    return Math.max(score, 0); // Ensure score doesn't go below 0
   };
 
   // Function to add a student to the classroom
@@ -424,55 +489,66 @@ const ClassroomStudents = () => {
               <>
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="bg-blue-50 rounded-lg shadow p-6 flex items-center">
-                    <div className="bg-blue-100 p-3 rounded-full mr-4">
-                      <CheckCircle size={24} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-sm">Completed Books</span>
-                      <div className="text-3xl font-bold text-blue-600">{progressStats.completedCount}</div>
-                    </div>
+                  <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+                    <span className="text-gray-500 text-lg mb-2">Completed Books</span>
+                    <span className="text-4xl font-bold text-blue-600">{progressStats.completedCount}</span>
                   </div>
-                  <div className="bg-yellow-50 rounded-lg shadow p-6 flex items-center">
-                    <div className="bg-yellow-100 p-3 rounded-full mr-4">
-                      <BookOpen size={24} className="text-yellow-600" />
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-sm">Books in Progress</span>
-                      <div className="text-3xl font-bold text-yellow-500">{progressStats.inProgressCount}</div>
-                    </div>
+                  <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+                    <span className="text-gray-500 text-lg mb-2">Books in Progress</span>
+                    <span className="text-4xl font-bold text-yellow-500">{progressStats.inProgressCount}</span>
                   </div>
                 </div>
 
                 {/* Books in Progress */}
-                <div className="bg-white rounded-lg shadow border p-6 mb-8">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
-                    <BookOpen size={20} className="mr-2 text-blue-500" />
-                    Books in Progress
-                  </h2>
+                <div className="bg-white rounded-lg shadow p-6 mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-gray-700">Books in Progress</h2>
                   <ul>
                     {inProgressBooks.length === 0 && (
                       <li className="text-gray-400 italic">No books in progress.</li>
                     )}
                     {inProgressBooks.map((book) => (
-                      <li key={`in-progress-${book.id}`} className="mb-6 border-b pb-4 last:border-0">
+                      <li key={`in-progress-${book.id}`} className="mb-6">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <span className="font-semibold text-lg text-blue-700">{book.book.title}</span>
-                            <div className="text-sm text-gray-500 mt-1">
-                              Last read: {new Date(book.lastReadAt).toLocaleDateString()}<br />
-                              Page {book.lastPageRead} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                          <div className="flex items-center">
+                            {book.book.imageURL ? (
+                              <img 
+                                src={book.book.imageURL.startsWith('http') ? book.book.imageURL : `${API_BASE_URL}${book.book.imageURL}`} 
+                                alt={book.book.title}
+                                className="w-16 h-20 object-cover rounded mr-4"
+                                title={book.book.title}
+                              />
+                            ) : (
+                              <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
+                                <span className="text-xs text-gray-500">No image</span>
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-semibold text-lg text-blue-700">{book.book.title}</span>
+                              <div className="text-sm text-gray-500 mt-1">
+                                Last read: {new Date(book.lastReadAt).toLocaleDateString()}<br />
+                                Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                {snakeGameAttempts[book.book.bookID] > 0 && (
+                                  <div className="mt-1 text-green-600">
+                                    <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
+                                  </div>
+                                )}
+                                {ssaAttempts[book.book.bookID] > 0 && (
+                                  <div className="mt-1 text-blue-600">
+                                    <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="w-full md:w-1/2 mt-2 md:mt-0">
                             <div className="w-full bg-gray-200 rounded-full h-3">
                               <div
                                 className="bg-blue-500 h-3 rounded-full"
-                                style={{ width: `${(book.lastPageRead / book.book.totalPages) * 100}%` }}
+                                style={{ width: `${book.book.pageIds && book.lastPageRead ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}%` }}
                               ></div>
                             </div>
                             <div className="text-xs text-gray-400 mt-1 text-right">
-                              {Math.round((book.lastPageRead / book.book.totalPages) * 100)}% complete
+                              {book.book.pageIds ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}% complete
                             </div>
                           </div>
                         </div>
@@ -482,23 +558,44 @@ const ClassroomStudents = () => {
                 </div>
 
                 {/* Completed Books */}
-                <div className="bg-white rounded-lg shadow border p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center">
-                    <CheckCircle size={20} className="mr-2 text-green-500" />
-                    Completed Books
-                  </h2>
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-2xl font-semibold mb-4 text-gray-700">Completed Books</h2>
                   <ul>
                     {completedBooks.length === 0 && (
                       <li className="text-gray-400 italic">No completed books yet.</li>
                     )}
                     {completedBooks.map((book) => (
-                      <li key={`completed-${book.id}`} className="mb-6 border-b pb-4 last:border-0">
+                      <li key={`completed-${book.id}`} className="mb-6">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <span className="font-semibold text-lg text-green-700">{book.book.title}</span>
-                            <div className="text-sm text-gray-500 mt-1">
-                              Completed on: {new Date(book.endTime).toLocaleDateString()}<br />
-                              Total reading time: {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)}
+                          <div className="flex items-center">
+                            {book.book.imageURL ? (
+                              <img 
+                                src={book.book.imageURL.startsWith('http') ? book.book.imageURL : `${API_BASE_URL}${book.book.imageURL}`} 
+                                alt={book.book.title}
+                                className="w-16 h-20 object-cover rounded mr-4"
+                                title={book.book.title}
+                              />
+                            ) : (
+                              <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center mr-4">
+                                <span className="text-xs text-gray-500">No image</span>
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-semibold text-lg text-green-700">{book.book.title}</span>
+                              <div className="text-sm text-gray-500 mt-1">
+                                Completed on: {new Date(book.endTime).toLocaleDateString()}<br />
+                                Total reading time: {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)}
+                                {snakeGameAttempts[book.book.bookID] > 0 && (
+                                  <div className="mt-1 text-green-600">
+                                    <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
+                                  </div>
+                                )}
+                                {ssaAttempts[book.book.bookID] > 0 && (
+                                  <div className="mt-1 text-blue-600">
+                                    <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

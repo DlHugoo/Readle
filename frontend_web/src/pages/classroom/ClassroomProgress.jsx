@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart } from "lucide-react";
+import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye, Download } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from "axios";
 
@@ -9,6 +9,7 @@ const API_BASE_URL = 'http://localhost:8080';
 
 const ClassroomProgress = () => {
   const { classroomId } = useParams();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [classroomName, setClassroomName] = useState("");
   const [students, setStudents] = useState([]);
@@ -31,9 +32,30 @@ const ClassroomProgress = () => {
   const [filterByActivity, setFilterByActivity] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Modal state
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   // Toggle sidebar function
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  // Open student details modal
+  const openStudentModal = (student) => {
+    setSelectedStudent(student);
+    setIsModalOpen(true);
+  };
+
+  // Close student details modal
+  const closeStudentModal = () => {
+    setIsModalOpen(false);
+    setSelectedStudent(null);
+  };
+  
+  // Navigate to visualization dashboard
+  const navigateToVisualization = () => {
+    navigate(`/classroom-visualization/${classroomId}`);
   };
 
   // Fetch classroom details and students
@@ -148,13 +170,63 @@ const ClassroomProgress = () => {
             return total + minutes;
           }, 0);
           
-          // Calculate average comprehension score (placeholder - would need actual data)
-          // This is a placeholder - you would need to implement actual comprehension scoring
-          const avgComprehensionScore = Math.floor(Math.random() * 40) + 60; // Random score between 60-100
+          // Fetch snake game attempts and SSA attempts for all books
+          const allBooks = [...completedBooks, ...inProgressBooks];
+          const snakeAttemptsData = {};
+          const ssaAttemptsData = {};
           
-          // Calculate vocabulary score (placeholder - would need actual data)
-          // This is a placeholder - you would need to implement actual vocabulary scoring
-          const vocabularyScore = Math.floor(Math.random() * 40) + 60; // Random score between 60-100
+          await Promise.all(allBooks.map(async (book) => {
+            try {
+              const bookId = book.book.bookID;
+              const snakeAttemptsRes = await axios.get(
+                `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              snakeAttemptsData[bookId] = snakeAttemptsRes.data;
+              
+              // Fetch SSA attempts for this book
+              try {
+                const ssaAttemptsRes = await axios.get(
+                  `${API_BASE_URL}/api/ssa-attempts/user/${userId}/book/${bookId}/count`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                ssaAttemptsData[bookId] = ssaAttemptsRes.data;
+              } catch (err) {
+                console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
+                ssaAttemptsData[bookId] = 0;
+              }
+            } catch (err) {
+              console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
+              snakeAttemptsData[book.book.bookID] = 0;
+            }
+          }));
+          
+          // Calculate average comprehension score based on snake game and SSA attempts
+          let totalScore = 0;
+          let totalActivities = 0;
+          
+          // Calculate scores for snake game attempts
+          Object.entries(snakeAttemptsData).forEach(([bookId, attempts]) => {
+            if (attempts > 0) {
+              const score = calculateSnakeGameScore(attempts);
+              totalScore += score;
+              totalActivities++;
+            }
+          });
+          
+          // Calculate scores for SSA attempts
+          Object.entries(ssaAttemptsData).forEach(([bookId, attempts]) => {
+            if (attempts > 0) {
+              const score = calculateSSAScore(attempts);
+              totalScore += score;
+              totalActivities++;
+            }
+          });
+          
+          // Calculate average comprehension score
+          const avgComprehensionScore = totalActivities > 0 
+            ? Math.round(totalScore / totalActivities) 
+            : 0;
           
           // Determine status based on activity and scores
           const daysSinceLastActivity = lastActivityDate 
@@ -178,7 +250,6 @@ const ClassroomProgress = () => {
               lastActivityDate: lastActivityDate,
               totalReadingTimeMinutes: totalReadingTimeMinutes,
               avgComprehensionScore: avgComprehensionScore,
-              vocabularyScore: vocabularyScore,
               status: status
             }
           };
@@ -194,7 +265,6 @@ const ClassroomProgress = () => {
               lastActivityDate: null,
               totalReadingTimeMinutes: 0,
               avgComprehensionScore: 0,
-              vocabularyScore: 0,
               status: 'Unknown'
             } 
           };
@@ -211,6 +281,34 @@ const ClassroomProgress = () => {
       console.error("Error fetching progress data:", error);
       setError("Failed to load progress data. Please try again.");
     }
+  };
+  
+  // Add functions to calculate scores based on attempts
+  const calculateSnakeGameScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    
+    // Scoring logic: starts at 100, minus 2 points for each additional attempt
+    // 1 attempt = 100 points
+    // 2 attempts = 98 points
+    // 3 attempts = 96 points
+    // etc.
+    
+    const score = 100 - ((attempts - 1) * 2);
+    return Math.max(score, 0); // Ensure score doesn't go below 0
+  };
+  
+  // Function to calculate SSA score based on attempts
+  const calculateSSAScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    
+    // Scoring logic: starts at 100, minus 25 points for each additional attempt
+    // 1 attempt = 100 points
+    // 2 attempts = 75 points
+    // 3 attempts = 50 points
+    // etc.
+    
+    const score = 100 - ((attempts - 1) * 25);
+    return Math.max(score, 0); // Ensure score doesn't go below 0
   };
   
   // Calculate summary statistics for the dashboard
@@ -281,6 +379,54 @@ const ClassroomProgress = () => {
     return true;
   });
 
+  // Add new function to handle CSV export
+  const exportToCSV = () => {
+    // Create CSV header
+    const headers = [
+      'Student Name',
+      'Email',
+      'Books Completed',
+      'Books In Progress',
+      'Total Reading Time',
+      'Average Comprehension Score',
+      'Last Activity',
+      'Status'
+    ].join(',');
+
+    // Create CSV rows from filtered students data
+    const csvRows = filteredStudents.map(student => {
+      const readingTime = student.progressData?.totalReadingTimeMinutes || 0;
+      const formattedTime = formatTime(readingTime);
+      const lastActivity = student.progressData?.lastActivityDate 
+        ? new Date(student.progressData.lastActivityDate).toLocaleDateString()
+        : 'Never';
+
+      return [
+        `${student.firstName} ${student.lastName}`,
+        student.email,
+        student.progressData?.completedCount || 0,
+        student.progressData?.inProgressCount || 0,
+        formattedTime,
+        student.progressData?.avgComprehensionScore || 0,
+        lastActivity,
+        student.progressData?.status || 'Unknown'
+      ].join(',');
+    });
+
+    // Combine headers and rows
+    const csvContent = [headers, ...csvRows].join('\n');
+
+    // Create and download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${classroomName}_progress_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <TeahcerNav />
@@ -301,6 +447,25 @@ const ClassroomProgress = () => {
                 <Menu size={24} />
               </button>
               <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Progress Dashboard</h1>
+            </div>
+            
+            <div className="flex gap-2">
+              {/* Add Export CSV Button */}
+              <button
+                onClick={exportToCSV}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                <Download size={18} />
+                Export CSV
+              </button>
+              
+              <button
+                onClick={navigateToVisualization}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <BarChart size={18} />
+                View Visualizations
+              </button>
             </div>
           </div>
           
@@ -387,12 +552,9 @@ const ClassroomProgress = () => {
                       <ul className="mt-2">
                         {summaryStats.topPerformers.map((student, index) => (
                           <li key={index} className="text-sm">
-                            {student.firstName} {student.lastName} - {student.progressData?.avgComprehensionScore || 0}%
+                            {student.firstName} {student.lastName}
                           </li>
                         ))}
-                        {summaryStats.topPerformers.length === 0 && (
-                          <li className="text-sm text-gray-400 italic">No data available</li>
-                        )}
                       </ul>
                     </div>
                   </div>
@@ -406,49 +568,44 @@ const ClassroomProgress = () => {
                     </div>
                     <div>
                       <h3 className="text-gray-500 text-sm">Needs Attention</h3>
-                      <ul className="mt-2">
-                        {summaryStats.studentsNeedingAttention.map((student, index) => (
-                          <li key={index} className="text-sm">
-                            {student.firstName} {student.lastName}
-                          </li>
-                        ))}
-                        {summaryStats.studentsNeedingAttention.length === 0 && (
-                          <li className="text-sm text-gray-400 italic">No students need attention</li>
-                        )}
-                      </ul>
+                      <p className="text-3xl font-bold text-red-600">
+                        {summaryStats.studentsNeedingAttention.length}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* Filters and Search */}
-              <div className="bg-white rounded-lg shadow p-4 mb-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                  {/* Search */}
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search size={18} className="text-gray-400" />
+              {/* Student Progress Table */}
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="p-4 border-b">
+                  <h2 className="text-xl font-semibold text-gray-800">Student Progress</h2>
+                </div>
+                
+                {/* Search and Filter Controls */}
+                <div className="p-4 bg-gray-50 border-b">
+                  <div className="flex flex-wrap gap-4">
+                    {/* Search */}
+                    <div className="flex items-center bg-white rounded-md px-3 py-2 border">
+                      <Search size={18} className="text-gray-400 mr-2" />
+                      <input
+                        type="text"
+                        placeholder="Search students..."
+                        className="outline-none text-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Search students..."
-                      className="pl-10 pr-4 py-2 border rounded-md w-full md:w-64"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  
-                  {/* Filters */}
-                  <div className="flex flex-wrap gap-2">
+                    
                     {/* Performance Filter */}
-                    <div className="flex items-center">
-                      <label className="mr-2 text-sm text-gray-600">Performance:</label>
+                    <div className="flex items-center bg-white rounded-md px-3 py-2 border">
+                      <Filter size={18} className="text-gray-400 mr-2" />
                       <select
-                        className="border rounded-md px-2 py-1 text-sm"
+                        className="outline-none text-sm bg-transparent"
                         value={filterByPerformance}
                         onChange={(e) => setFilterByPerformance(e.target.value)}
                       >
-                        <option value="all">All Levels</option>
+                        <option value="all">All Performance</option>
                         <option value="high">High (80%+)</option>
                         <option value="medium">Medium (60-79%)</option>
                         <option value="low">Low (Below 60%)</option>
@@ -456,105 +613,119 @@ const ClassroomProgress = () => {
                     </div>
                     
                     {/* Activity Filter */}
-                    <div className="flex items-center">
-                      <label className="mr-2 text-sm text-gray-600">Activity:</label>
+                    <div className="flex items-center bg-white rounded-md px-3 py-2 border">
+                      <Clock size={18} className="text-gray-400 mr-2" />
                       <select
-                        className="border rounded-md px-2 py-1 text-sm"
+                        className="outline-none text-sm bg-transparent"
                         value={filterByActivity}
                         onChange={(e) => setFilterByActivity(e.target.value)}
                       >
-                        <option value="all">All Time</option>
-                        <option value="recent">Last 7 Days</option>
-                        <option value="week">Last 30 Days</option>
-                        <option value="month">Older Than 30 Days</option>
+                        <option value="all">All Activity</option>
+                        <option value="recent">Recent (Last 7 days)</option>
+                        <option value="week">Last 7-30 days</option>
+                        <option value="month">Over 30 days ago</option>
                       </select>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Students Table */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
+                
+                {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student Name
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Student
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Books Completed
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Avg. Comprehension
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Books In Progress
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Vocabulary Score
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Last Activity
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total Reading Time
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Avg. Comprehension
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredStudents.length === 0 ? (
-                        <tr>
-                          <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                            No students match the current filters
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredStudents.map((student) => (
-                          <tr key={student.userId || student.id || student.email}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {student.firstName} {student.lastName}
-                                  </div>
-                                  <div className="text-sm text-gray-500">{student.email}</div>
-                                </div>
+                      {filteredStudents.map((student, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 font-semibold">
+                                  {student.firstName?.charAt(0) || '?'}{student.lastName?.charAt(0) || ''}
+                                </span>
                               </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {student.progressData?.completedCount || 0}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{student.progressData?.avgComprehensionScore || 0}%</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{student.progressData?.vocabularyScore || 0}%</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {student.progressData?.lastActivityDate 
-                                ? new Date(student.progressData.lastActivityDate).toLocaleDateString() 
-                                : 'No activity'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {student.firstName} {student.lastName}
+                                </div>
+                                <div className="text-sm text-gray-500">{student.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.progressData?.completedCount || 0}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.progressData?.inProgressCount || 0}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.progressData?.lastActivityDate 
+                              ? new Date(student.progressData.lastActivityDate).toLocaleDateString()
+                              : 'Never'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatTime(student.progressData?.totalReadingTimeMinutes || 0)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
+                                <div 
+                                  className="bg-blue-600 h-2.5 rounded-full" 
+                                  style={{ width: `${student.progressData?.avgComprehensionScore || 0}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-500">
+                                {student.progressData?.avgComprehensionScore || 0}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span 
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                 ${student.progressData?.status === 'On Track' 
                                   ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'}`}>
-                                {student.progressData?.status || 'Unknown'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button 
-                                onClick={() => window.location.href = `/classroom-students/${classroomId}`}
-                                className="text-indigo-600 hover:text-indigo-900"
-                              >
-                                View Details
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
+                                  : 'bg-red-100 text-red-800'}`}
+                            >
+                              {student.progressData?.status || 'Unknown'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button
+                              onClick={() => openStudentModal(student)}
+                              className="text-blue-600 hover:text-blue-800 flex items-center"
+                            >
+                              <Eye size={16} className="mr-1" />
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -563,6 +734,163 @@ const ClassroomProgress = () => {
           )}
         </div>
       </div>
+      
+      {/* Student Details Modal */}
+      {isModalOpen && selectedStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-800">
+                  {selectedStudent.firstName} {selectedStudent.lastName} - Progress Details
+                </h2>
+                <button
+                  onClick={closeStudentModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {/* Student Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">Student Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium">{selectedStudent.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">User ID</p>
+                    <p className="font-medium">{selectedStudent.userId || selectedStudent.id || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Progress Summary */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">Progress Summary</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Books Completed</p>
+                    <p className="text-xl font-bold text-blue-600">{selectedStudent.progressData?.completedCount || 0}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Books In Progress</p>
+                    <p className="text-xl font-bold text-orange-600">{selectedStudent.progressData?.inProgressCount || 0}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Total Reading Time</p>
+                    <p className="text-xl font-bold text-green-600">{formatTime(selectedStudent.progressData?.totalReadingTimeMinutes || 0)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Completed Books */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">Completed Books</h3>
+                {selectedStudent.progressData?.completedBooks && selectedStudent.progressData.completedBooks.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book Title</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Date</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reading Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {selectedStudent.progressData.completedBooks.map((book, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">{book.book.title}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">
+                              {book.endTime ? new Date(book.endTime).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">
+                              {formatTime(book.totalReadingTimeMinutes || 
+                                (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No completed books yet.</p>
+                )}
+              </div>
+              
+              {/* In Progress Books */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">Books In Progress</h3>
+                {selectedStudent.progressData?.inProgressBooks && selectedStudent.progressData.inProgressBooks.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book Title</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Read</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reading Time</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {selectedStudent.progressData.inProgressBooks.map((book, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">{book.book.title}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">
+                              {book.lastReadAt ? new Date(book.lastReadAt).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">
+                              {formatTime(book.totalReadingTimeMinutes || 
+                                (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0))}
+                            </td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm">
+                              <div className="flex items-center">
+                                <div className="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
+                                  <div 
+                                    className="bg-blue-600 h-2.5 rounded-full" 
+                                    style={{ width: `${book.progress || 0}%` }}
+                                  ></div>
+                                </div>
+                                <span>{book.progress || 0}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No books in progress.</p>
+                )}
+              </div>
+              
+              {/* Comprehension Activities */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Comprehension Activities</h3>
+                <p className="text-gray-500 mb-2">Average Comprehension Score: <span className="font-bold">{selectedStudent.progressData?.avgComprehensionScore || 0}%</span></p>
+                <p className="text-sm text-gray-500">
+                  This score is calculated based on the student's performance in Snake Game and Sentence Sorting activities across all books.
+                </p>
+              </div>
+            </div>
+            
+            <div className="p-4 border-t bg-gray-50 flex justify-end">
+              <button
+                onClick={closeStudentModal}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

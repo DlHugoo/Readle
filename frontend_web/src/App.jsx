@@ -19,6 +19,7 @@ import StudentProgressDashboard from "./pages/studentPage/StudentProgressDashboa
 import StudentBadgeDashboard from "./pages/studentPage/StudentBadgeDashboard";
 import ClassroomProgress from "./pages/classroom/ClassroomProgress";
 import BookCompletionPage from "./pages/studentPage/BookCompletionPage";
+import ClassroomVisualization from "./pages/classroom/ClassroomVisualization";
 import AdminLoginPage from "./pages/loginPage/AdminLoginPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
@@ -54,6 +55,10 @@ function App() {
         <Route
           path="/classroom-progress/:classroomId"
           element={<ClassroomProgress />}
+        />
+        <Route
+          path="/classroom-visualization/:classroomId"
+          element={<ClassroomVisualization />}
         />
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
