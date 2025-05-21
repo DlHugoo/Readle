@@ -142,4 +142,4 @@ public class StudentProgressTracker {
         this.isCompleted = true;
         this.endTime = LocalDateTime.now();
     }
-} 
+}

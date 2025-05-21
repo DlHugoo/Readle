@@ -5,6 +5,7 @@ import com.edu.readle.dto.UserBadgeDTO;
 import com.edu.readle.service.BadgeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +29,10 @@ public class BadgeController {
         return ResponseEntity.ok(badgeService.getAllBadges());
     }
 
+    // Student can access their own badges
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<UserBadgeDTO>> getUserBadges(@PathVariable Long userId) {
+        // Add authorization check to ensure users can only access their own badges
         return ResponseEntity.ok(badgeService.getUserBadges(userId));
     }
 
@@ -43,12 +46,16 @@ public class BadgeController {
         return ResponseEntity.ok(badgeService.getUserInProgressBadges(userId));
     }
 
+    // Restrict badge creation to TEACHER and ADMIN roles
     @PostMapping
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<BadgeDTO> createBadge(@RequestBody BadgeDTO badgeDTO) {
         return ResponseEntity.ok(badgeService.createBadge(badgeDTO));
     }
 
+    // Restrict manual progress updates to TEACHER and ADMIN roles
     @PutMapping("/user/{userId}/progress")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public ResponseEntity<UserBadgeDTO> updateUserBadgeProgress(
             @PathVariable Long userId,
             @RequestParam String achievementCriteria,

@@ -22,15 +22,18 @@ public class StudentProgressTrackerService {
     private final StudentProgressTrackerRepository progressTrackerRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
+    private final BadgeService badgeService; // Add this field
 
     @Autowired
     public StudentProgressTrackerService(
             StudentProgressTrackerRepository progressTrackerRepository,
             UserRepository userRepository,
-            BookRepository bookRepository) {
+            BookRepository bookRepository,
+            BadgeService badgeService) { // Add this parameter
         this.progressTrackerRepository = progressTrackerRepository;
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
+        this.badgeService = badgeService; // Initialize the field
     }
 
     @Transactional
@@ -55,8 +58,26 @@ public class StudentProgressTrackerService {
         StudentProgressTracker tracker = progressTrackerRepository.findById(trackerId)
                 .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
 
+        // Calculate pages read since last update
+        int previousPage = tracker.getLastPageRead();
+        int pagesRead = pageNumber - previousPage;
+        
+        // Update tracker with new page number
         tracker.setLastPageRead(pageNumber);
         tracker.updateReadingTime(readingTime);
+        
+        // Track reading time for badge progress (convert Duration to minutes)
+        Long userId = tracker.getUser().getId();
+        int minutesRead = (int) readingTime.toMinutes();
+        if (minutesRead > 0) {
+            badgeService.trackReadingTime(userId, minutesRead);
+        }
+        
+        // Track pages read for badge progress (only if positive progress)
+        if (pagesRead > 0) {
+            badgeService.trackPagesRead(userId, pagesRead);
+        }
+        
         return convertToDTO(progressTrackerRepository.save(tracker));
     }
 
@@ -66,6 +87,13 @@ public class StudentProgressTrackerService {
                 .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
 
         tracker.completeBook();
+        
+        // Track the genre for badge progress
+        BookEntity book = tracker.getBook();
+        if (book != null && book.getGenre() != null && !book.getGenre().isEmpty()) {
+            badgeService.trackGenreRead(tracker.getUser().getId(), book.getGenre());
+        }
+        
         return convertToDTO(progressTrackerRepository.save(tracker));
     }
 
@@ -122,4 +150,13 @@ public class StudentProgressTrackerService {
             tracker.getLastReadAt()
         );
     }
-} 
+
+    /**
+     * Get the user ID associated with a progress tracker
+     */
+    public Long getUserIdByTrackerId(Long trackerId) {
+        StudentProgressTracker tracker = progressTrackerRepository.findById(trackerId)
+                .orElseThrow(() -> new RuntimeException("Progress tracker not found"));
+        return tracker.getUser().getId();
+    }
+}
