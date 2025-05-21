@@ -556,7 +556,7 @@ const resetGame = () => {
                   How to play:
                 </h4>
                 <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• Use arrow keys to move the snake</li>
+                  <li>• Use arrow keys/ WASD keys to move the snake</li>
                   <li>• Eat answers in the correct order</li>
                   <li>• Correct answer grows the snake</li>
                   <li>• Wrong answer ends the game</li>
