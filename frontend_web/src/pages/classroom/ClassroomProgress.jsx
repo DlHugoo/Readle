@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
 import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye, Download } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
+import StudentDetailsModal from './StudentDetailsModal';
 import axios from "axios";
 
 const API_BASE_URL = 'http://localhost:8080';
@@ -250,7 +251,9 @@ const ClassroomProgress = () => {
               lastActivityDate: lastActivityDate,
               totalReadingTimeMinutes: totalReadingTimeMinutes,
               avgComprehensionScore: avgComprehensionScore,
-              status: status
+              status: status,
+              snakeAttemptsData: snakeAttemptsData,
+              ssaAttemptsData: ssaAttemptsData
             }
           };
         } catch (error) {
@@ -286,13 +289,6 @@ const ClassroomProgress = () => {
   // Add functions to calculate scores based on attempts
   const calculateSnakeGameScore = (attempts) => {
     if (!attempts || attempts <= 0) return 0;
-    
-    // Scoring logic: starts at 100, minus 2 points for each additional attempt
-    // 1 attempt = 100 points
-    // 2 attempts = 98 points
-    // 3 attempts = 96 points
-    // etc.
-    
     const score = 100 - ((attempts - 1) * 2);
     return Math.max(score, 0); // Ensure score doesn't go below 0
   };
@@ -300,13 +296,6 @@ const ClassroomProgress = () => {
   // Function to calculate SSA score based on attempts
   const calculateSSAScore = (attempts) => {
     if (!attempts || attempts <= 0) return 0;
-    
-    // Scoring logic: starts at 100, minus 25 points for each additional attempt
-    // 1 attempt = 100 points
-    // 2 attempts = 75 points
-    // 3 attempts = 50 points
-    // etc.
-    
     const score = 100 - ((attempts - 1) * 25);
     return Math.max(score, 0); // Ensure score doesn't go below 0
   };
@@ -406,12 +395,16 @@ const filteredStudents = progressData.map(student => {
     let totalActivities = 0;
 
     allClassroomBooks.forEach(book => {
-      if (book.snakeGameAttempts > 0) {
-        totalScore += calculateSnakeGameScore(book.snakeGameAttempts);
+      const bookId = book.book.bookID;
+      const snakeAttempts = filteredStudent.progressData.snakeAttemptsData[bookId] || 0;
+      const ssaAttempts = filteredStudent.progressData.ssaAttemptsData[bookId] || 0;
+
+      if (snakeAttempts > 0) {
+        totalScore += calculateSnakeGameScore(snakeAttempts);
         totalActivities++;
       }
-      if (book.ssaAttempts > 0) {
-        totalScore += calculateSSAScore(book.ssaAttempts);
+      if (ssaAttempts > 0) {
+        totalScore += calculateSSAScore(ssaAttempts);
         totalActivities++;
       }
     });
@@ -821,161 +814,14 @@ const filteredStudents = progressData.map(student => {
       </div>
       
       {/* Student Details Modal */}
-      {isModalOpen && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">
-                  {selectedStudent.firstName} {selectedStudent.lastName} - Progress Details
-                </h2>
-                <button
-                  onClick={closeStudentModal}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              {/* Student Info */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Student Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedStudent.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">User ID</p>
-                    <p className="font-medium">{selectedStudent.userId || selectedStudent.id || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Progress Summary */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Progress Summary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500">Books Completed</p>
-                    <p className="text-xl font-bold text-blue-600">{selectedStudent.progressData?.completedCount || 0}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500">Books In Progress</p>
-                    <p className="text-xl font-bold text-orange-600">{selectedStudent.progressData?.inProgressCount || 0}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500">Total Reading Time</p>
-                    <p className="text-xl font-bold text-green-600">{formatTime(selectedStudent.progressData?.totalReadingTimeMinutes || 0)}</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Completed Books */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Completed Books</h3>
-                {selectedStudent.progressData?.completedBooks && selectedStudent.progressData.completedBooks.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book Title</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completion Date</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reading Time</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedStudent.progressData.completedBooks.map((book, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 whitespace-nowrap text-sm">{book.book.title}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm">
-                              {book.endTime ? new Date(book.endTime).toLocaleDateString() : 'N/A'}
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm">
-                              {formatTime(book.totalReadingTimeMinutes || 
-                                (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0))}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No completed books yet.</p>
-                )}
-              </div>
-              
-              {/* In Progress Books */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Books In Progress</h3>
-                {selectedStudent.progressData?.inProgressBooks && selectedStudent.progressData.inProgressBooks.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book Title</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Read</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reading Time</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedStudent.progressData.inProgressBooks.map((book, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 whitespace-nowrap text-sm">{book.book.title}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm">
-                              {book.lastReadAt ? new Date(book.lastReadAt).toLocaleDateString() : 'N/A'}
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm">
-                              {formatTime(book.totalReadingTimeMinutes || 
-                                (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0))}
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm">
-                              <div className="flex items-center">
-                                <div className="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
-                                  <div 
-                                    className="bg-blue-600 h-2.5 rounded-full" 
-                                    style={{ width: `${book.progress || 0}%` }}
-                                  ></div>
-                                </div>
-                                <span>{book.progress || 0}%</span>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No books in progress.</p>
-                )}
-              </div>
-              
-              {/* Comprehension Activities */}
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Comprehension Activities</h3>
-                <p className="text-gray-500 mb-2">Average Comprehension Score: <span className="font-bold">{selectedStudent.progressData?.avgComprehensionScore || 0}%</span></p>
-                <p className="text-sm text-gray-500">
-                  This score is calculated based on the student's performance in Snake Game and Sentence Sorting activities across all books.
-                </p>
-              </div>
-            </div>
-            
-            <div className="p-4 border-t bg-gray-50 flex justify-end">
-              <button
-                onClick={closeStudentModal}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <StudentDetailsModal
+        isOpen={isModalOpen}
+        student={selectedStudent}
+        onClose={closeStudentModal}
+        formatTime={formatTime}
+        calculateSnakeGameScore={calculateSnakeGameScore}
+        calculateSSAScore={calculateSSAScore}
+      />
     </div>
   );
 };
