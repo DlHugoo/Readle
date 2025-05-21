@@ -15,6 +15,16 @@ import ImageCard from "../storySequencingPage/ImageCard";
 const PredictionCheckpointPage = () => {
   const { bookId } = useParams();
   const navigate = useNavigate();
+  
+  // Add sensors configuration
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
   const [storyData, setStoryData] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -22,10 +32,7 @@ const PredictionCheckpointPage = () => {
   const [slots, setSlots] = useState([]);
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
+  const [pageNumber, setPageNumber] = useState(null);
 
   useEffect(() => {
     const fetchPredictionData = async () => {
@@ -45,7 +52,10 @@ const PredictionCheckpointPage = () => {
           id,
           sequenceImages,
           options: predictionOptions,
+          pageNumber: checkpointPage,
         } = res.data;
+
+        setPageNumber(checkpointPage);
 
         // Sort and prepare slots with locked sequence images
         const orderedSequence = sequenceImages
@@ -123,22 +133,16 @@ const PredictionCheckpointPage = () => {
       setIsCorrect(response.data.correct);
       setShowFeedback(true);
 
-      if (!response.data.correct) {
-        setAttemptsLeft((prev) => prev - 1);
-      }
+      // After showing feedback, continue to the next page
+      setTimeout(() => {
+        navigate(`/book/${bookId}?page=${pageNumber + 1}`);
+      }, 2000);
     } catch (err) {
       console.error("Failed to submit prediction:", err);
     }
   };
 
-  const handleTryAgain = () => {
-    setShowFeedback(false);
-    setSlots((prev) => {
-      const newSlots = [...prev];
-      newSlots[newSlots.length - 1] = null;
-      return newSlots;
-    });
-  };
+  // Remove the handleTryAgain function since we only want one attempt
 
   if (loading) {
     return (
@@ -157,7 +161,8 @@ const PredictionCheckpointPage = () => {
             {storyData?.title}
           </h1>
           <p className="text-xl text-gray-700 text-center mb-6">
-            What happens next? Drag your prediction to the last slot!
+            What happens next? Choose your prediction carefully - you only have
+            one chance!
           </p>
 
           <DndContext
@@ -188,48 +193,35 @@ const PredictionCheckpointPage = () => {
           <div className="text-center mt-6">
             <button
               onClick={handleSubmit}
-              disabled={!slots[slots.length - 1]}
+              disabled={!slots[slots.length - 1] || showFeedback}
               className={`px-6 py-3 rounded-full text-xl font-bold ${
-                !slots[slots.length - 1]
+                !slots[slots.length - 1] || showFeedback
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-green-500 hover:bg-green-600 text-white"
               }`}
             >
-              Check My Prediction
+              Submit My Prediction
             </button>
           </div>
+
+          {showFeedback && (
+            <div
+              className={`mt-6 p-4 rounded-lg text-center ${
+                isCorrect
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              <p className="text-lg font-semibold">
+                {isCorrect
+                  ? "Great prediction! 🎉"
+                  : "Not quite right, but that's okay! 🤔"}
+              </p>
+              <p className="mt-2">Continuing the story in a moment...</p>
+            </div>
+          )}
         </div>
       </div>
-
-      {showFeedback && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-xl max-w-md text-center">
-            <h2 className="text-2xl font-bold mb-4">
-              {isCorrect ? "🎉 Correct!" : "Try Again!"}
-            </h2>
-            <p className="text-gray-700 mb-6">
-              {isCorrect
-                ? "Great job predicting what happens next!"
-                : `You have ${attemptsLeft} attempts left.`}
-            </p>
-            {isCorrect ? (
-              <button
-                onClick={() => navigate("/library")}
-                className="bg-green-500 text-white px-6 py-2 rounded-full hover:bg-green-600"
-              >
-                Back to Library
-              </button>
-            ) : (
-              <button
-                onClick={handleTryAgain}
-                className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600"
-              >
-                Try Again
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

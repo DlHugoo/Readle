@@ -197,32 +197,57 @@ const BookPage = () => {
     }
   }, [trackerId, pages.length, currentPageIndex]);
 
-  const handleNextPage = () => {
-    setCurrentPageIndex((prev) => {
-      const nextIndex = Math.min(prev + 1, pages.length - 1);
+  const handleNextPage = async () => {
+    if (currentPageIndex < pages.length - 1) {
+      const token = localStorage.getItem("token"); // Get token at the beginning of the function
+      
+      // Check for prediction activity before proceeding
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/api/prediction-checkpoints/by-book/${bookId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // If there's a prediction activity and we're at the trigger page
+        if (res.data && currentPageIndex === res.data.pageNumber - 1) {
+          navigate(`/prediction/${bookId}`);
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking prediction activity:", err);
+      }
+
+      // If no prediction activity or not at trigger page, proceed normally
+      const nextIndex = currentPageIndex + 1;
+      const pageNumber = nextIndex + 1;
+      
       if (userId && book && trackerId) {
-        const token = localStorage.getItem("token");
-        const pageNumber = nextIndex + 1;
-        axios
-          .put(
+        // Update progress
+        try {
+          await axios.put(
             `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
-          )
-          .catch((err) => console.error("Error updating book progress:", err));
+          );
 
-        if (nextIndex === pages.length - 1) {
-          axios
-            .put(
+          if (nextIndex === pages.length - 1) {
+            await axios.put(
               `http://localhost:8080/api/progress/complete/${trackerId}`,
               {},
               { headers: { Authorization: `Bearer ${token}` } }
-            )
-            .catch((err) => console.error("Error completing book:", err));
+            );
+          }
+        } catch (err) {
+          console.error("Error updating book progress:", err);
         }
       }
-      return nextIndex;
-    });
+      
+      setCurrentPageIndex(nextIndex);
+    }
   };
 
   const handlePreviousPage = () => {
