@@ -15,7 +15,7 @@ import ImageCard from "../storySequencingPage/ImageCard";
 const PredictionCheckpointPage = () => {
   const { bookId } = useParams();
   const navigate = useNavigate();
-  
+
   // Add sensors configuration
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -117,12 +117,27 @@ const PredictionCheckpointPage = () => {
 
     try {
       const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+
+      // Check if the prediction is correct first
       const response = await axios.post(
         `http://localhost:8080/api/prediction-checkpoints/${storyData.id}/check`,
         {
           selectedImageId: predictionSlot.id,
-          userId: localStorage.getItem("userId"),
+          userId: userId,
         },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Then create an attempt record using the correct endpoint
+      // In your handleSubmit function, modify the second axios call:
+      await axios.post(
+        `http://localhost:8080/api/prediction-checkpoint-attempts?userId=${userId}&checkpointId=${storyData.id}&selectedImageId=${predictionSlot.id}&isCorrect=${response.data.correct}`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -135,7 +150,7 @@ const PredictionCheckpointPage = () => {
 
       // After showing feedback, continue to the next page
       setTimeout(() => {
-        navigate(`/book/${bookId}?page=${pageNumber + 1}`);
+        navigate(`/book/${bookId}`);
       }, 2000);
     } catch (err) {
       console.error("Failed to submit prediction:", err);

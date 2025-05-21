@@ -199,11 +199,11 @@ const BookPage = () => {
 
   const handleNextPage = async () => {
     if (currentPageIndex < pages.length - 1) {
-      const token = localStorage.getItem("token"); // Get token at the beginning of the function
-      
-      // Check for prediction activity before proceeding
+      // Check if there's a prediction checkpoint at the current page
       try {
-        const res = await axios.get(
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
+        const response = await axios.get(
           `http://localhost:8080/api/prediction-checkpoints/by-book/${bookId}`,
           {
             headers: {
@@ -212,41 +212,48 @@ const BookPage = () => {
           }
         );
 
-        // If there's a prediction activity and we're at the trigger page
-        if (res.data && currentPageIndex === res.data.pageNumber - 1) {
+        // If there's a checkpoint and it matches current page
+        if (
+          response.data &&
+          response.data.pageNumber === currentPageIndex + 1
+        ) {
+          // Navigate to prediction checkpoint page
           navigate(`/prediction/${bookId}`);
           return;
         }
       } catch (err) {
-        console.error("Error checking prediction activity:", err);
+        // If error is not 404 (no checkpoint), log it
+        if (err.response?.status !== 404) {
+          console.error("Error checking prediction checkpoint:", err);
+        }
       }
 
-      // If no prediction activity or not at trigger page, proceed normally
-      const nextIndex = currentPageIndex + 1;
-      const pageNumber = nextIndex + 1;
-      
-      if (userId && book && trackerId) {
-        // Update progress
+      // If no checkpoint or error, proceed to next page
+      setCurrentPageIndex(currentPageIndex + 1);
+
+      // Update URL without reloading
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set("page", (currentPageIndex + 2).toString());
+      window.history.pushState({}, "", newUrl);
+
+      // Update progress if we have a tracker
+      if (trackerId) {
+        const token = localStorage.getItem("token");
         try {
           await axios.put(
-            `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`,
+            `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${
+              currentPageIndex + 2
+            }&readingTimeMinutes=1`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
-
-          if (nextIndex === pages.length - 1) {
-            await axios.put(
-              `http://localhost:8080/api/progress/complete/${trackerId}`,
-              {},
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          }
         } catch (err) {
-          console.error("Error updating book progress:", err);
+          console.error("Error updating progress:", err);
         }
       }
-      
-      setCurrentPageIndex(nextIndex);
+    } else {
+      // Handle book completion
+      navigate(`/book/${bookId}/completion`);
     }
   };
 
