@@ -38,7 +38,7 @@ public class StorySequenceActivityController {
     /**
      * 🔐 GET /api/ssa/by-book/{bookId} — Admin & Teacher can view SSA setup
      */
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER', 'STUDENT')")
     @GetMapping("/by-book/{bookId}")
     public ResponseEntity<?> getSSAByBook(@PathVariable Long bookId) {
         Optional<StorySequenceActivityEntity> optionalSSA = ssaRepo.findByBook_BookID(bookId);

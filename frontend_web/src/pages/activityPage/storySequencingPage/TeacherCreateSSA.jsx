@@ -72,11 +72,14 @@ const TeacherCreateSSA = () => {
     if (!selectedBookId) return;
     
     setLoading(true);
+    const token = localStorage.getItem("token");
+    
     axios
-      .get(`http://localhost:8080/api/ssa/by-book/${selectedBookId}`)
+      .get(`http://localhost:8080/api/ssa/by-book/${selectedBookId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       .then((res) => {
-        if (res.data && res.data.images && res.data.images.length > 0) {
-          // SSA exists for this book
+        if (res.data) {
           setExistingSSA(res.data);
           setTitle(res.data.title);
           setImages(
@@ -89,24 +92,30 @@ const TeacherCreateSSA = () => {
               originalId: img.id
             }))
           );
-        } else {
-          // No SSA exists for this book
-          setExistingSSA(null);
-          if (passedBookTitle) {
-            setTitle(`${passedBookTitle} - Sequencing Activity`);
-          }
-          setImages([]);
         }
       })
       .catch((err) => {
-        console.error("Error fetching SSA:", err);
+        // Handle 400 Bad Request (no SSA exists) or other errors
+        console.log("No existing SSA found or error occurred:", err.response?.data);
+        if (err.response?.status === 403) {
+          setModal({
+            open: true,
+            message: "You don't have permission to view this content. Please make sure you are logged in as a teacher or admin.",
+            type: "error"
+          });
+          navigate("/login");
+          return;
+        }
         setExistingSSA(null);
+        if (passedBookTitle) {
+          setTitle(`${passedBookTitle} - Sequencing Activity`);
+        }
         setImages([]);
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [selectedBookId, passedBookTitle]);
+  }, [selectedBookId, passedBookTitle, navigate]);
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
   const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

@@ -87,8 +87,15 @@ const SnakeGame = () => {
     
 const fetchQuestions = async () => {
   try {
+    const token = localStorage.getItem("token");
     const res = await axios.get(
-      `http://localhost:8080/api/snake-questions/book/${bookId}`
+      `http://localhost:8080/api/snake-questions/book/${bookId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
     );
     console.log("Fetched questions:", res.data);
     
@@ -161,6 +168,12 @@ const fetchQuestions = async () => {
     setAnswerPositions(answerPositions);
   } catch (err) {
     console.error("Error fetching questions:", err);
+    if (err.response?.status === 403) {
+      alert('Access denied. Only teachers and admins can access questions.');
+      navigate('/');
+    } else {
+      alert('Error loading questions: ' + (err.response?.data?.message || 'Please try again'));
+    }
   }
 };
     
@@ -302,8 +315,14 @@ const resetGame = () => {
   setSpeed(300);
   setGameStarted(false);
   
+  const token = localStorage.getItem("token");
   axios
-    .get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
+    .get(`http://localhost:8080/api/snake-questions/book/${bookId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
     .then((res) => {
       // Shuffle the questions array
       const shuffledQuestions = [...res.data].sort(() => Math.random() - 0.5);

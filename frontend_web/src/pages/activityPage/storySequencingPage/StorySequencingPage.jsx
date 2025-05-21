@@ -37,9 +37,26 @@ const StorySequencingPage = () => {
     const fetchSSA = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) {
-          alert("You must be logged in.");
+        const role = localStorage.getItem("role");
+        const userId = localStorage.getItem("userId");
+
+        if (!token || !userId) {
+          setModal({
+            open: true,
+            message: "Please log in to access this activity.",
+            type: "error"
+          });
           navigate("/login");
+          return;
+        }
+
+        if (role !== "STUDENT") {
+          setModal({
+            open: true,
+            message: "This activity is only accessible to students.",
+            type: "error"
+          });
+          navigate("/");
           return;
         }
 
@@ -48,9 +65,14 @@ const StorySequencingPage = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
             },
           }
         );
+
+        if (!res.data) {
+          throw new Error("No data received from server");
+        }
 
         const { title, id, images } = res.data;
 
@@ -70,13 +92,57 @@ const StorySequencingPage = () => {
         });
       } catch (err) {
         console.error("Failed to fetch SSA:", err);
-        alert(
-          "❌ Failed to load activity. Make sure this book has a Story Sequencing Activity."
-        );
+        
+        if (err.response) {
+          const errorMessage = err.response.data || "An error occurred";
+          
+          switch (err.response.status) {
+            case 400:
+              setModal({
+                open: true,
+                message: "This book doesn't have a Story Sequencing Activity yet.",
+                type: "error"
+              });
+              navigate(-1);
+              break;
+            case 401:
+              setModal({
+                open: true,
+                message: "Your session has expired. Please login again.",
+                type: "error"
+              });
+              navigate("/login");
+              break;
+            case 403:
+              setModal({
+                open: true,
+                message: "You don't have permission to access this activity.",
+                type: "error"
+              });
+              navigate("/");
+              break;
+            default:
+              setModal({
+                open: true,
+                message: "Failed to load activity. Please try again later.",
+                type: "error"
+              });
+              navigate(-1);
+          }
+        } else {
+          setModal({
+            open: true,
+            message: "Failed to connect to the server. Please check your internet connection.",
+            type: "error"
+          });
+          navigate(-1);
+        }
       }
     };
 
-    fetchSSA();
+    if (bookId) {
+      fetchSSA();
+    }
   }, [bookId, navigate]);
 
   const handleSubmitSequence = async (sequenceIds) => {

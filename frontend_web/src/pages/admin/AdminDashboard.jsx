@@ -207,6 +207,11 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleBookClick = (bookId) => {
+    console.log("Navigating to book with ID:", bookId);
+    navigate(`/book-editor/${bookId}`);
+  };
+
   const getDifficultyStars = (level) =>
     "★".repeat(Math.max(1, Math.min(level, 3)));
 
@@ -251,7 +256,11 @@ const AdminDashboard = () => {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {books.map((book, index) => (
-              <div key={book.bookID} className="bg-white shadow-md rounded p-3 hover:shadow-lg transition relative">
+              <div
+                key={book.bookID}
+                className="bg-white shadow-md rounded p-3 hover:shadow-lg transition relative"
+                onClick={() => handleBookClick(book.bookID)}
+              >
                 <button
                   className="absolute top-2 right-2 text-gray-500 text-xl hover:text-black"
                   onClick={(e) => {
