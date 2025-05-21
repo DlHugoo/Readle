@@ -197,32 +197,67 @@ const BookPage = () => {
     }
   }, [trackerId, pages.length, currentPageIndex]);
 
-  const handleNextPage = () => {
-    setCurrentPageIndex((prev) => {
-      const nextIndex = Math.min(prev + 1, pages.length - 1);
-      if (userId && book && trackerId) {
-        const token = localStorage.getItem("token");
-        const pageNumber = nextIndex + 1;
-        axios
-          .put(
-            `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-          .catch((err) => console.error("Error updating book progress:", err));
+  const handleNextPage = async () => {
+    // If we’re not on the last page yet…
+    if (currentPageIndex < pages.length - 1) {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId"); // or your userId state
 
-        if (nextIndex === pages.length - 1) {
-          axios
-            .put(
-              `http://localhost:8080/api/progress/complete/${trackerId}`,
-              {},
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
-            .catch((err) => console.error("Error completing book:", err));
+      try {
+        // 1) Load the checkpoint metadata for this book
+        const { data: checkpoint } = await axios.get(
+          `http://localhost:8080/api/prediction-checkpoints/by-book/${bookId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // 2) If this checkpoint lives on the *next* page…
+        if (checkpoint.pageNumber === currentPageIndex + 1) {
+          const checkpointId = checkpoint.id;
+
+          // 3) Ask how many times the user has tried this checkpoint
+          const { data: attemptCount } = await axios.get(
+            `http://localhost:8080/api/prediction-checkpoint-attempts/user/${userId}` +
+              `/checkpoint/${checkpointId}/count`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          // 4) Only redirect into the prediction if they've never attempted yet
+          if (attemptCount === 0) {
+            navigate(`/prediction/${bookId}`);
+            return;
+          }
+          // Otherwise fall through and advance normally
+        }
+      } catch (err) {
+        // 404 means “no checkpoint here” → just ignore
+        if (err.response?.status !== 404) {
+          console.error("Error checking prediction checkpoint:", err);
         }
       }
-      return nextIndex;
-    });
+
+      // ---- No new prediction, or user already tried it ----
+
+      // Advance the page index
+      const nextIndex = currentPageIndex + 1;
+      setCurrentPageIndex(nextIndex);
+
+      // Finally, update reading progress if we have a tracker
+      if (trackerId) {
+        try {
+          await axios.put(
+            `http://localhost:8080/api/progress/update/${trackerId}` +
+              `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } catch (updateErr) {
+          console.error("Error updating progress:", updateErr);
+        }
+      }
+    } else {
+      // If we *are* on the last page, go to the completion screen
+      navigate(`/book/${bookId}/completion`);
+    }
   };
 
   const handlePreviousPage = () => {
