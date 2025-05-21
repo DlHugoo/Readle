@@ -22,6 +22,8 @@ import BookCompletionPage from "./pages/studentPage/BookCompletionPage";
 import ClassroomVisualization from "./pages/classroom/ClassroomVisualization";
 import AdminLoginPage from "./pages/loginPage/AdminLoginPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import PredictionCheckpointPage from "./pages/activityPage/predictionCheckpoint/PredictionCheckpointPage";
+import CreatePredictionCheckpoint from "./pages/activityPage/predictionCheckpoint/CreatePredictionCheckpoint";
 
 
 function App() {
@@ -36,6 +38,10 @@ function App() {
         <Route path="/student-classrooms" element={<StudentClassroomPage />} />
         <Route path="/library" element={<StudentLibraryPage />} />
         <Route path="/dashboard" element={<StudentProgressDashboard />} />
+        <Route
+          path="/prediction/:bookId"
+          element={<PredictionCheckpointPage />}
+        />
 
         {/* ⬇️ Differentiated content routes for teacher vs student */}
         <Route
@@ -75,6 +81,11 @@ function App() {
         <Route path="/student/badges" element={<StudentBadgeDashboard />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route
+          path="/create-prediction"
+          element={<CreatePredictionCheckpoint />}
+        />
+
       </Routes>
     </Router>
   );

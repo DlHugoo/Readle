@@ -14,10 +14,17 @@ public class SequenceImageEntity {
 
     private int correctPosition;
 
+    // For StorySequenceActivity
     @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ssa_id")
     private StorySequenceActivityEntity ssa;
+
+    // For PredictionCheckpoint
+    @JsonBackReference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "checkpoint_id", nullable = true)
+    private PredictionCheckpointEntity checkpoint;
 
     // Constructors
     public SequenceImageEntity() {
@@ -61,5 +68,13 @@ public class SequenceImageEntity {
 
     public void setSsa(StorySequenceActivityEntity ssa) {
         this.ssa = ssa;
+    }
+
+    public PredictionCheckpointEntity getCheckpoint() {
+        return checkpoint;
+    }
+
+    public void setCheckpoint(PredictionCheckpointEntity checkpoint) {
+        this.checkpoint = checkpoint;
     }
 }
