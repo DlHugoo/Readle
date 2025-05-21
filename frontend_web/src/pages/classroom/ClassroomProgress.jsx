@@ -26,7 +26,7 @@ const ClassroomProgress = () => {
   });
   
   // Filter states
-  const [showOnlyClassroomBooks, setShowOnlyClassroomBooks] = useState(true);
+  const [showOnlyClassroomBooks, setShowOnlyClassroomBooks] = useState(false);
   const [filterByLevel, setFilterByLevel] = useState('all');
   const [filterByPerformance, setFilterByPerformance] = useState('all');
   const [filterByActivity, setFilterByActivity] = useState('all');
@@ -354,12 +354,92 @@ const ClassroomProgress = () => {
   };
   
   // Filter students based on selected filters
-  const filteredStudents = progressData.filter(student => {
-    // Search term filter
+// Add this function to fetch classroom books
+const [classroomBooks, setClassroomBooks] = useState([]);
+
+// Add this function to fetch classroom books
+const fetchClassroomBooks = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_BASE_URL}/api/classrooms/${classroomId}/books`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setClassroomBooks(response.data);
+  } catch (error) {
+    console.error('Error fetching classroom books:', error);
+  }
+};
+
+// Add this to your useEffect
+useEffect(() => {
+  fetchClassroomBooks();
+}, [classroomId]);
+
+// Modify the filtering logic
+const filteredStudents = progressData.map(student => {
+  // Create a deep copy of the student object
+  const filteredStudent = {
+    ...student,
+    progressData: student.progressData ? {
+      ...student.progressData,
+      completedBooks: [...(student.progressData.completedBooks || [])],
+      inProgressBooks: [...(student.progressData.inProgressBooks || [])]
+    } : null
+  };
+
+  if (filteredStudent.progressData && showOnlyClassroomBooks) {
+    // Filter completed books that belong to the current classroom
+    const filteredCompletedBooks = filteredStudent.progressData.completedBooks.filter(book => 
+      book.book && book.book.classroomId && book.book.classroomId.toString() === classroomId
+    );
+
+    // Filter in-progress books that belong to the current classroom
+    const filteredInProgressBooks = filteredStudent.progressData.inProgressBooks.filter(book => 
+      book.book && book.book.classroomId && book.book.classroomId.toString() === classroomId
+    );
+
+    // Get all classroom books for calculations
+    const allClassroomBooks = [...filteredCompletedBooks, ...filteredInProgressBooks];
+
+    // Calculate comprehension scores
+    let totalScore = 0;
+    let totalActivities = 0;
+
+    allClassroomBooks.forEach(book => {
+      if (book.snakeGameAttempts > 0) {
+        totalScore += calculateSnakeGameScore(book.snakeGameAttempts);
+        totalActivities++;
+      }
+      if (book.ssaAttempts > 0) {
+        totalScore += calculateSSAScore(book.ssaAttempts);
+        totalActivities++;
+      }
+    });
+
+    // Update the filtered student's progress data
+    filteredStudent.progressData = {
+      ...filteredStudent.progressData,
+      completedBooks: filteredCompletedBooks,
+      inProgressBooks: filteredInProgressBooks,
+      completedCount: filteredCompletedBooks.length,
+      inProgressCount: filteredInProgressBooks.length,
+      totalReadingTimeMinutes: allClassroomBooks.reduce((total, book) => {
+        const minutes = typeof book.totalReadingTimeMinutes === 'number'
+          ? book.totalReadingTimeMinutes
+          : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
+        return total + minutes;
+      }, 0),
+      avgComprehensionScore: totalActivities > 0 ? Math.round(totalScore / totalActivities) : 0
+    };
+  }
+
+  return filteredStudent;
+}).filter(student => {
+  // Apply other filters (search, performance, activity)
     if (searchTerm && !`${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
-    
+  
     // Performance band filter
     if (filterByPerformance !== 'all') {
       const score = student.progressData?.avgComprehensionScore || 0;
@@ -367,7 +447,7 @@ const ClassroomProgress = () => {
       if (filterByPerformance === 'medium' && (score < 60 || score >= 80)) return false;
       if (filterByPerformance === 'low' && score >= 60) return false;
     }
-    
+  
     // Activity date filter
     if (filterByActivity !== 'all' && student.progressData?.lastActivityDate) {
       const daysSince = Math.floor((new Date() - new Date(student.progressData.lastActivityDate)) / (1000 * 60 * 60 * 24));
@@ -375,10 +455,15 @@ const ClassroomProgress = () => {
       if (filterByActivity === 'week' && (daysSince <= 7 || daysSince > 30)) return false;
       if (filterByActivity === 'month' && daysSince <= 30) return false;
     }
-    
+  
     return true;
   });
-
+  
+  // Update the summary stats calculation to use the filtered data
+  useEffect(() => {
+    calculateSummaryStats(filteredStudents);
+  }, [progressData, showOnlyClassroomBooks, filterByPerformance, filterByActivity, searchTerm]);
+  
   // Add new function to handle CSV export
   const exportToCSV = () => {
     // Create CSV header
@@ -491,16 +576,6 @@ const ClassroomProgress = () => {
                   <div className="flex bg-gray-100 rounded-lg p-1">
                     <button
                       className={`px-3 py-1 rounded-md text-sm ${
-                        showOnlyClassroomBooks 
-                          ? 'bg-blue-500 text-white' 
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }`}
-                      onClick={() => setShowOnlyClassroomBooks(true)}
-                    >
-                      Classroom Books Only
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
                         !showOnlyClassroomBooks 
                           ? 'bg-blue-500 text-white' 
                           : 'text-gray-700 hover:bg-gray-200'
@@ -508,6 +583,16 @@ const ClassroomProgress = () => {
                       onClick={() => setShowOnlyClassroomBooks(false)}
                     >
                       All Books (Classroom + OOB)
+                    </button>
+                    <button
+                      className={`px-3 py-1 rounded-md text-sm ${
+                        showOnlyClassroomBooks 
+                          ? 'bg-blue-500 text-white' 
+                          : 'text-gray-700 hover:bg-gray-200'
+                      }`}
+                      onClick={() => setShowOnlyClassroomBooks(true)}
+                    >
+                      Classroom Books Only
                     </button>
                   </div>
                 </div>
