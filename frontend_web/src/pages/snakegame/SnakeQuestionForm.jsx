@@ -72,7 +72,14 @@ const SnakeQuestionForm = () => {
   useEffect(() => {
     if (bookId) {
       setLoading(true);
-      axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`)
+      const token = localStorage.getItem('token');
+      
+      axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
         .then(response => {
           console.log('API Response for book questions:', response.data);
           
@@ -86,31 +93,27 @@ const SnakeQuestionForm = () => {
         })
         .catch(error => {
           console.error('Error checking existing questions:', error);
-          if (error.response && error.response.status === 404) {
-            setExistingQuestions([]);
-            setHasExistingQuestions(false);
+          if (error.response) {
+            if (error.response.status === 403) {
+              alert('Access denied. Only teachers and admins can access questions.');
+              navigate('/');
+            } else if (error.response.status === 404) {
+              setExistingQuestions([]);
+              setHasExistingQuestions(false);
+            } else {
+              alert('Error loading questions: ' + (error.response.data?.message || 'Please try again'));
+            }
           } else {
-            alert('Error loading questions. Please try again.');
+            alert('Error loading questions. Please check your connection and try again.');
           }
         })
         .finally(() => {
           setLoading(false);
         });
     }
-  }, [bookId]);
+  }, [bookId, navigate]);
 
-  const handleQuestionChange = (index, value) => {
-    const updated = [...questions];
-    updated[index].text = value;
-    setQuestions(updated);
-  };
-
-  const handleAnswerChange = (index, value) => {
-    const updated = [...questions];
-    updated[index].answer = value;
-    setQuestions(updated);
-  };
-
+  // Also update the handleSubmit function to include the token
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -126,8 +129,16 @@ const SnakeQuestionForm = () => {
       }
 
       setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
 
-      const checkResponse = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
+      const checkResponse = await axios.get(
+        `http://localhost:8080/api/snake-questions/book/${bookId}`,
+        { headers }
+      );
       
       if (checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
         alert('Questions already exist for this book. You cannot add more.');
@@ -143,7 +154,7 @@ const SnakeQuestionForm = () => {
       }));
 
       const promises = questionsToSubmit.map(q => 
-        axios.post('http://localhost:8080/api/snake-questions', q)
+        axios.post('http://localhost:8080/api/snake-questions', q, { headers })
       );
 
       await Promise.all(promises);
@@ -151,10 +162,27 @@ const SnakeQuestionForm = () => {
       window.location.reload();
     } catch (err) {
       console.error('Error submitting questions:', err);
-      alert('Failed to submit questions: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+      if (err.response?.status === 403) {
+        alert('Access denied. Only teachers and admins can create questions.');
+        navigate('/');
+      } else {
+        alert('Failed to submit questions: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuestionChange = (index, value) => {
+    const updated = [...questions];
+    updated[index].text = value;
+    setQuestions(updated);
+  };
+
+  const handleAnswerChange = (index, value) => {
+    const updated = [...questions];
+    updated[index].answer = value;
+    setQuestions(updated);
   };
 
   const handleEditClick = (question) => {
