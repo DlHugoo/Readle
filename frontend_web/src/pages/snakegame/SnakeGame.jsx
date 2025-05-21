@@ -279,26 +279,40 @@ const fetchQuestions = async () => {
     return () => clearInterval(intervalRef.current);
   }, [dir, answerPositions, currentIndex, gameOver, gameWon, speed, gameStarted, trackerId]);
 
-  useEffect(() => {
-    if (!gameStarted) return;
-    
-    const handleKey = (e) => {
-      if (directions[e.key]) {
-        e.preventDefault();
-        if (
-          !(dir.x === 1 && e.key === "ArrowLeft") &&
-          !(dir.x === -1 && e.key === "ArrowRight") &&
-          !(dir.y === 1 && e.key === "ArrowUp") &&
-          !(dir.y === -1 && e.key === "ArrowDown")
-        ) {
-          setDir(directions[e.key]);
-          setCurrentDirection(e.key);
-        }
+useEffect(() => {
+  if (!gameStarted) return;
+  
+  const keyMap = {
+    'ArrowUp': 'ArrowUp',
+    'ArrowDown': 'ArrowDown',
+    'ArrowLeft': 'ArrowLeft',
+    'ArrowRight': 'ArrowRight',
+    'w': 'ArrowUp',
+    's': 'ArrowDown',
+    'a': 'ArrowLeft',
+    'd': 'ArrowRight'
+  };
+
+  const handleKey = (e) => {
+    const key = e.key;
+    const mappedKey = keyMap[key] || keyMap[key.toLowerCase()];
+    if (mappedKey && directions[mappedKey]) {
+      e.preventDefault();
+      if (
+        !(dir.x === 1 && mappedKey === "ArrowLeft") &&
+        !(dir.x === -1 && mappedKey === "ArrowRight") &&
+        !(dir.y === 1 && mappedKey === "ArrowUp") &&
+        !(dir.y === -1 && mappedKey === "ArrowDown")
+      ) {
+        setDir(directions[mappedKey]);
+        setCurrentDirection(mappedKey);
       }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [dir, gameStarted]);
+    }
+  };
+
+  window.addEventListener("keydown", handleKey);
+  return () => window.removeEventListener("keydown", handleKey);
+}, [dir, gameStarted]);
 
   const startGame = async () => {
     await createAttempt(0);
@@ -542,7 +556,7 @@ const resetGame = () => {
                   How to play:
                 </h4>
                 <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• Use arrow keys to move the snake</li>
+                  <li>• Use arrow keys/ WASD keys to move the snake</li>
                   <li>• Eat answers in the correct order</li>
                   <li>• Correct answer grows the snake</li>
                   <li>• Wrong answer ends the game</li>
