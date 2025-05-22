@@ -69,10 +69,27 @@ const StudentBadgeDashboard = () => {
           axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, axiosOptions)
         ]);
         
-        // If user has no badges yet, create placeholder badges from all available badges
-        if ((userBadgesRes.data || []).length === 0 && availableBadges.length > 0) {
-          // Create placeholder user badges from available badges
-          const placeholderBadges = availableBadges.map(badge => ({
+        const userBadges = userBadgesRes.data || [];
+        setEarnedBadges(earnedBadgesRes.data || []);
+        setInProgressBadges(inProgressBadgesRes.data || []);
+        
+        // Create a map of badge IDs that the user already has progress on
+        const userBadgeMap = new Map();
+        userBadges.forEach(badge => {
+          if (badge.badge && badge.badge.id) {
+            userBadgeMap.set(badge.badge.id, badge);
+          }
+        });
+        
+        // Create a complete list of all badges, including ones the user hasn't started yet
+        const completeBadgesList = availableBadges.map(badge => {
+          // If user already has this badge in their progress, use that
+          if (userBadgeMap.has(badge.id)) {
+            return userBadgeMap.get(badge.id);
+          }
+          
+          // Otherwise create a placeholder badge with 0 progress
+          return {
             id: `placeholder-${badge.id}`,
             badge: badge,
             isEarned: false,
@@ -80,14 +97,10 @@ const StudentBadgeDashboard = () => {
             currentProgress: 0,
             requiredProgress: badge.thresholdValue,
             progressPercentage: 0
-          }));
-          setAllBadges(placeholderBadges);
-        } else {
-          setAllBadges(userBadgesRes.data || []);
-        }
+          };
+        });
         
-        setEarnedBadges(earnedBadgesRes.data || []);
-        setInProgressBadges(inProgressBadgesRes.data || []);
+        setAllBadges(completeBadgesList);
         setError(null);
       } catch (err) {
         console.error("Error fetching badges:", err.response || err);
