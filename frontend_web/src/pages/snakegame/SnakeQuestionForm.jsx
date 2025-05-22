@@ -114,7 +114,7 @@ const SnakeQuestionForm = () => {
   }, [bookId, navigate]);
 
   // Also update the handleSubmit function to include the token
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (!bookId) {
@@ -139,7 +139,7 @@ const SnakeQuestionForm = () => {
         `http://localhost:8080/api/snake-questions/book/${bookId}`,
         { headers }
       );
-      
+
       if (checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
         alert('Questions already exist for this book. You cannot add more.');
         setLoading(false);
@@ -208,33 +208,40 @@ const SnakeQuestionForm = () => {
 
   const handleUpdateQuestion = async (questionID) => {
     try {
-        if (!editFormData.text || !editFormData.answer) {
-            alert('Please fill in both question and answer fields');
-            return;
-        }
+      if (!editFormData.text || !editFormData.answer) {
+        alert('Please fill in both question and answer fields');
+        return;
+      }
 
-        setLoading(true);
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
 
-        await axios.put(
-            `http://localhost:8080/api/snake-questions/${questionID}`,
-            {
-                text: editFormData.text,
-                answer: editFormData.answer,
-                bookId: bookId
-            }
-        );
+      await axios.put(
+        `http://localhost:8080/api/snake-questions/${questionID}`,
+        {
+          text: editFormData.text,
+          answer: editFormData.answer,
+          bookId: bookId
+        },
+        { headers }
+      );
 
-        const response = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`);
-        setExistingQuestions(response.data);
-        setEditingQuestionId(null);
-        setShowSuccessModal(true); // Show modal instead of alert
+      const response = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`, { headers });
+      setExistingQuestions(response.data);
+      setEditingQuestionId(null);
+      setShowSuccessModal(true);
     } catch (error) {
-        console.error('Error updating question:', error);
-        alert('Failed to update question: ' + (error.response?.data?.message || error.message));
+      console.error('Error updating question:', error);
+      alert('Failed to update question: ' + (error.response?.data?.message || error.message));
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
+
 
   const closeSuccessModal = () => {
     setShowSuccessModal(false);

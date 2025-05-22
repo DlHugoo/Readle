@@ -153,23 +153,26 @@ const ClassroomContentManager = () => {
 
   // Function to upload the image and return the URL
   const uploadImage = async (file) => {
-    if (!file) return null;
-    
-    const formData = new FormData();
-    formData.append("file", file);
+  if (!file) return null;
 
-    try {
-      const response = await axios.post("/api/books/upload-image", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      throw error;
-    }
-  };
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const token = localStorage.getItem("token"); // Ensure token is retrieved
+
+  try {
+    const response = await axios.post("/api/books/upload-image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`, // Include token in headers
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    throw error;
+  }
+};
 
   const handleAddBook = async () => {
     const token = localStorage.getItem("token");
