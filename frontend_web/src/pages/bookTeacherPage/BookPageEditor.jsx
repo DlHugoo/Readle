@@ -556,7 +556,7 @@ const BookPageEditor = () => {
             <h2 className="text-xl font-bold text-gray-800 mb-4">Add Learning Activities</h2>
             <p className="text-gray-600 mb-6">Enhance this book with interactive learning activities for students</p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link
                 to="/teacher-create-ssa"
                 state={{ bookId: bookId, bookTitle: book?.title }}
@@ -582,6 +582,20 @@ const BookPageEditor = () => {
                 <div>
                   <h3 className="font-semibold text-green-700">Snake Game Questions</h3>
                   <p className="text-sm text-green-600">Add questions for the snake game activity</p>
+                </div>
+              </Link>
+
+              <Link
+                to="/create-prediction"
+                state={{ bookId: bookId, bookTitle: book?.title}}
+                className="flex items-center p-4 bg-blue-100 border border-blue-200 rounded-lg hover:bg-blue-200 transition-colors group"
+              >
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white mr-4 group-hover:bg-blue-600">
+                  <Plus size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-700">Prediction Checkpoint</h3>
+                  <p className="text-sm text-blue-600">Create prediction activities at specific points in the story</p>
                 </div>
               </Link>
             </div>

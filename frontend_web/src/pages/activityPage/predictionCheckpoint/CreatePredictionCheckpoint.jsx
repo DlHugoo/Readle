@@ -8,6 +8,7 @@ import {
   XCircle,
   CheckCircle,
   AlertCircle,
+  ArrowLeft,
 } from "lucide-react";
 import axios from "axios";
 import TeacherNav from "../../../components/TeacherNav";
@@ -67,34 +68,85 @@ const CreatePredictionCheckpoint = () => {
   const fileInputRef = useRef(null);
   const optionFileInputRef = useRef(null);
   const [bookPageCount, setBookPageCount] = useState(0);
-
-  useEffect(() => {
-    if (!passedBookId) {
-      axios
-        .get("http://localhost:8080/api/books")
-        .then((res) => setBooks(res.data))
-        .catch(console.error);
-    }
-  }, [passedBookId]);
+  const [existingCheckpoint, setExistingCheckpoint] = useState(null);
 
   useEffect(() => {
     if (selectedBookId) {
+      // Fetch existing prediction checkpoint
+      const token = localStorage.getItem("token");
+      setLoading(true);
+      axios
+        .get(`http://localhost:8080/api/prediction-checkpoints/by-book/${selectedBookId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then((res) => {
+          if (res.data) {
+            setExistingCheckpoint(res.data);
+            setTitle(res.data.title);
+            setPageNumber(res.data.pageNumber.toString());
+            // Set story images
+            setStoryImages(
+              res.data.sequenceImages
+                .sort((a, b) => a.position - b.position)
+                .map((img, idx) => ({
+                  id: `${Date.now()}-${idx}`,
+                  file: null,
+                  preview: img.imageUrl.startsWith("/uploads")
+                    ? `http://localhost:8080${img.imageUrl}`
+                    : img.imageUrl,
+                  originalId: img.id,
+                  position: img.position
+                }))
+            );
+            // Set option images
+            setOptionImages(
+              res.data.options.map((opt, idx) => ({
+                id: `${Date.now()}-option-${idx}`,
+                file: null,
+                preview: opt.imageUrl.startsWith("/uploads")
+                  ? `http://localhost:8080${opt.imageUrl}`
+                  : opt.imageUrl,
+                originalId: opt.id,
+                isCorrect: opt.isCorrect
+              }))
+            );
+          }
+        })
+        .catch((err) => {
+          console.log("No existing prediction checkpoint or error occurred:", err.response?.data);
+          if (err.response?.status === 403) {
+            setModal({
+              open: true,
+              message: "You don't have permission to view this content.",
+              type: "error"
+            });
+            navigate("/login");
+            return;
+          }
+          setExistingCheckpoint(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+
+      // If we have books data, set the title based on the selected book
       const selected = books.find(
         (b) => b.bookID.toString() === selectedBookId.toString()
       );
       if (selected) {
         setTitle(`${selected.title} - Prediction Checkpoint`);
-        // Get the page count from the API response
-        axios
-          .get(`http://localhost:8080/api/pages/${selectedBookId}`)
-          .then((response) => {
-            setBookPageCount(response.data.length || 0);
-          })
-          .catch((error) => {
-            console.error("Error fetching page count:", error);
-            setBookPageCount(0);
-          });
       }
+      
+      // Always fetch pages when selectedBookId is available, regardless of books array
+      axios
+        .get(`http://localhost:8080/api/pages/${selectedBookId}`)
+        .then((response) => {
+          setBookPageCount(response.data.length || 0);
+        })
+        .catch((error) => {
+          console.error("Error fetching page count:", error);
+          setBookPageCount(0);
+        });
     }
   }, [selectedBookId, books]);
 
@@ -263,23 +315,41 @@ const CreatePredictionCheckpoint = () => {
     }
   };
 
+  // Add goBack function
+  const goBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <TeacherNav />
       <Modal {...modal} onClose={() => setModal({ ...modal, open: false })} />
       <div className="max-w-4xl mx-auto p-6 bg-gray-50 rounded-lg shadow pt-24">
-        <Modal {...modal} onClose={() => setModal({ ...modal, open: false })} />
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-semibold text-gray-800">
-            <span className="mr-2">🎯</span> Create Prediction Checkpoint
-          </h2>
-          <button
-            className="text-blue-600 hover:text-blue-800 flex items-center"
-            onClick={() => setShowHelp(!showHelp)}
-          >
-            <Info size={18} className="mr-1" />
-            Help
-          </button>
+        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {passedBookId && (
+                <button 
+                  onClick={goBack} 
+                  className="mr-4 text-blue-600 hover:text-blue-800 flex items-center"
+                >
+                  <ArrowLeft size={20} className="mr-1" />
+                  Back to Book
+                </button>
+              )}
+              <h2 className="text-2xl font-semibold text-gray-800">
+                <span className="mr-2">🎯</span> 
+                {existingCheckpoint ? "View" : "Create"} Prediction Checkpoint
+              </h2>
+            </div>
+            <button
+              className="text-blue-600 hover:text-blue-800 flex items-center"
+              onClick={() => setShowHelp(!showHelp)}
+            >
+              <Info size={18} className="mr-1" />
+              Help
+            </button>
+          </div>
         </div>
 
         {showHelp && (
@@ -335,12 +405,13 @@ const CreatePredictionCheckpoint = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trigger Page Number
+                  Trigger Page Number (Do not Select The last page of the book)
                 </label>
                 <select
                   value={pageNumber}
                   onChange={(e) => setPageNumber(e.target.value)}
-                  className="w-full p-2 border rounded-md"
+                  disabled={existingCheckpoint}
+                  className={`w-full p-2 border rounded-md ${existingCheckpoint ? 'bg-gray-100' : ''}`}
                 >
                   <option value="">Select page...</option>
                   {[...Array(bookPageCount)].map((_, i) => (
@@ -359,37 +430,40 @@ const CreatePredictionCheckpoint = () => {
               Story Sequence Images
             </label>
             <div className="flex flex-wrap gap-4 mb-4">
-              {storyImages.map((img) => (
+              {storyImages.map((img, index) => (
                 <div key={img.id} className="relative">
                   <img
                     src={img.preview}
-                    alt="Story"
+                    alt={`Story ${index + 1}`}
                     className="w-32 h-32 object-cover rounded-lg"
                   />
-                  <button
-                    onClick={() => removeImage(img.id)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                  >
-                    <XCircle size={20} />
-                  </button>
+                  {!existingCheckpoint && (
+                    <button
+                      onClick={() => removeImage(img.id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <XCircle size={20} />
+                    </button>
+                  )}
                 </div>
               ))}
-              <label className="w-32 h-32 flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => handleImageChange(e, false)}
-                  accept="image/*"
-                  className="hidden"
-                  multiple
-                />
-                <Camera className="text-gray-400" size={32} />
-              </label>
+              {!existingCheckpoint && (
+                <label className="w-32 h-32 flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => handleImageChange(e, false)}
+                    accept="image/*"
+                    className="hidden"
+                    multiple
+                  />
+                  <Camera className="text-gray-400" size={32} />
+                </label>
+              )}
             </div>
           </div>
 
           {/* Option Images Section */}
-
           <div className="mb-6">
             <label className="block text-gray-700 font-medium mb-2">
               Prediction Options (First image will be the correct answer)
@@ -402,12 +476,14 @@ const CreatePredictionCheckpoint = () => {
                     alt="Option"
                     className="w-32 h-32 object-cover rounded-lg"
                   />
-                  <button
-                    onClick={() => removeImage(img.id, true)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                  >
-                    <XCircle size={20} />
-                  </button>
+                  {!existingCheckpoint && (
+                    <button
+                      onClick={() => removeImage(img.id, true)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <XCircle size={20} />
+                    </button>
+                  )}
                   {index === 0 && (
                     <div className="absolute -top-2 -left-2 bg-green-500 text-white rounded-full p-1">
                       <CheckCircle size={20} />
@@ -415,31 +491,35 @@ const CreatePredictionCheckpoint = () => {
                   )}
                 </div>
               ))}
-              <label className="w-32 h-32 flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="file"
-                  ref={optionFileInputRef}
-                  onChange={(e) => handleImageChange(e, true)}
-                  accept="image/*"
-                  className="hidden"
-                  multiple
-                />
-                <Camera className="text-gray-400" size={32} />
-              </label>
+              {!existingCheckpoint && (
+                <label className="w-32 h-32 flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="file"
+                    ref={optionFileInputRef}
+                    onChange={(e) => handleImageChange(e, true)}
+                    accept="image/*"
+                    className="hidden"
+                    multiple
+                  />
+                  <Camera className="text-gray-400" size={32} />
+                </label>
+              )}
             </div>
           </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className={`w-full py-3 rounded-lg font-semibold ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
-          >
-            {loading ? "Creating..." : "Create Prediction Checkpoint"}
-          </button>
+          {!existingCheckpoint && (
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className={`w-full py-3 rounded-lg font-semibold ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              {loading ? "Creating..." : "Create Prediction Checkpoint"}
+            </button>
+          )}
         </div>
       </div>
     </div>
