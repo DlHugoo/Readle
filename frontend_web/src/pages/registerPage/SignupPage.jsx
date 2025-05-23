@@ -5,7 +5,9 @@ import mascot from "../../assets/mascot.png";
 const ErrorModal = ({ message, onClose }) => (
   <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
     <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-sm relative">
-      <h2 className="text-xl font-semibold text-red-600 mb-2">⚠️ Signup Error</h2>
+      <h2 className="text-xl font-semibold text-red-600 mb-2">
+        ⚠️ Signup Error
+      </h2>
       <p className="text-gray-700 text-sm">{message}</p>
       <button
         onClick={onClose}
@@ -27,6 +29,7 @@ const SignupPage = () => {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [showError, setShowError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const showErrorModal = (message) => {
     setErrorMessage(message);
@@ -44,20 +47,20 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const role = localStorage.getItem("userRole");
-  
+
     if (!role) {
       showErrorModal("Please select a role before signing up.");
       return;
     }
-  
+
     const generatedUsername = formData.email.split("@")[0] + "_" + Date.now();
-  
+
     const payload = {
       ...formData,
       username: generatedUsername,
       role: role.toUpperCase(),
     };
-  
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -66,16 +69,19 @@ const SignupPage = () => {
         },
         body: JSON.stringify(payload),
       });
-  
+
       const contentType = response.headers.get("content-type");
       const data = contentType?.includes("application/json")
         ? await response.json()
         : {};
-  
+
       if (response.ok) {
         localStorage.setItem("token", data.token);
         window.location.href = "/login";
-      } else if (response.status === 409 || data.message?.toLowerCase().includes("exist")) {
+      } else if (
+        response.status === 409 ||
+        data.message?.toLowerCase().includes("exist")
+      ) {
         showErrorModal("User already existed.");
       } else {
         showErrorModal(data.message || "User already existed.");
@@ -85,7 +91,6 @@ const SignupPage = () => {
       showErrorModal("User already existed.");
     }
   };
-  
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">
@@ -134,16 +139,23 @@ const SignupPage = () => {
               />
             </div>
 
-            <div className="mb-8">
+            <div className="mb-8 relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-blue-500"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
 
             <button
@@ -180,7 +192,10 @@ const SignupPage = () => {
 
       {/* Error Modal */}
       {showError && (
-        <ErrorModal message={errorMessage} onClose={() => setShowError(false)} />
+        <ErrorModal
+          message={errorMessage}
+          onClose={() => setShowError(false)}
+        />
       )}
     </div>
   );
