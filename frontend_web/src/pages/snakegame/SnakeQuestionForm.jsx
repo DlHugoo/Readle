@@ -113,69 +113,65 @@ const SnakeQuestionForm = () => {
     }
   }, [bookId, navigate]);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    if (!bookId) {
-      alert('No book associated with these questions');
-      return;
-    }
+  // Also update the handleSubmit function to include the token
+   const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (!bookId) {
+        alert('No book associated with these questions');
+        return;
+      }
 
-    const emptyQuestions = questions.filter(q => !q.text || !q.answer);
-    if (emptyQuestions.length > 0) {
-      alert('Please fill in all questions and answers');
-      return;
-    }
+      const emptyQuestions = questions.filter(q => !q.text || !q.answer);
+      if (emptyQuestions.length > 0) {
+        alert('Please fill in all questions and answers');
+        return;
+      }
 
-    setLoading(true);
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    };
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
 
-    const checkResponse = await axios.get(
-      `http://localhost:8080/api/snake-questions/book/${bookId}`,
-      { headers }
-    );
+      const checkResponse = await axios.get(
+        `http://localhost:8080/api/snake-questions/book/${bookId}`,
+        { headers }
+      );
 
-    if (checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
-      alert('Questions already exist for this book. You cannot add more.');
+      if (checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data.length > 0) {
+        alert('Questions already exist for this book. You cannot add more.');
+        setLoading(false);
+        setHasExistingQuestions(true);
+        setExistingQuestions(checkResponse.data);
+        return;
+      }
+
+      const questionsToSubmit = questions.map(q => ({
+        ...q,
+        bookId: bookId
+      }));
+
+      const promises = questionsToSubmit.map(q => 
+        axios.post('http://localhost:8080/api/snake-questions', q, { headers })
+      );
+
+      await Promise.all(promises);
+      alert('5 questions submitted successfully!');
+      window.location.reload();
+    } catch (err) {
+      console.error('Error submitting questions:', err);
+      if (err.response?.status === 403) {
+        alert('Access denied. Only teachers and admins can create questions.');
+        navigate('/');
+      } else {
+        alert('Failed to submit questions: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+      }
+    } finally {
       setLoading(false);
-      setHasExistingQuestions(true);
-      setExistingQuestions(checkResponse.data);
-      return;
     }
-
-    const questionsToSubmit = questions.map(q => ({
-      ...q,
-      bookId: bookId
-    }));
-
-    const promises = questionsToSubmit.map(q => 
-      axios.post('http://localhost:8080/api/snake-questions', q, { headers })
-    );
-
-    await Promise.all(promises);
-    
-    // Instead of reloading, fetch the newly created questions and update state
-    const response = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`, { headers });
-    setExistingQuestions(response.data);
-    setHasExistingQuestions(true);
-    setShowSuccessModal(true);
-    
-  } catch (err) {
-    console.error('Error submitting questions:', err);
-    if (err.response?.status === 403) {
-      alert('Access denied. Only teachers and admins can create questions.');
-      navigate('/');
-    } else {
-      alert('Failed to submit questions: ' + (err.response?.data?.message || err.message || 'Unknown error'));
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleQuestionChange = (index, value) => {
     const updated = [...questions];
@@ -408,36 +404,25 @@ const handleSubmit = async (e) => {
       </div>
 
       {/* Success Modal */}
-{showSuccessModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-      <div className="flex flex-col items-center">
-        <CheckCircle className="text-green-500 w-12 h-12 mb-4" />
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">Success!</h3>
-        <p className="text-gray-600 mb-6 text-center">
-          Questions have been submitted successfully.
-        </p>
-        <div className="flex space-x-4">
-          <button
-            onClick={() => {
-              closeSuccessModal();
-              navigate(-1); // Go back to the book page
-            }}
-            className="bg-blue-500 text-white font-bold px-6 py-2 rounded-full hover:bg-blue-600 transition"
-          >
-            Return to Book
-          </button>
-          <button
-            onClick={closeSuccessModal}
-            className="bg-gray-500 text-white font-bold px-6 py-2 rounded-full hover:bg-gray-600 transition"
-          >
-            Stay Here
-          </button>
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
+            <div className="flex flex-col items-center">
+              <CheckCircle className="text-green-500 w-12 h-12 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Success!</h3>
+              <p className="text-gray-600 mb-6 text-center">
+                The question has been updated successfully.
+              </p>
+              <button
+                onClick={closeSuccessModal}
+                className="bg-blue-500 text-white font-bold px-6 py-2 rounded-full hover:bg-blue-600 transition"
+              >
+                OK
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };
