@@ -10,10 +10,9 @@ import BookPageEditor from "./pages/bookTeacherPage/BookPageEditor";
 import BookPage from "./pages/studentPage/BookPage";
 import SnakeGame from "./pages/snakegame/SnakeGame";
 import SnakeQuestionForm from "./pages/snakegame/SnakeQuestionForm";
-import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage"; // Keep this import
+import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage";
 import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
 import StorySequencingPage from "./pages/activityPage/storySequencingPage/StorySequencingPage";
-import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
 import StudentProgressDashboard from "./pages/studentPage/StudentProgressDashboard";
 import StudentBadgeDashboard from "./pages/studentPage/StudentBadgeDashboard";
@@ -25,25 +24,25 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import PredictionCheckpointPage from "./pages/activityPage/predictionCheckpoint/PredictionCheckpointPage";
 import CreatePredictionCheckpoint from "./pages/activityPage/predictionCheckpoint/CreatePredictionCheckpoint";
 
-
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Existing routes */}
+        {/* Common routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/classroom" element={<ClassroomManagement />} />
+
+        {/* Student routes */}
         <Route path="/student-classrooms" element={<StudentClassroomPage />} />
         <Route path="/library" element={<StudentLibraryPage />} />
         <Route path="/dashboard" element={<StudentProgressDashboard />} />
-        <Route
-          path="/prediction/:bookId"
-          element={<PredictionCheckpointPage />}
-        />
+        <Route path="/student/badges" element={<StudentBadgeDashboard />} />
+        <Route path="/book/:bookId" element={<BookPage />} />
+        <Route path="/book/:bookId/complete" element={<BookCompletionPage />} />
 
-        {/* ⬇️ Differentiated content routes for teacher vs student */}
+        {/* Teacher Routes */}
+        <Route path="/classroom" element={<ClassroomManagement />} />
         <Route
           path="/classroom-content/:classroomId"
           element={<ClassroomContent />}
@@ -52,7 +51,6 @@ function App() {
           path="/student/classroom-content/:classroomId"
           element={<ClassroomContentPage />}
         />
-
         <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
         <Route
           path="/classroom-students/:classroomId"
@@ -66,26 +64,29 @@ function App() {
           path="/classroom-visualization/:classroomId"
           element={<ClassroomVisualization />}
         />
-        <Route path="/snake-questions" element={<SnakeQuestionForm />} />
-        <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
-        <Route path="/book/:bookId" element={<BookPage />} />
-        <Route path="/book/:bookId/complete" element={<BookCompletionPage />} />
 
-        <Route
-          path="/book/:bookId/sequencing"
-          element={<StorySequencingPage />}
-        />
-        <Route path="/create-ssa" element={<CreateSSA />} />
-        <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
-        <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
-        <Route path="/student/badges" element={<StudentBadgeDashboard />} />
+        {/* Admin routes */}
         <Route path="/admin-login" element={<AdminLoginPage />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route
+
+        {/* Activity Creation routes */}
+        <Route path="/snake-questions" element={<SnakeQuestionForm />} />
+        <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
+        <Route
           path="/create-prediction"
           element={<CreatePredictionCheckpoint />}
         />
 
+        {/* Activity routes */}
+        <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
+        <Route
+          path="/book/:bookId/sequencing"
+          element={<StorySequencingPage />}
+        />
+        <Route
+          path="/prediction/:bookId"
+          element={<PredictionCheckpointPage />}
+        />
       </Routes>
     </Router>
   );
