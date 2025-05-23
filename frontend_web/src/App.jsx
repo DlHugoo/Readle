@@ -10,10 +10,9 @@ import BookPageEditor from "./pages/bookTeacherPage/BookPageEditor";
 import BookPage from "./pages/studentPage/BookPage";
 import SnakeGame from "./pages/snakegame/SnakeGame";
 import SnakeQuestionForm from "./pages/snakegame/SnakeQuestionForm";
-import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage"; // Keep this import
+import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage";
 import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
 import StorySequencingPage from "./pages/activityPage/storySequencingPage/StorySequencingPage";
-import CreateSSA from "./pages/activityPage/storySequencingPage/CreateSSA";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
 import StudentProgressDashboard from "./pages/studentPage/StudentProgressDashboard";
 import StudentBadgeDashboard from "./pages/studentPage/StudentBadgeDashboard";
@@ -26,7 +25,6 @@ import PredictionCheckpointPage from "./pages/activityPage/predictionCheckpoint/
 import CreatePredictionCheckpoint from "./pages/activityPage/predictionCheckpoint/CreatePredictionCheckpoint";
 import ProtectedRoute from "./components/ProtectedRoute";
 import UnauthorizedPage from "./pages/unauthorized/UnauthorizedPage";
-
 
 function App() {
   return (
@@ -66,7 +64,6 @@ function App() {
           <Route path="/classroom-progress/:classroomId" element={<ClassroomProgress />} />
           <Route path="/classroom-visualization/:classroomId" element={<ClassroomVisualization />} />
           <Route path="/snake-questions" element={<SnakeQuestionForm />} />
-          <Route path="/create-ssa" element={<CreateSSA />} />
           <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
           <Route path="/create-prediction" element={<CreatePredictionCheckpoint />} />
         </Route>
@@ -75,6 +72,7 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']} />}>
           {/* Add any shared routes here */}
         </Route>
+
       </Routes>
   );
 }

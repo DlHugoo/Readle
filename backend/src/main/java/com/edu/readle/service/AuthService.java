@@ -34,10 +34,8 @@ public class AuthService {
     public String register(UserEntity user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
-        
         // Track first login for new users to award the welcome badge
         badgeService.trackUserLogin(user.getId());
-        
         return jwtService.generateToken(user.getEmail(), user.getId());
     }
 

@@ -5,6 +5,29 @@ import StudentNavbar from '../../components/StudentNavbar';
 
 const API_BASE_URL = 'http://localhost:8080';
 
+// Define the scoring functions outside the component
+// This ensures they're available everywhere in the file
+const calculateSnakeGameScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    
+    // Scoring logic: starts at 100, minus 2 points for each additional attempt
+    const score = 100 - ((attempts - 1) * 2);
+    return Math.max(score, 0); // Ensure score doesn't go below 0
+};
+
+const calculateSSAScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    
+    // Scoring logic: starts at 100, minus 25 points for each additional attempt
+    const score = 100 - ((attempts - 1) * 25);
+    return Math.max(score, 0); // Ensure score doesn't go below 0
+};
+
+const calculatePredictionScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
+};
+
 const StudentProgressDashboard = () => {
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
@@ -18,6 +41,12 @@ const StudentProgressDashboard = () => {
     const [inProgressBooks, setInProgressBooks] = useState([]);
     const [snakeGameAttempts, setSnakeGameAttempts] = useState({});
     const [ssaAttempts, setSSAAttempts] = useState({});
+    const [predictionAttempts, setPredictionAttempts] = useState({});
+    const [averageScores, setAverageScores] = useState({
+        snakeGame: 0,
+        ssa: 0,
+        prediction: 0
+    });
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
@@ -75,6 +104,7 @@ const StudentProgressDashboard = () => {
                 const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
                 const snakeAttemptsData = {};
                 const ssaAttemptsData = {};
+                const predictionAttemptsData = {}; // Add object for prediction attempts
                 
                 await Promise.all(allBooks.map(async (book) => {
                     try {
@@ -96,6 +126,20 @@ const StudentProgressDashboard = () => {
                             console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
                             ssaAttemptsData[bookId] = 0;
                         }
+                        
+                        // Fetch prediction checkpoint attempts for this book
+                        try {
+                            // Assuming each book has a checkpoint with the same ID as the book
+                            // You may need to adjust this based on your actual data structure
+                            const predictionAttemptsRes = await axios.get(
+                                `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
+                                { headers }
+                            );
+                            predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+                        } catch (err) {
+                            console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
+                            predictionAttemptsData[bookId] = 0;
+                        }
                     } catch (err) {
                         console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
                         snakeAttemptsData[book.book.bookID] = 0;
@@ -104,6 +148,48 @@ const StudentProgressDashboard = () => {
                 
                 setSnakeGameAttempts(snakeAttemptsData);
                 setSSAAttempts(ssaAttemptsData);
+                setPredictionAttempts(predictionAttemptsData); // Set prediction attempts state
+                
+                // Calculate average scores
+                const calculateAverages = () => {
+                    // Calculate average snake game score
+                    let snakeTotal = 0;
+                    let snakeCount = 0;
+                    Object.keys(snakeAttemptsData).forEach(bookId => {
+                        if (snakeAttemptsData[bookId] > 0) {
+                            snakeTotal += calculateSnakeGameScore(snakeAttemptsData[bookId]);
+                            snakeCount++;
+                        }
+                    });
+                    
+                    // Calculate average SSA score
+                    let ssaTotal = 0;
+                    let ssaCount = 0;
+                    Object.keys(ssaAttemptsData).forEach(bookId => {
+                        if (ssaAttemptsData[bookId] > 0) {
+                            ssaTotal += calculateSSAScore(ssaAttemptsData[bookId]);
+                            ssaCount++;
+                        }
+                    });
+                    
+                    // Calculate average prediction score
+                    let predictionTotal = 0;
+                    let predictionCount = 0;
+                    Object.keys(predictionAttemptsData).forEach(bookId => {
+                        if (predictionAttemptsData[bookId] > 0) {
+                            predictionTotal += calculatePredictionScore(predictionAttemptsData[bookId]);
+                            predictionCount++;
+                        }
+                    });
+                    
+                    setAverageScores({
+                        snakeGame: snakeCount > 0 ? Math.round(snakeTotal / snakeCount) : 0,
+                        ssa: ssaCount > 0 ? Math.round(ssaTotal / ssaCount) : 0,
+                        prediction: predictionCount > 0 ? Math.round(predictionTotal / predictionCount) : 0
+                    });
+                };
+                
+                calculateAverages();
                 setError(null);
             } catch (error) {
                 console.error('Error fetching progress data:', error);
@@ -186,34 +272,6 @@ const StudentProgressDashboard = () => {
         );
     }
 
-    // Add a function to calculate score based on attempts
-    const calculateSnakeGameScore = (attempts) => {
-        if (!attempts || attempts <= 0) return 0;
-        
-        // Scoring logic: starts at 100, minus 2 points for each additional attempt
-        // 1 attempt = 100 points
-        // 2 attempts = 98 points
-        // 3 attempts = 96 points
-        // etc.
-        
-        const score = 100 - ((attempts - 1) * 2);
-        return Math.max(score, 0); // Ensure score doesn't go below 0
-    };
-    
-    // Add a function to calculate SSA score based on attempts
-    const calculateSSAScore = (attempts) => {
-        if (!attempts || attempts <= 0) return 0;
-        
-        // Scoring logic: starts at 100, minus 25 points for each additional attempt
-        // 1 attempt = 100 points
-        // 2 attempts = 75 points
-        // 3 attempts = 50 points
-        // etc.
-        
-        const score = 100 - ((attempts - 1) * 25);
-        return Math.max(score, 0); // Ensure score doesn't go below 0
-    };
-
     return (
         <>
             <StudentNavbar />
@@ -239,7 +297,35 @@ const StudentProgressDashboard = () => {
                         <span className="text-4xl font-bold text-yellow-500">{stats.inProgressCount}</span>
                     </div>
                 </div>
-
+                
+                {/* Average Scores Cards */}
+                <div className="bg-white rounded-lg shadow p-6 mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-700">Average Activity Scores</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
+                            <span className="text-gray-500 text-md mb-1">Snake Game</span>
+                            <div className="flex items-center">
+                                <span role="img" aria-label="snake" className="mr-2 text-2xl">🐍</span>
+                                <span className="text-3xl font-bold text-green-600">{averageScores.snakeGame}</span>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
+                            <span className="text-gray-500 text-md mb-1">Sequencing</span>
+                            <div className="flex items-center">
+                                <span role="img" aria-label="puzzle" className="mr-2 text-2xl">🧩</span>
+                                <span className="text-3xl font-bold text-blue-600">{averageScores.ssa}</span>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4 flex flex-col items-center">
+                            <span className="text-gray-500 text-md mb-1">Prediction</span>
+                            <div className="flex items-center">
+                                <span role="img" aria-label="crystal-ball" className="mr-2 text-2xl">🔮</span>
+                                <span className="text-3xl font-bold text-purple-600">{averageScores.prediction}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 {/* Books in Progress */}
                 <div className="bg-white rounded-lg shadow p-6 mb-8">
                     <h2 className="text-2xl font-semibold mb-4 text-gray-700">Books in Progress</h2>
@@ -276,6 +362,11 @@ const StudentProgressDashboard = () => {
                                                 {ssaAttempts[book.book.bookID] > 0 && (
                                                     <div className="mt-1 text-blue-600">
                                                         <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
+                                                    </div>
+                                                )}
+                                                {predictionAttempts[book.book.bookID] > 0 && (
+                                                    <div className="mt-1 text-purple-600">
+                                                        <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {calculatePredictionScore(predictionAttempts[book.book.bookID])} points
                                                     </div>
                                                 )}
                                             </div>
@@ -335,6 +426,11 @@ const StudentProgressDashboard = () => {
                                                 {ssaAttempts[book.book.bookID] > 0 && (
                                                     <div className="mt-1 text-blue-600">
                                                         <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
+                                                    </div>
+                                                )}
+                                                {predictionAttempts[book.book.bookID] > 0 && (
+                                                    <div className="mt-1 text-purple-600">
+                                                        <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {calculatePredictionScore(predictionAttempts[book.book.bookID])} points
                                                     </div>
                                                 )}
                                             </div>
