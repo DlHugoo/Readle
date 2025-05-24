@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "../../assets/hero-desktop.webp";
 import books from "../../assets/books.png";
@@ -9,6 +9,10 @@ import Navbar from "../../components/Navbar";
 
 function LandingPage() {
   const navigate = useNavigate();
+
+    useEffect(() => {
+    localStorage.clear(); // Clear local storage on page load
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">

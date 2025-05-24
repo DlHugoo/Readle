@@ -23,72 +23,57 @@ import AdminLoginPage from "./pages/loginPage/AdminLoginPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import PredictionCheckpointPage from "./pages/activityPage/predictionCheckpoint/PredictionCheckpointPage";
 import CreatePredictionCheckpoint from "./pages/activityPage/predictionCheckpoint/CreatePredictionCheckpoint";
+import ProtectedRoute from "./components/ProtectedRoute";
+import UnauthorizedPage from "./pages/unauthorized/UnauthorizedPage";
 
 function App() {
   return (
-    <Router>
       <Routes>
-        {/* Common routes */}
+        {/* Common Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        
+        {/* Admin Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route path="/admin-login" element={<AdminLoginPage />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        </Route>
 
-        {/* Student routes */}
-        <Route path="/student-classrooms" element={<StudentClassroomPage />} />
-        <Route path="/library" element={<StudentLibraryPage />} />
-        <Route path="/dashboard" element={<StudentProgressDashboard />} />
-        <Route path="/student/badges" element={<StudentBadgeDashboard />} />
-        <Route path="/book/:bookId" element={<BookPage />} />
-        <Route path="/book/:bookId/complete" element={<BookCompletionPage />} />
+        {/* Student Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
+          <Route path="/student-classrooms" element={<StudentClassroomPage />} />
+          <Route path="/library" element={<StudentLibraryPage />} />
+          <Route path="/dashboard" element={<StudentProgressDashboard />} />
+          <Route path="/prediction/:bookId" element={<PredictionCheckpointPage />} />
+          <Route path="/student/classroom-content/:classroomId" element={<ClassroomContentPage />} />
+          <Route path="/book/:bookId" element={<BookPage />} />
+          <Route path="/book/:bookId/complete" element={<BookCompletionPage />} />
+          <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
+          <Route path="/book/:bookId/sequencing" element={<StorySequencingPage />} />
+          <Route path="/student/badges" element={<StudentBadgeDashboard />} />
+        </Route>
 
         {/* Teacher Routes */}
-        <Route path="/classroom" element={<ClassroomManagement />} />
-        <Route
-          path="/classroom-content/:classroomId"
-          element={<ClassroomContent />}
-        />
-        <Route
-          path="/student/classroom-content/:classroomId"
-          element={<ClassroomContentPage />}
-        />
-        <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
-        <Route
-          path="/classroom-students/:classroomId"
-          element={<ClassroomStudents />}
-        />
-        <Route
-          path="/classroom-progress/:classroomId"
-          element={<ClassroomProgress />}
-        />
-        <Route
-          path="/classroom-visualization/:classroomId"
-          element={<ClassroomVisualization />}
-        />
+        <Route element={<ProtectedRoute allowedRoles={['TEACHER']} />}>
+          <Route path="/classroom" element={<ClassroomManagement />} />
+          <Route path="/classroom-content/:classroomId" element={<ClassroomContent />} />
+          <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
+          <Route path="/classroom-students/:classroomId" element={<ClassroomStudents />} />
+          <Route path="/classroom-progress/:classroomId" element={<ClassroomProgress />} />
+          <Route path="/classroom-visualization/:classroomId" element={<ClassroomVisualization />} />
+          <Route path="/snake-questions" element={<SnakeQuestionForm />} />
+          <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
+          <Route path="/create-prediction" element={<CreatePredictionCheckpoint />} />
+        </Route>
 
-        {/* Admin routes */}
-        <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        {/* Routes accessible by both Teacher and Admin */}
+        <Route element={<ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']} />}>
+          {/* Add any shared routes here */}
+        </Route>
 
-        {/* Activity Creation routes */}
-        <Route path="/snake-questions" element={<SnakeQuestionForm />} />
-        <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
-        <Route
-          path="/create-prediction"
-          element={<CreatePredictionCheckpoint />}
-        />
-
-        {/* Activity routes */}
-        <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
-        <Route
-          path="/book/:bookId/sequencing"
-          element={<StorySequencingPage />}
-        />
-        <Route
-          path="/prediction/:bookId"
-          element={<PredictionCheckpointPage />}
-        />
       </Routes>
-    </Router>
   );
 }
 
