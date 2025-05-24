@@ -175,10 +175,11 @@ const ClassroomProgress = () => {
           const allBooks = [...completedBooks, ...inProgressBooks];
           const snakeAttemptsData = {};
           const ssaAttemptsData = {};
+          const predictionAttemptsData = {}; // Add this declaration
           
           await Promise.all(allBooks.map(async (book) => {
+            const bookId = book.book.bookID; // Move bookId declaration to the top of the scope
             try {
-              const bookId = book.book.bookID;
               const snakeAttemptsRes = await axios.get(
                 `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -196,9 +197,18 @@ const ClassroomProgress = () => {
                 console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
                 ssaAttemptsData[bookId] = 0;
               }
+
+              // Move prediction attempts inside the main try block
+              const predictionAttemptsRes = await axios.get(
+                `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              predictionAttemptsData[bookId] = predictionAttemptsRes.data;
             } catch (err) {
-              console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
-              snakeAttemptsData[book.book.bookID] = 0;
+              console.error(`Error fetching attempts for book ${bookId}:`, err);
+              snakeAttemptsData[bookId] = 0;
+              ssaAttemptsData[bookId] = 0;
+              predictionAttemptsData[bookId] = 0;
             }
           }));
           
@@ -219,6 +229,14 @@ const ClassroomProgress = () => {
           Object.entries(ssaAttemptsData).forEach(([bookId, attempts]) => {
             if (attempts > 0) {
               const score = calculateSSAScore(attempts);
+              totalScore += score;
+              totalActivities++;
+            }
+          });
+
+          Object.entries(predictionAttemptsData).forEach(([bookId, attempts]) => {
+            if (attempts > 0) {
+              const score = calculatePredictionScore(attempts);
               totalScore += score;
               totalActivities++;
             }
@@ -253,7 +271,8 @@ const ClassroomProgress = () => {
               avgComprehensionScore: avgComprehensionScore,
               status: status,
               snakeAttemptsData: snakeAttemptsData,
-              ssaAttemptsData: ssaAttemptsData
+              ssaAttemptsData: ssaAttemptsData,
+              predictionAttemptsData: predictionAttemptsData
             }
           };
         } catch (error) {
@@ -298,6 +317,11 @@ const ClassroomProgress = () => {
     if (!attempts || attempts <= 0) return 0;
     const score = 100 - ((attempts - 1) * 25);
     return Math.max(score, 0); // Ensure score doesn't go below 0
+  };
+
+  const calculatePredictionScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
   };
   
   // Calculate summary statistics for the dashboard
@@ -398,6 +422,7 @@ const filteredStudents = progressData.map(student => {
       const bookId = book.book.bookID;
       const snakeAttempts = filteredStudent.progressData.snakeAttemptsData[bookId] || 0;
       const ssaAttempts = filteredStudent.progressData.ssaAttemptsData[bookId] || 0;
+      const predictionAttempts = filteredStudent.progressData.predictionAttemptsData[bookId] || 0;
 
       if (snakeAttempts > 0) {
         totalScore += calculateSnakeGameScore(snakeAttempts);
@@ -407,6 +432,12 @@ const filteredStudents = progressData.map(student => {
         totalScore += calculateSSAScore(ssaAttempts);
         totalActivities++;
       }
+
+      if (predictionAttempts > 0) {
+        totalScore += calculatePredictionScore(predictionAttempts);
+        totalActivities++;
+      }
+
     });
 
     // Update the filtered student's progress data
@@ -821,6 +852,7 @@ const filteredStudents = progressData.map(student => {
         formatTime={formatTime}
         calculateSnakeGameScore={calculateSnakeGameScore}
         calculateSSAScore={calculateSSAScore}
+        calculatePredictionScore={calculatePredictionScore}
       />
     </div>
   );

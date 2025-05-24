@@ -148,6 +148,7 @@ const ClassroomVisualization = () => {
           const allBooks = [...completedBooks, ...inProgressBooks];
           const snakeAttemptsData = {};
           const ssaAttemptsData = {};
+          const predictionAttemptsData = {}; // Add this
           
           await Promise.all(allBooks.map(async (book) => {
             try {
@@ -169,13 +170,27 @@ const ClassroomVisualization = () => {
                 console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
                 ssaAttemptsData[bookId] = 0;
               }
+
+              // Add prediction attempts fetch
+              try {
+                const predictionAttemptsRes = await axios.get(
+                  `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+              } catch (err) {
+                console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
+                predictionAttemptsData[bookId] = 0;
+              }
             } catch (err) {
-              console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
+              console.error(`Error fetching attempts for book ${book.book.bookID}:`, err);
               snakeAttemptsData[book.book.bookID] = 0;
+              ssaAttemptsData[book.book.bookID] = 0;
+              predictionAttemptsData[book.book.bookID] = 0;
             }
           }));
           
-          // Calculate average comprehension score based on snake game and SSA attempts
+          // Calculate average comprehension score based on all activities
           let totalScore = 0;
           let totalActivities = 0;
           
@@ -192,6 +207,15 @@ const ClassroomVisualization = () => {
           Object.entries(ssaAttemptsData).forEach(([bookId, attempts]) => {
             if (attempts > 0) {
               const score = calculateSSAScore(attempts);
+              totalScore += score;
+              totalActivities++;
+            }
+          });
+
+          // Add prediction score calculation
+          Object.entries(predictionAttemptsData).forEach(([bookId, attempts]) => {
+            if (attempts > 0) {
+              const score = calculatePredictionScore(attempts);
               totalScore += score;
               totalActivities++;
             }
@@ -274,6 +298,8 @@ const ClassroomVisualization = () => {
     const score = 100 - ((attempts - 1) * 25);
     return Math.max(score, 0); // Ensure score doesn't go below 0
   };
+
+  
   
   // Calculate summary statistics for the dashboard
   const calculateSummaryStats = (studentsWithProgress) => {
@@ -600,3 +626,33 @@ const ClassroomVisualization = () => {
 };
 
 export default ClassroomVisualization;
+
+
+  // Add prediction score calculation function
+  const calculatePredictionScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
+  };
+
+  // Update prepareComprehensionScoreData to include prediction scores
+  const prepareComprehensionScoreData = () => {
+    return progressData
+      .filter(student => student.progressData?.avgComprehensionScore !== undefined)
+      .map(student => ({
+        name: `${student.firstName} ${student.lastName}`,
+        score: student.progressData.avgComprehensionScore,
+        snakeGame: calculateAverageScore(student.progressData.snakeAttemptsData, calculateSnakeGameScore),
+        sequencing: calculateAverageScore(student.progressData.ssaAttemptsData, calculateSSAScore),
+        prediction: calculateAverageScore(student.progressData.predictionAttemptsData, calculatePredictionScore)
+      }))
+      .sort((a, b) => b.score - a.score);
+  };
+
+  // Helper function to calculate average score
+  const calculateAverageScore = (attemptsData, scoreCalculator) => {
+    if (!attemptsData) return 0;
+    const scores = Object.values(attemptsData)
+      .filter(attempts => attempts > 0)
+      .map(attempts => scoreCalculator(attempts));
+    return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 0;
+  };

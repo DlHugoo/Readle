@@ -31,6 +31,8 @@ const ClassroomStudents = () => {
   const [inProgressBooks, setInProgressBooks] = useState([]);
   const [snakeGameAttempts, setSnakeGameAttempts] = useState({});
   const [ssaAttempts, setSSAAttempts] = useState({});
+  // Add this state variable at the top with other state declarations
+  const [predictionAttempts, setPredictionAttempts] = useState({});
 
   // Add student state
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
@@ -200,10 +202,13 @@ const ClassroomStudents = () => {
       setCompletedBooks(completedBooksRes.data);
       setInProgressBooks(inProgressBooksRes.data);
       
-      // Fetch snake game attempts and SSA attempts for all books
+      
+  
+      // In the fetchStudentProgress function, modify the attempts fetching section:
       const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
       const snakeAttemptsData = {};
       const ssaAttemptsData = {};
+      const predictionAttemptsData = {}; // Add this line
       
       await Promise.all(allBooks.map(async (book) => {
         try {
@@ -225,6 +230,18 @@ const ClassroomStudents = () => {
             console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
             ssaAttemptsData[bookId] = 0;
           }
+      
+          // Add prediction attempts fetching
+          try {
+            const predictionAttemptsRes = await axios.get(
+              `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
+              { headers }
+            );
+            predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+          } catch (err) {
+            console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
+            predictionAttemptsData[bookId] = 0;
+          }
         } catch (err) {
           console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
           snakeAttemptsData[book.book.bookID] = 0;
@@ -233,6 +250,7 @@ const ClassroomStudents = () => {
       
       setSnakeGameAttempts(snakeAttemptsData);
       setSSAAttempts(ssaAttemptsData);
+      setPredictionAttempts(predictionAttemptsData); // Add this line
       
     } catch (error) {
       console.error('Error fetching student progress:', error);
@@ -851,6 +869,7 @@ const handleSort = (key) => {
         inProgressBooks={inProgressBooks}
         snakeGameAttempts={snakeGameAttempts}
         ssaAttempts={ssaAttempts}
+        predictionAttempts={predictionAttempts}
         formatDuration={formatDuration}
         calculateSnakeGameScore={calculateSnakeGameScore}
         calculateSSAScore={calculateSSAScore}
