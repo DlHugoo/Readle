@@ -6,9 +6,45 @@ const StudentDetailsModal = ({
   onClose, 
   formatTime, 
   calculateSnakeGameScore, 
-  calculateSSAScore 
+  calculateSSAScore, 
+  calculatePredictionScore // Add this prop
 }) => {
   if (!isOpen || !selectedStudent) return null;
+
+  // Add this function to calculate average activity scores
+  const calculateAverageScores = () => {
+    if (!selectedStudent?.progressData) return { snakeGame: 0, ssa: 0, prediction: 0 };
+    
+    const allBooks = [
+      ...selectedStudent.progressData.completedBooks || [],
+      ...selectedStudent.progressData.inProgressBooks || []
+    ];
+    let snakeTotal = 0, snakeCount = 0;
+    let ssaTotal = 0, ssaCount = 0;
+    let predictionTotal = 0, predictionCount = 0;
+
+    allBooks.forEach(book => {
+      const bookId = book.book.bookID;
+      if (selectedStudent.progressData.snakeAttemptsData?.[bookId] > 0) {
+        snakeTotal += calculateSnakeGameScore(selectedStudent.progressData.snakeAttemptsData[bookId]);
+        snakeCount++;
+      }
+      if (selectedStudent.progressData.ssaAttemptsData?.[bookId] > 0) {
+        ssaTotal += calculateSSAScore(selectedStudent.progressData.ssaAttemptsData[bookId]);
+        ssaCount++;
+      }
+      if (selectedStudent.progressData.predictionAttemptsData?.[bookId] > 0) {
+        predictionTotal += calculatePredictionScore(selectedStudent.progressData.predictionAttemptsData[bookId]);
+        predictionCount++;
+      }
+    });
+
+    return {
+      snakeGame: snakeCount > 0 ? Math.round(snakeTotal / snakeCount) : 0,
+      ssa: ssaCount > 0 ? Math.round(ssaTotal / ssaCount) : 0,
+      prediction: predictionCount > 0 ? Math.round(predictionTotal / predictionCount) : 0
+    };
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -77,6 +113,7 @@ const StudentDetailsModal = ({
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reading Time</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Snake Game</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Story Sequencing</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prediction</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -84,9 +121,11 @@ const StudentDetailsModal = ({
                       const bookId = book.book.bookID;
                       const snakeAttempts = selectedStudent.progressData.snakeAttemptsData?.[bookId] || 0;
                       const ssaAttempts = selectedStudent.progressData.ssaAttemptsData?.[bookId] || 0;
+                      const predictionAttempts = selectedStudent.progressData.predictionAttemptsData?.[bookId] || 0;
                       const snakeScore = calculateSnakeGameScore(snakeAttempts);
                       const ssaScore = calculateSSAScore(ssaAttempts);
-                      
+                      const predictionScore = calculatePredictionScore(predictionAttempts);
+
                       return (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="px-4 py-2 whitespace-nowrap text-sm">{book.book.title}</td>
@@ -107,6 +146,16 @@ const StudentDetailsModal = ({
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
                             {ssaAttempts > 0 ? (
                               <span className="text-blue-600">{ssaScore} points ({ssaAttempts} attempts)</span>
+                            ) : (
+                              <span className="text-gray-400">Not attempted</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                            {selectedStudent.progressData.predictionAttemptsData?.[bookId] > 0 ? (
+                              <span className="text-purple-600">
+                                {calculatePredictionScore(selectedStudent.progressData.predictionAttemptsData[bookId])} points 
+                                ({selectedStudent.progressData.predictionAttemptsData[bookId]} attempts)
+                              </span>
                             ) : (
                               <span className="text-gray-400">Not attempted</span>
                             )}
@@ -136,6 +185,7 @@ const StudentDetailsModal = ({
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Snake Game</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Story Sequencing</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prediction</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -181,6 +231,16 @@ const StudentDetailsModal = ({
                               <span className="text-gray-400">Not attempted</span>
                             )}
                           </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                            {selectedStudent.progressData.predictionAttemptsData?.[bookId] > 0 ? (
+                              <span className="text-purple-600">
+                                {calculatePredictionScore(selectedStudent.progressData.predictionAttemptsData[bookId])} points 
+                                ({selectedStudent.progressData.predictionAttemptsData[bookId]} attempts)
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">Not attempted</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -199,6 +259,26 @@ const StudentDetailsModal = ({
             <p className="text-sm text-gray-500">
               This score is calculated based on the student's performance in Snake Game and Sentence Sorting activities across all books.
             </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-green-600 font-semibold">🐍 Snake Game</span>
+                  <span className="text-2xl font-bold text-green-600">{calculateAverageScores().snakeGame}</span>
+                </div>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-600 font-semibold">🧩 Sequencing</span>
+                  <span className="text-2xl font-bold text-blue-600">{calculateAverageScores().ssa}</span>
+                </div>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-purple-600 font-semibold">🔮 Prediction</span>
+                  <span className="text-2xl font-bold text-purple-600">{calculateAverageScores().prediction}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
