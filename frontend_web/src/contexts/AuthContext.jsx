@@ -7,24 +7,35 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  // Add your login, logout, and check auth functions here
-  const login = (userData) => {
+  const login = ({ token, role, userId, email }) => {
+    // Save to state
+    const userData = { token, role, userId, email };
     setUser(userData);
-    // Store user data in localStorage or cookies
-    localStorage.setItem('user', JSON.stringify(userData));
+
+    // Save to localStorage
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("email", email);
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
-    navigate('/login');
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("email");
+    navigate("/login");
   };
 
-  // Check if user is logged in on app load
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    const email = localStorage.getItem("email");
+
+    if (token && role && userId && email) {
+      setUser({ token, role, userId, email });
     }
   }, []);
 
