@@ -1,10 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; // Import the auth context
 import mascot from "../../assets/mascot.png";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth(); // Get login function from auth context
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,42 +32,61 @@ const LoginPage = () => {
     return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
-    if (!validateForm()) return;
-  
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-  
-      const contentType = response.headers.get("content-type");
-  
-      let data = {};
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      }
-  
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
-        localStorage.setItem("userId", data.userId);
-  
-        window.location.href = data.role === "TEACHER" ? "/classroom" : "/library";
-      } else if (response.status === 401) {
-        setErrorMessage("Incorrect email or password. Please try again.");
-      } else {
-        setErrorMessage(data.message || "Incorrect email or password. Please try again.");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      setErrorMessage("Incorrect email or password. Please try again.");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!validateForm()) return;
+
+  setIsLoading(true);
+  setErrorMessage("");
+
+  try {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    let data;
+    // Check if the response has JSON content-type before parsing
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      // If no JSON, read text for error handling
+      const text = await response.text();
+      throw new Error(text || "Login failed");
     }
-  };
-  
+
+    if (!response.ok) {
+      throw new Error(data.message || "Wrong password/email");
+    }
+
+    login({
+      token: data.token,
+      role: data.role,
+      userId: data.userId,
+      email: formData.email,
+    });
+
+    switch (data.role) {
+      case "TEACHER":
+        navigate("/classroom");
+        break;
+      case "ADMIN":
+        navigate("/admin-dashboard");
+        break;
+      default:
+        navigate("/library");
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    setErrorMessage("Incorrect email or password. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">
@@ -92,6 +116,7 @@ const LoginPage = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -104,11 +129,13 @@ const LoginPage = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 required
+                disabled={isLoading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-blue-500"
+                disabled={isLoading}
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
@@ -116,12 +143,20 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-4 rounded-lg transition duration-300"
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-4 rounded-lg transition duration-300 flex justify-center items-center"
+              disabled={isLoading}
             >
-              Log In
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Logging in...
+                </>
+              ) : "Log In"}
             </button>
 
-            {/* 🔴 Inline Error Box */}
             {errorMessage && (
               <div className="mt-4 text-center text-sm text-red-600 bg-red-100 border border-red-300 rounded-lg px-4 py-2">
                 {errorMessage}

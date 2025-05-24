@@ -17,6 +17,8 @@ const BookCompletionPage = () => {
   const [book, setBook] = useState(null);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [showConfetti, setShowConfetti] = useState(true);
+  const [hasSSA, setHasSSA] = useState(false);
+  const [hasSnakeGame, setHasSnakeGame] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -28,7 +30,32 @@ const BookCompletionPage = () => {
       }
     };
 
+    const checkActivities = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        // Check for SSA
+        const ssaRes = await axios.get(`http://localhost:8080/api/ssa/by-book/${bookId}`, { headers });
+        setHasSSA(!!ssaRes.data);
+      } catch (err) {
+        setHasSSA(false);
+      }
+
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        // Check for Snake Game
+        const snakeRes = await axios.get(`http://localhost:8080/api/snake-questions/book/${bookId}`, { headers });
+        setHasSnakeGame(!!snakeRes.data && snakeRes.data.length > 0);
+      } catch (err) {
+        setHasSnakeGame(false);
+      }
+    };
+
     fetchBook();
+    checkActivities();
   }, [bookId]);
 
   useEffect(() => {
@@ -41,7 +68,7 @@ const BookCompletionPage = () => {
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setShowConfetti(false), 5000);
+    const timeout = setTimeout(() => setShowConfetti(false), 10000);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -69,7 +96,7 @@ const BookCompletionPage = () => {
           Well done!
         </h1>
         <p className="text-lg sm:text-xl text-gray-700 mb-8">
-          You've successfully completed reading{" "}
+          You've successfully finished reading{" "}
           <span className=" ">{book.title}</span>
         </p>
 
@@ -81,23 +108,36 @@ const BookCompletionPage = () => {
           />
         )}
 
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Test your knowledge
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => navigate(`/book/${bookId}/sequencing`)}
-            className="px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow hover:bg-green-700 transition"
-          >
-            🎯 Start Story Sequencing
-          </button>
-          <button
-            onClick={() => navigate(`/book/${bookId}/snake-game`)}
-            className="px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow hover:bg-purple-700 transition"
-          >
-            🐍 Play Snake Game
-          </button>
-        </div>
+        {(hasSSA || hasSnakeGame) && (
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            Test your knowledge
+          </h3>
+        )}
+        
+        {(!hasSSA && !hasSnakeGame) ? (
+          <p className="text-gray-600 italic mb-8">
+            No activities are available for this book yet.
+          </p>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {hasSSA && (
+              <button
+                onClick={() => navigate(`/book/${bookId}/sequencing`)}
+                className="px-6 py-3 bg-green-600 text-white text-lg rounded-full shadow hover:bg-green-700 transition"
+              >
+                🎯 Start Story Sequencing
+              </button>
+            )}
+            {hasSnakeGame && (
+              <button
+                onClick={() => navigate(`/book/${bookId}/snake-game`)}
+                className="px-6 py-3 bg-purple-600 text-white text-lg rounded-full shadow hover:bg-purple-700 transition"
+              >
+                🐍 Play Snake Game
+              </button>
+            )}
+          </div>
+        )}
 
         <button
           onClick={() => navigate("/library")}
