@@ -546,6 +546,11 @@ const resetGame = () => {
                       <span className="font-medium">
                         {i + 1}. {q.text}
                       </span>
+                      {i === currentIndex && (
+                        <span className="block mt-1 text-sm text-blue-600">
+                          Find: <span className="font-bold">{sequence[i]}</span>
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ol>
