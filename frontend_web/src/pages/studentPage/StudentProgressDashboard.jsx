@@ -129,13 +129,27 @@ const StudentProgressDashboard = () => {
                         
                         // Fetch prediction checkpoint attempts for this book
                         try {
-                            // Assuming each book has a checkpoint with the same ID as the book
-                            // You may need to adjust this based on your actual data structure
-                            const predictionAttemptsRes = await axios.get(
-                                `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
+                            // First, get the prediction checkpoint ID for this book
+                            const predictionCheckpointRes = await axios.get(
+                                `${API_BASE_URL}/api/prediction-checkpoints/by-book/${bookId}`,
                                 { headers }
                             );
-                            predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+                            
+                            if (predictionCheckpointRes.data && predictionCheckpointRes.data.id) {
+                                // Use the checkpoint ID from the response
+                                const checkpointId = predictionCheckpointRes.data.id;
+                                
+                                // Now fetch attempts using the correct checkpoint ID
+                                const predictionAttemptsRes = await axios.get(
+                                    `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/count`,
+                                    { headers }
+                                );
+                                console.log(`Prediction attempts for book ${bookId}:`, predictionAttemptsRes.data);
+                                predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+                            } else {
+                                console.log(`No prediction checkpoints found for book ${bookId}`);
+                                predictionAttemptsData[bookId] = 0;
+                            }
                         } catch (err) {
                             console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
                             predictionAttemptsData[bookId] = 0;
