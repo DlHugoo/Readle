@@ -11,6 +11,7 @@ import {
 } from "@dnd-kit/core";
 import Slot from "../storySequencingPage/Slot";
 import ImageCard from "../storySequencingPage/ImageCard";
+import sequenceBg from "../../../assets/sequence-bg1.png";
 
 const PredictionCheckpointPage = () => {
   const { bookId } = useParams();
@@ -33,6 +34,7 @@ const PredictionCheckpointPage = () => {
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pageNumber, setPageNumber] = useState(null);
+  const [availableOptions, setAvailableOptions] = useState([]);
 
   useEffect(() => {
     const fetchPredictionData = async () => {
@@ -81,6 +83,7 @@ const PredictionCheckpointPage = () => {
         }));
 
         setOptions(formattedOptions);
+        setAvailableOptions(formattedOptions); // Initialize available options
         setStoryData({ id, title });
       } catch (err) {
         console.error("Failed to fetch prediction data:", err);
@@ -98,9 +101,22 @@ const PredictionCheckpointPage = () => {
     if (over.id === `slot-${slots.length - 1}`) {
       const draggedOption = options.find((opt) => opt.id === active.id);
       if (draggedOption) {
+        // Get the current option in the slot (if any)
+        const currentSlotOption = slots[slots.length - 1];
+
+        // Update the slots with the new option
         const newSlots = [...slots];
         newSlots[slots.length - 1] = draggedOption;
         setSlots(newSlots);
+
+        // Update available options: remove the dragged option and add back the previous one
+        const newAvailableOptions = availableOptions.filter(
+          (opt) => opt.id !== active.id
+        );
+        if (currentSlotOption) {
+          newAvailableOptions.push(currentSlotOption);
+        }
+        setAvailableOptions(newAvailableOptions);
       }
     }
   };
@@ -151,7 +167,7 @@ const PredictionCheckpointPage = () => {
       // After showing feedback, continue to the next page
       setTimeout(() => {
         navigate(`/book/${bookId}`);
-      }, 2000);
+      }, 3000);
     } catch (err) {
       console.error("Failed to submit prediction:", err);
     }
@@ -161,8 +177,13 @@ const PredictionCheckpointPage = () => {
 
   if (loading) {
     return (
-      <div className="text-center mt-20 text-blue-500 text-2xl font-bold">
-        Loading...
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-blue-500 text-xl font-semibold">
+            Loading your prediction challenge...
+          </p>
+        </div>
       </div>
     );
   }
@@ -171,13 +192,19 @@ const PredictionCheckpointPage = () => {
     <div className="min-h-screen bg-white">
       <StudentNavbar />
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h1 className="text-3xl font-bold text-center text-gray-800 mb-4">
+        <div
+          className="bg-white rounded-xl shadow-lg p-6"
+          style={{
+            backgroundImage: `url(${sequenceBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <h1 className="text-3xl font-bold text-center text-sequence-title mb-4">
             {storyData?.title}
           </h1>
           <p className="text-xl text-gray-700 text-center mb-6">
-            What happens next? Choose your prediction carefully - you only have
-            one chance!
+            What happens next? Choose your prediction carefully
           </p>
 
           <DndContext
@@ -185,7 +212,7 @@ const PredictionCheckpointPage = () => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex flex-col items-center min-h-[300px]">
+            <div className="flex flex-col items-center min-h-[350px]">
               <div className="flex justify-center gap-3 mb-10 flex-wrap">
                 {slots.map((slot, index) => (
                   <Slot
@@ -198,7 +225,7 @@ const PredictionCheckpointPage = () => {
               </div>
 
               <div className="flex flex-wrap justify-center gap-4 p-4 rounded-xl">
-                {options.map((option) => (
+                {availableOptions.map((option) => (
                   <ImageCard key={option.id} id={option.id} url={option.url} />
                 ))}
               </div>
@@ -220,19 +247,71 @@ const PredictionCheckpointPage = () => {
           </div>
 
           {showFeedback && (
-            <div
-              className={`mt-6 p-4 rounded-lg text-center ${
-                isCorrect
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              <p className="text-lg font-semibold">
-                {isCorrect
-                  ? "Great prediction! 🎉"
-                  : "Not quite right, but that's okay! 🤔"}
-              </p>
-              <p className="mt-2">Continuing the story in a moment...</p>
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div
+                className={`bg-white p-8 rounded-xl shadow-2xl transform transition-all ${
+                  isCorrect
+                    ? "border-4 border-green-500"
+                    : "border-4 border-red-500"
+                }`}
+              >
+                <div className="text-center">
+                  {isCorrect ? (
+                    <div className="animate-bounce mb-4">
+                      <svg
+                        className="w-16 h-16 mx-auto text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        ></path>
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="animate-pulse mb-4">
+                      <svg
+                        className="w-16 h-16 mx-auto text-red-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        ></path>
+                      </svg>
+                    </div>
+                  )}
+                  <h3
+                    className={`text-2xl font-bold mb-4 ${
+                      isCorrect ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {isCorrect
+                      ? "Great prediction! 🎉"
+                      : "Not quite right, but that's okay! 🤔"}
+                  </h3>
+                  <p className="text-gray-700 text-lg mb-4">
+                    {isCorrect
+                      ? "You correctly predicted what happens next in the story!"
+                      : "Keep reading to discover what actually happens next!"}
+                  </p>
+                  <div className="animate-pulse">
+                    <p className="text-gray-600 italic">
+                      Continuing to story in a moment...
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
