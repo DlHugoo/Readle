@@ -1,6 +1,18 @@
 import React from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
+  const navigate = useNavigate();
+  const { bookId } = useParams();
+
+  const handleContinue = () => {
+    if (isCorrect || attemptsLeft === 0) {
+      navigate(`/book/${bookId}/complete`);
+    } else if (onContinue) {
+      onContinue();
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4 transform transition-all animate-bounce-in">
@@ -33,7 +45,7 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
               </p>
               <p className="text-lg mb-6 font-semibold">
                 {attemptsLeft > 0
-                  ? `You have ${attemptsLeft} ${    
+                  ? `You have ${attemptsLeft} ${
                       attemptsLeft === 1 ? "try" : "tries"
                     } left`
                   : "Let's see the correct order"}
@@ -51,12 +63,12 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
               </button>
             )}
 
-            {(isCorrect || attemptsLeft === 0) && onContinue && (
+            {(isCorrect || attemptsLeft === 0) && (
               <button
-                onClick={onContinue}
+                onClick={handleContinue}
                 className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-full text-xl font-bold transition-colors"
               >
-                {isCorrect ? "Continue" : "Show Answer & Continue"}
+                {isCorrect ? "Back to Book" : "See Correct Order"}
               </button>
             )}
           </div>
