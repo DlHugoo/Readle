@@ -299,8 +299,12 @@ const ClassroomVisualization = () => {
     return Math.max(score, 0); // Ensure score doesn't go below 0
   };
 
-  
-  
+  // Add prediction score calculation function
+  const calculatePredictionScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
+  };
+
   // Calculate summary statistics for the dashboard
   const calculateSummaryStats = (studentsWithProgress) => {
     // Total books read (sum of all completed books)
@@ -344,12 +348,17 @@ const ClassroomVisualization = () => {
   };
 
   // Prepare data for charts
+  
+  // Update prepareComprehensionScoreData to include prediction scores
   const prepareComprehensionScoreData = () => {
     return progressData
       .filter(student => student.progressData?.avgComprehensionScore !== undefined)
       .map(student => ({
         name: `${student.firstName} ${student.lastName}`,
-        score: student.progressData.avgComprehensionScore
+        score: student.progressData.avgComprehensionScore,
+        snakeGame: calculateAverageScore(student.progressData.snakeAttemptsData, calculateSnakeGameScore),
+        sequencing: calculateAverageScore(student.progressData.ssaAttemptsData, calculateSSAScore),
+        prediction: calculateAverageScore(student.progressData.predictionAttemptsData, calculatePredictionScore)
       }))
       .sort((a, b) => b.score - a.score);
   };
@@ -386,6 +395,15 @@ const ClassroomVisualization = () => {
       name: status,
       value: count
     }));
+  };
+
+  // Helper function to calculate average score
+  const calculateAverageScore = (attemptsData, scoreCalculator) => {
+    if (!attemptsData) return 0;
+    const scores = Object.values(attemptsData)
+      .filter(attempts => attempts > 0)
+      .map(attempts => scoreCalculator(attempts));
+    return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 0;
   };
 
   // Colors for charts
@@ -626,33 +644,3 @@ const ClassroomVisualization = () => {
 };
 
 export default ClassroomVisualization;
-
-
-  // Add prediction score calculation function
-  const calculatePredictionScore = (attempts) => {
-    if (!attempts || attempts <= 0) return 0;
-    return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
-  };
-
-  // Update prepareComprehensionScoreData to include prediction scores
-  const prepareComprehensionScoreData = () => {
-    return progressData
-      .filter(student => student.progressData?.avgComprehensionScore !== undefined)
-      .map(student => ({
-        name: `${student.firstName} ${student.lastName}`,
-        score: student.progressData.avgComprehensionScore,
-        snakeGame: calculateAverageScore(student.progressData.snakeAttemptsData, calculateSnakeGameScore),
-        sequencing: calculateAverageScore(student.progressData.ssaAttemptsData, calculateSSAScore),
-        prediction: calculateAverageScore(student.progressData.predictionAttemptsData, calculatePredictionScore)
-      }))
-      .sort((a, b) => b.score - a.score);
-  };
-
-  // Helper function to calculate average score
-  const calculateAverageScore = (attemptsData, scoreCalculator) => {
-    if (!attemptsData) return 0;
-    const scores = Object.values(attemptsData)
-      .filter(attempts => attempts > 0)
-      .map(attempts => scoreCalculator(attempts));
-    return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 0;
-  };
