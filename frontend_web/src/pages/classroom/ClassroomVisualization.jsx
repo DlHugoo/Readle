@@ -5,7 +5,8 @@ import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, ArrowLeft, Pi
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from "axios";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,  ScatterChart, 
+  Scatter 
 } from 'recharts';
 
 const API_BASE_URL = 'http://localhost:8080';
@@ -397,6 +398,31 @@ const ClassroomVisualization = () => {
     }));
   };
 
+  // Prepare reading time trend data
+  const prepareReadingTimeTrendData = () => {
+    const timeData = progressData.map(student => {
+      const books = [...(student.progressData?.completedBooks || []), ...(student.progressData?.inProgressBooks || [])];
+      return books.map(book => ({
+        name: `${student.firstName} ${student.lastName}`,
+        date: new Date(book.lastReadAt || book.endTime).toLocaleDateString(),
+        minutes: book.totalReadingTimeMinutes || Math.floor((book.totalReadingTime?.seconds || 0) / 60)
+      }));
+    }).flat();
+
+    // Sort by date
+    timeData.sort((a, b) => new Date(a.date) - new Date(b.date));
+    return timeData;
+  };
+
+  // Prepare comprehension vs reading time data
+  const prepareComprehensionVsTimeData = () => {
+    return progressData.map(student => ({
+      name: `${student.firstName} ${student.lastName}`,
+      readingTime: student.progressData?.totalReadingTimeMinutes || 0,
+      comprehensionScore: student.progressData?.avgComprehensionScore || 0
+    }));
+  };
+
   // Helper function to calculate average score
   const calculateAverageScore = (attemptsData, scoreCalculator) => {
     if (!attemptsData) return 0;
@@ -492,40 +518,44 @@ const ClassroomVisualization = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
-                
-                {/* Books Read Chart */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-green-100 p-2 rounded-full mr-3">
-                      <BookOpen size={20} className="text-green-600" />
-                    </div>
-                    <h2 className="text-lg font-semibold">Books Read</h2>
-                  </div>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={prepareBooksReadData()}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
-                          angle={-45} 
-                          textAnchor="end" 
-                          height={70}
-                          interval={0}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="completed" name="Completed" fill="#4CAF50" />
-                        <Bar dataKey="inProgress" name="In Progress" fill="#FFC107" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+
+              {/* Comprehension vs Reading Time Scatter Plot */}
+              <div className="bg-white p-6 rounded-lg shadow-md mt-6">
+                <h3 className="text-lg font-semibold mb-4">Comprehension Score vs Reading Time</h3>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart
+                      margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <CartesianGrid />
+                      <XAxis
+                        type="number"
+                        dataKey="readingTime"
+                        name="Reading Time"
+                        label={{ value: 'Total Reading Time (minutes)', position: 'bottom' }}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey="comprehensionScore"
+                        name="Comprehension Score"
+                        label={{ value: 'Comprehension Score', angle: -90, position: 'insideLeft' }}
+                      />
+                      <Tooltip
+                        cursor={{ strokeDasharray: '3 3' }}
+                        formatter={(value, name, props) => [
+                          `${value}${name === 'Reading Time' ? ' minutes' : '%'}`,
+                          `${props.payload.name} - ${name}`
+                        ]}
+                      />
+                      <Scatter
+                        name="Students"
+                        data={prepareComprehensionVsTimeData()}
+                        fill="#8884d8"
+                      />
+                    </ScatterChart>
+                  </ResponsiveContainer>
                 </div>
-                
+              </div>
+
                 {/* Reading Time Chart */}
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center mb-4">
@@ -557,7 +587,74 @@ const ClassroomVisualization = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
-                
+
+                {/* Reading Time Trend Line Chart */}
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <h3 className="text-lg font-semibold mb-4">Reading Time Trends</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={prepareReadingTimeTrendData()}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          angle={-45} 
+                          textAnchor="end"
+                          height={60}
+                          interval={0}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
+                        <Tooltip />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="minutes" 
+                          name="Reading Time" 
+                          stroke="#8884d8" 
+                          activeDot={{ r: 8 }} 
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Books Read Chart */}
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-green-100 p-2 rounded-full mr-3">
+                      <BookOpen size={20} className="text-green-600" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Books Read</h2>
+                  </div>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={prepareBooksReadData()}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+                        stackOffset="none"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45} 
+                          textAnchor="end" 
+                          height={70}
+                          interval={0}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value, name) => [value, name === 'completed' ? 'Completed Books' : 'Books in Progress']}
+                        />
+                        <Legend />
+                        <Bar dataKey="completed" name="Completed" fill="#4CAF50" stackId="a" />
+                        <Bar dataKey="inProgress" name="In Progress" fill="#FFC107" stackId="a" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+  
                 {/* Status Distribution Pie Chart */}
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex items-center mb-4">
