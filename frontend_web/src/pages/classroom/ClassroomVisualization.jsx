@@ -1,288 +1,322 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, ArrowLeft, PieChart as PieChartIcon, BarChart2, TrendingUp, Activity } from "lucide-react";
-import ClassroomSidebar from "../../components/ClassroomSidebar";
-import axios from "axios";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,  ScatterChart, 
-  Scatter 
+import ClassroomSidebar from '../../components/ClassroomSidebar';
+import { Menu, ArrowLeft, BarChart2, Clock, BookOpen, PieChart, Activity } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, ScatterChart, Scatter, PieChart as RePieChart, Pie, Cell,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 
+// Add API base URL constant
 const API_BASE_URL = 'http://localhost:8080';
 
 const ClassroomVisualization = () => {
   const { classroomId } = useParams();
   const navigate = useNavigate();
+  
+  // State variables
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [classroomName, setClassroomName] = useState("");
+  const [classroomName, setClassroomName] = useState('');
+  const [progressData, setProgressData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [progressData, setProgressData] = useState([]);
-  const [summaryStats, setSummaryStats] = useState({
-    totalBooksRead: 0,
-    averageReadingTime: 0,
-    topPerformers: [],
-    studentsNeedingAttention: []
-  });
+  const [showOnlyClassroomBooks, setShowOnlyClassroomBooks] = useState(false); // Add filter state
+  const [classroomBooks, setClassroomBooks] = useState([]); // Add state for classroom books
   
-  // Toggle sidebar function
+  // Toggle sidebar
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
   
-  // Go back to progress dashboard
+  // Navigate back to progress dashboard
   const goBackToProgress = () => {
-    navigate(`/classroom-progress/${classroomId}`);
+    navigate(-1);
   };
-
-  // Fetch classroom details and students
+  
+  // Fetch classroom details
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setError("Authentication required. Please log in.");
-        setLoading(false);
-        return;
-      }
-
+    const fetchClassroomDetails = async () => {
       try {
-        // Fetch classroom details
-        const classroomResponse = await axios.get(`/api/classrooms/${classroomId}`, {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setError("Authentication required. Please log in.");
+          setLoading(false);
+          return;
+        }
+        
+        const response = await axios.get(`${API_BASE_URL}/api/classrooms/${classroomId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        const classroomData = classroomResponse.data;
-        setClassroomName(classroomData.name || "Unknown Classroom");
-        
-        // Fetch student details for each email in studentEmails
-        if (classroomData.studentEmails && Array.isArray(classroomData.studentEmails)) {
-          const studentPromises = classroomData.studentEmails.map(async (email) => {
-            try {
-              const userResponse = await axios.get(`/api/users/by-email/${email}`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
-              return userResponse.data;
-            } catch (error) {
-              console.error(`Error fetching details for student ${email}:`, error);
-              return {
-                email: email,
-                firstName: email.split('@')[0],
-                lastName: "",
-                userId: null,
-                username: email.split('@')[0]
-              };
-            }
-          });
-          
-          const studentDetails = await Promise.all(studentPromises);
-          
-          // Fetch progress data for each student
-          await fetchProgressForAllStudents(studentDetails, token);
-        }
-        
-        setError(null);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        if (error.response && error.response.status === 404) {
-          setError("Classroom not found or you don't have access to it.");
-        } else {
-          setError("Failed to load data. Please try again.");
-        }
-      } finally {
-        setLoading(false);
+        setClassroomName(response.data.name);
+      } catch (err) {
+        console.error('Error fetching classroom details:', err);
+        setError('Failed to load classroom details. Please try again later.');
       }
     };
-
-    fetchData();
+    
+    fetchClassroomDetails();
   }, [classroomId]);
-
-  // Fetch progress data for all students
-  const fetchProgressForAllStudents = async (studentsList, token) => {
-    try {
-      const progressPromises = studentsList.map(async (student) => {
-        const userId = student.userId || student.id;
-        if (!userId) return { ...student, progressData: null };
+  
+  // Fetch classroom books
+  useEffect(() => {
+    const fetchClassroomBooks = async () => {
+      try {
+        const token = localStorage.getItem('token');
         
-        try {
-          // Fetch all progress data in parallel
-          const [completedCountRes, inProgressCountRes, completedBooksRes, inProgressBooksRes] = await Promise.all([
-            axios.get(`${API_BASE_URL}/api/progress/completed/count/${userId}`, { 
-              headers: { Authorization: `Bearer ${token}` }
-            }),
-            axios.get(`${API_BASE_URL}/api/progress/in-progress/count/${userId}`, { 
-              headers: { Authorization: `Bearer ${token}` }
-            }),
-            axios.get(`${API_BASE_URL}/api/progress/completed/${userId}`, { 
-              headers: { Authorization: `Bearer ${token}` }
-            }),
-            axios.get(`${API_BASE_URL}/api/progress/in-progress/${userId}`, { 
-              headers: { Authorization: `Bearer ${token}` }
-            }),
-          ]);
-          
-          // Calculate last activity date
-          let lastActivityDate = null;
-          const inProgressBooks = inProgressBooksRes.data;
-          const completedBooks = completedBooksRes.data;
-          
-          if (inProgressBooks.length > 0) {
-            lastActivityDate = new Date(Math.max(...inProgressBooks.map(book => new Date(book.lastReadAt))));
-          } else if (completedBooks.length > 0) {
-            lastActivityDate = new Date(Math.max(...completedBooks.map(book => new Date(book.endTime))));
+        if (!token) return;
+        
+        const response = await axios.get(`${API_BASE_URL}/api/classrooms/${classroomId}/books`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setClassroomBooks(response.data);
+      } catch (err) {
+        console.error('Error fetching classroom books:', err);
+        // Don't set error here as it's not critical
+      }
+    };
+    
+    fetchClassroomBooks();
+  }, [classroomId]);
+  
+  // Fetch student progress data
+  useEffect(() => {
+    const fetchStudentProgress = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setError("Authentication required. Please log in.");
+          setLoading(false);
+          return;
+        }
+        
+        // Get classroom data to get student emails
+        const classroomResponse = await axios.get(`${API_BASE_URL}/api/classrooms/${classroomId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        const classroomData = classroomResponse.data;
+        
+        // If no students in classroom, return empty array
+        if (!classroomData.studentEmails || !Array.isArray(classroomData.studentEmails) || classroomData.studentEmails.length === 0) {
+          setProgressData([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch student details for each email
+        const studentPromises = classroomData.studentEmails.map(async (email) => {
+          try {
+            const userResponse = await axios.get(`${API_BASE_URL}/api/users/by-email/${email}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            return userResponse.data;
+          } catch (error) {
+            console.error(`Error fetching details for student ${email}:`, error);
+            return {
+              email: email,
+              firstName: email.split('@')[0],
+              lastName: "",
+              userId: null,
+              username: email.split('@')[0]
+            };
           }
+        });
+        
+        const studentDetails = await Promise.all(studentPromises);
+        
+        // Fetch progress data for each student
+        const progressPromises = studentDetails.map(async (student) => {
+          const userId = student.userId || student.id;
+          if (!userId) return { ...student, progressData: null };
           
-          // Calculate total reading time across all books
-          const totalReadingTimeMinutes = [...inProgressBooks, ...completedBooks].reduce((total, book) => {
-            const minutes = typeof book.totalReadingTimeMinutes === 'number' 
-              ? book.totalReadingTimeMinutes 
-              : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
-            return total + minutes;
-          }, 0);
-          
-          // Fetch snake game attempts and SSA attempts for all books
-          const allBooks = [...completedBooks, ...inProgressBooks];
-          const snakeAttemptsData = {};
-          const ssaAttemptsData = {};
-          const predictionAttemptsData = {}; // Add this
-          
-          await Promise.all(allBooks.map(async (book) => {
-            try {
+          try {
+            // Fetch all progress data in parallel
+            const [completedCountRes, inProgressCountRes, completedBooksRes, inProgressBooksRes] = await Promise.all([
+              axios.get(`${API_BASE_URL}/api/progress/completed/count/${userId}`, { 
+                headers: { Authorization: `Bearer ${token}` }
+              }),
+              axios.get(`${API_BASE_URL}/api/progress/in-progress/count/${userId}`, { 
+                headers: { Authorization: `Bearer ${token}` }
+              }),
+              axios.get(`${API_BASE_URL}/api/progress/completed/${userId}`, { 
+                headers: { Authorization: `Bearer ${token}` }
+              }),
+              axios.get(`${API_BASE_URL}/api/progress/in-progress/${userId}`, { 
+                headers: { Authorization: `Bearer ${token}` }
+              }),
+            ]);
+            
+            // Calculate last activity date
+            let lastActivityDate = null;
+            const inProgressBooks = inProgressBooksRes.data;
+            const completedBooks = completedBooksRes.data;
+            
+            if (inProgressBooks.length > 0) {
+              lastActivityDate = new Date(Math.max(...inProgressBooks.map(book => new Date(book.lastReadAt))));
+            } else if (completedBooks.length > 0) {
+              lastActivityDate = new Date(Math.max(...completedBooks.map(book => new Date(book.endTime))));
+            }
+            
+            // Calculate total reading time across all books
+            const totalReadingTimeMinutes = [...inProgressBooks, ...completedBooks].reduce((total, book) => {
+              const minutes = typeof book.totalReadingTimeMinutes === 'number' 
+                ? book.totalReadingTimeMinutes 
+                : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
+              return total + minutes;
+            }, 0);
+            
+            // Fetch snake game attempts and SSA attempts for all books
+            const allBooks = [...completedBooks, ...inProgressBooks];
+            const snakeAttemptsData = {};
+            const ssaAttemptsData = {};
+            const predictionAttemptsData = {};
+            
+            await Promise.all(allBooks.map(async (book) => {
               const bookId = book.book.bookID;
-              const snakeAttemptsRes = await axios.get(
-                `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              snakeAttemptsData[bookId] = snakeAttemptsRes.data;
-              
-              // Fetch SSA attempts for this book
               try {
-                const ssaAttemptsRes = await axios.get(
-                  `${API_BASE_URL}/api/ssa-attempts/user/${userId}/book/${bookId}/count`,
+                const snakeAttemptsRes = await axios.get(
+                  `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
-                ssaAttemptsData[bookId] = ssaAttemptsRes.data;
-              } catch (err) {
-                console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
-                ssaAttemptsData[bookId] = 0;
-              }
+                snakeAttemptsData[bookId] = snakeAttemptsRes.data;
+                
+                // Fetch SSA attempts for this book
+                try {
+                  const ssaAttemptsRes = await axios.get(
+                    `${API_BASE_URL}/api/ssa-attempts/user/${userId}/book/${bookId}/count`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                  );
+                  ssaAttemptsData[bookId] = ssaAttemptsRes.data;
+                } catch (err) {
+                  console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
+                  ssaAttemptsData[bookId] = 0;
+                }
 
-              // Add prediction attempts fetch
-              try {
+                // Fetch prediction attempts
                 const predictionAttemptsRes = await axios.get(
                   `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
                 predictionAttemptsData[bookId] = predictionAttemptsRes.data;
               } catch (err) {
-                console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
+                console.error(`Error fetching attempts for book ${bookId}:`, err);
+                snakeAttemptsData[bookId] = 0;
+                ssaAttemptsData[bookId] = 0;
                 predictionAttemptsData[bookId] = 0;
               }
-            } catch (err) {
-              console.error(`Error fetching attempts for book ${book.book.bookID}:`, err);
-              snakeAttemptsData[book.book.bookID] = 0;
-              ssaAttemptsData[book.book.bookID] = 0;
-              predictionAttemptsData[book.book.bookID] = 0;
-            }
-          }));
-          
-          // Calculate average comprehension score based on all activities
-          let totalScore = 0;
-          let totalActivities = 0;
-          
-          // Calculate scores for snake game attempts
-          Object.entries(snakeAttemptsData).forEach(([bookId, attempts]) => {
-            if (attempts > 0) {
-              const score = calculateSnakeGameScore(attempts);
-              totalScore += score;
-              totalActivities++;
-            }
-          });
-          
-          // Calculate scores for SSA attempts
-          Object.entries(ssaAttemptsData).forEach(([bookId, attempts]) => {
-            if (attempts > 0) {
-              const score = calculateSSAScore(attempts);
-              totalScore += score;
-              totalActivities++;
-            }
-          });
-
-          // Add prediction score calculation
-          Object.entries(predictionAttemptsData).forEach(([bookId, attempts]) => {
-            if (attempts > 0) {
-              const score = calculatePredictionScore(attempts);
-              totalScore += score;
-              totalActivities++;
-            }
-          });
-          
-          // Calculate average comprehension score
-          const avgComprehensionScore = totalActivities > 0 
-            ? Math.round(totalScore / totalActivities) 
-            : 0;
-          
-          // Determine status based on activity and scores
-          const daysSinceLastActivity = lastActivityDate 
-            ? Math.floor((new Date() - lastActivityDate) / (1000 * 60 * 60 * 24)) 
-            : null;
+            }));
             
-          let status = 'On Track';
-          if (daysSinceLastActivity === null || daysSinceLastActivity > 14) {
-            status = 'Needs Attention';
-          } else if (avgComprehensionScore < 70) {
-            status = 'Needs Attention';
-          }
-          
-          return {
-            ...student,
-            progressData: {
-              completedCount: completedCountRes.data,
-              inProgressCount: inProgressCountRes.data,
-              completedBooks: completedBooks,
-              inProgressBooks: inProgressBooks,
-              lastActivityDate: lastActivityDate,
-              totalReadingTimeMinutes: totalReadingTimeMinutes,
-              avgComprehensionScore: avgComprehensionScore,
-              status: status
+            // Calculate average comprehension score
+            let totalScore = 0;
+            let totalActivities = 0;
+            
+            // Calculate scores for snake game attempts
+            Object.entries(snakeAttemptsData).forEach(([bookId, attempts]) => {
+              if (attempts > 0) {
+                const score = calculateSnakeGameScore(attempts);
+                totalScore += score;
+                totalActivities++;
+              }
+            });
+            
+            // Calculate scores for SSA attempts
+            Object.entries(ssaAttemptsData).forEach(([bookId, attempts]) => {
+              if (attempts > 0) {
+                const score = calculateSSAScore(attempts);
+                totalScore += score;
+                totalActivities++;
+              }
+            });
+
+            // Calculate scores for prediction attempts
+            Object.entries(predictionAttemptsData).forEach(([bookId, attempts]) => {
+              if (attempts > 0) {
+                const score = calculatePredictionScore(attempts);
+                totalScore += score;
+                totalActivities++;
+              }
+            });
+            
+            // Calculate average comprehension score
+            const avgComprehensionScore = totalActivities > 0 
+              ? Math.round(totalScore / totalActivities) 
+              : 0;
+            
+            // Determine status based on activity and scores
+            const daysSinceLastActivity = lastActivityDate 
+              ? Math.floor((new Date() - lastActivityDate) / (1000 * 60 * 60 * 24)) 
+              : null;
+              
+            let status = 'On Track';
+            if (daysSinceLastActivity === null || daysSinceLastActivity > 14) {
+              status = 'Needs Attention';
+            } else if (avgComprehensionScore < 70) {
+              status = 'Needs Attention';
             }
-          };
-        } catch (error) {
-          console.error(`Error fetching progress for student ${userId}:`, error);
-          return { 
-            ...student, 
-            progressData: {
-              completedCount: 0,
-              inProgressCount: 0,
-              completedBooks: [],
-              inProgressBooks: [],
-              lastActivityDate: null,
-              totalReadingTimeMinutes: 0,
-              avgComprehensionScore: 0,
-              status: 'Unknown'
-            } 
-          };
-        }
-      });
-      
-      const studentsWithProgress = await Promise.all(progressPromises);
-      setProgressData(studentsWithProgress);
-      
-      // Calculate summary statistics
-      calculateSummaryStats(studentsWithProgress);
-      
-    } catch (error) {
-      console.error("Error fetching progress data:", error);
-      setError("Failed to load progress data. Please try again.");
-    }
-  };
+            
+            return {
+              ...student,
+              progressData: {
+                completedCount: completedCountRes.data,
+                inProgressCount: inProgressCountRes.data,
+                completedBooks: completedBooks,
+                inProgressBooks: inProgressBooks,
+                lastActivityDate: lastActivityDate,
+                totalReadingTimeMinutes: totalReadingTimeMinutes,
+                avgComprehensionScore: avgComprehensionScore,
+                status: status,
+                snakeAttemptsData: snakeAttemptsData,
+                ssaAttemptsData: ssaAttemptsData,
+                predictionAttemptsData: predictionAttemptsData
+              }
+            };
+          } catch (error) {
+            console.error(`Error fetching progress for student ${userId}:`, error);
+            return { 
+              ...student, 
+              progressData: {
+                completedCount: 0,
+                inProgressCount: 0,
+                completedBooks: [],
+                inProgressBooks: [],
+                lastActivityDate: null,
+                totalReadingTimeMinutes: 0,
+                avgComprehensionScore: 0,
+                status: 'Unknown'
+              } 
+            };
+          }
+        });
+        
+        const processedData = await Promise.all(progressPromises);
+        setProgressData(processedData);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching student progress:', err);
+        setError('Failed to load student progress data. Please try again later.');
+        setLoading(false);
+      }
+    };
+    
+    fetchStudentProgress();
+  }, [classroomId]);
   
-  // Add functions to calculate scores based on attempts
+  // Helper functions for calculating scores
   const calculateSnakeGameScore = (attempts) => {
     if (!attempts || attempts <= 0) return 0;
     
@@ -294,7 +328,7 @@ const ClassroomVisualization = () => {
   // Function to calculate SSA score based on attempts
   const calculateSSAScore = (attempts) => {
     if (!attempts || attempts <= 0) return 0;
-    
+  
     // Scoring logic: starts at 100, minus 25 points for each additional attempt
     const score = 100 - ((attempts - 1) * 25);
     return Math.max(score, 0); // Ensure score doesn't go below 0
@@ -305,102 +339,117 @@ const ClassroomVisualization = () => {
     if (!attempts || attempts <= 0) return 0;
     return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
   };
-
-  // Calculate summary statistics for the dashboard
-  const calculateSummaryStats = (studentsWithProgress) => {
-    // Total books read (sum of all completed books)
-    const totalBooksRead = studentsWithProgress.reduce((total, student) => {
-      return total + (student.progressData?.completedCount || 0);
-    }, 0);
-    
-    // Average reading time per student (in minutes)
-    const totalReadingTime = studentsWithProgress.reduce((total, student) => {
-      return total + (student.progressData?.totalReadingTimeMinutes || 0);
-    }, 0);
-    const averageReadingTime = studentsWithProgress.length > 0 
-      ? Math.round(totalReadingTime / studentsWithProgress.length) 
-      : 0;
-    
-    // Top performers (based on comprehension scores)
-    const sortedByScore = [...studentsWithProgress].sort((a, b) => 
-      (b.progressData?.avgComprehensionScore || 0) - (a.progressData?.avgComprehensionScore || 0)
-    );
-    const topPerformers = sortedByScore.slice(0, 3);
-    
-    // Students needing attention
-    const needingAttention = studentsWithProgress.filter(student => 
-      student.progressData?.status === 'Needs Attention'
-    );
-    
-    setSummaryStats({
-      totalBooksRead,
-      averageReadingTime,
-      topPerformers,
-      studentsNeedingAttention: needingAttention
-    });
-  };
   
-  // Format time function (converts minutes to hours and minutes)
+  // Helper function to format time
   const formatTime = (minutes) => {
-    if (!minutes) return '0h 0m';
+    if (minutes < 60) return `${minutes} min`;
     const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   };
-
-  // Prepare data for charts
   
-  // Update prepareComprehensionScoreData to include prediction scores
+ // Filter student data based on showOnlyClassroomBooks
+  const filteredProgressData = progressData.map(student => {
+    if (!student.progressData || !showOnlyClassroomBooks) {
+      return student;
+    }
+    
+    // Filter completed books that belong to the current classroom
+    const filteredCompletedBooks = student.progressData.completedBooks.filter(book => 
+      book.book && book.book.classroomId && book.book.classroomId.toString() === classroomId
+    );
+    
+    // Filter in-progress books that belong to the current classroom
+    const filteredInProgressBooks = student.progressData.inProgressBooks.filter(book => 
+      book.book && book.book.classroomId && book.book.classroomId.toString() === classroomId
+    );
+    
+    // Get all classroom books for calculations
+    const allClassroomBooks = [...filteredCompletedBooks, ...filteredInProgressBooks];
+    
+    // Calculate comprehension scores
+    let totalScore = 0;
+    let totalActivities = 0;
+    
+    allClassroomBooks.forEach(book => {
+      const bookId = book.book.bookID;
+      const snakeAttempts = student.progressData.snakeAttemptsData[bookId] || 0;
+      const ssaAttempts = student.progressData.ssaAttemptsData[bookId] || 0;
+      const predictionAttempts = student.progressData.predictionAttemptsData[bookId] || 0;
+      
+      if (snakeAttempts > 0) {
+        totalScore += calculateSnakeGameScore(snakeAttempts);
+        totalActivities++;
+      }
+      
+      if (ssaAttempts > 0) {
+        totalScore += calculateSSAScore(ssaAttempts);
+        totalActivities++;
+      }
+      
+      if (predictionAttempts > 0) {
+        totalScore += calculatePredictionScore(predictionAttempts);
+        totalActivities++;
+      }
+    });
+    
+    // Update the filtered student's progress data
+    return {
+      ...student,
+      progressData: {
+        ...student.progressData,
+        completedBooks: filteredCompletedBooks,
+        inProgressBooks: filteredInProgressBooks,
+        completedCount: filteredCompletedBooks.length,
+        inProgressCount: filteredInProgressBooks.length,
+        totalReadingTimeMinutes: allClassroomBooks.reduce((total, book) => {
+          const minutes = typeof book.totalReadingTimeMinutes === 'number'
+            ? book.totalReadingTimeMinutes
+            : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
+          return total + minutes;
+        }, 0),
+        avgComprehensionScore: totalActivities > 0 ? Math.round(totalScore / totalActivities) : 0
+      }
+    };
+  });
+  
+  // Prepare data for charts
   const prepareComprehensionScoreData = () => {
-    return progressData
-      .filter(student => student.progressData?.avgComprehensionScore !== undefined)
-      .map(student => ({
-        name: `${student.firstName} ${student.lastName}`,
-        score: student.progressData.avgComprehensionScore,
-        snakeGame: calculateAverageScore(student.progressData.snakeAttemptsData, calculateSnakeGameScore),
-        sequencing: calculateAverageScore(student.progressData.ssaAttemptsData, calculateSSAScore),
-        prediction: calculateAverageScore(student.progressData.predictionAttemptsData, calculatePredictionScore)
-      }))
-      .sort((a, b) => b.score - a.score);
-  };
-
-  const prepareBooksReadData = () => {
-    return progressData
-      .filter(student => student.progressData?.completedCount !== undefined)
-      .map(student => ({
-        name: `${student.firstName} ${student.lastName}`,
-        completed: student.progressData.completedCount,
-        inProgress: student.progressData.inProgressCount
-      }))
-      .sort((a, b) => b.completed - a.completed);
-  };
-
-  const prepareReadingTimeData = () => {
-    return progressData
-      .filter(student => student.progressData?.totalReadingTimeMinutes !== undefined)
-      .map(student => ({
-        name: `${student.firstName} ${student.lastName}`,
-        minutes: student.progressData.totalReadingTimeMinutes
-      }))
-      .sort((a, b) => b.minutes - a.minutes);
-  };
-
-  const prepareStatusDistributionData = () => {
-    const statusCounts = progressData.reduce((acc, student) => {
-      const status = student.progressData?.status || 'Unknown';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(statusCounts).map(([status, count]) => ({
-      name: status,
-      value: count
+    return filteredProgressData.map(student => ({
+      name: `${student.firstName} ${student.lastName}`,
+      score: student.progressData?.avgComprehensionScore || 0
     }));
   };
-
+  
+  const prepareReadingTimeData = () => {
+    return filteredProgressData.map(student => ({
+      name: `${student.firstName} ${student.lastName}`,
+      minutes: student.progressData?.totalReadingTimeMinutes || 0
+    }));
+  };
+  
+  const prepareBooksReadData = () => {
+    return filteredProgressData.map(student => ({
+      name: `${student.firstName} ${student.lastName}`,
+      completed: student.progressData?.completedCount || 0,
+      inProgress: student.progressData?.inProgressCount || 0
+    }));
+  };
+  
+  const prepareStatusDistributionData = () => {
+    const statusCounts = {};
+    
+    filteredProgressData.forEach(student => {
+      const status = student.progressData?.status || 'Unknown';
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    
+    return Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
+  };
+  
   // Prepare reading time trend data
   const prepareReadingTimeTrendData = () => {
-    const timeData = progressData.map(student => {
+    const timeData = filteredProgressData.map(student => {
       const books = [...(student.progressData?.completedBooks || []), ...(student.progressData?.inProgressBooks || [])];
       return books.map(book => ({
         name: `${student.firstName} ${student.lastName}`,
@@ -416,7 +465,7 @@ const ClassroomVisualization = () => {
 
   // Prepare comprehension vs reading time data
   const prepareComprehensionVsTimeData = () => {
-    return progressData.map(student => ({
+    return filteredProgressData.map(student => ({
       name: `${student.firstName} ${student.lastName}`,
       readingTime: student.progressData?.totalReadingTimeMinutes || 0,
       comprehensionScore: student.progressData?.avgComprehensionScore || 0
@@ -485,6 +534,35 @@ const ClassroomVisualization = () => {
             </div>
           ) : (
             <>
+              {/* Book Filter Toggle */}
+              <div className="mb-6 bg-white p-4 rounded-lg shadow">
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">Show books:</span>
+                  <div className="flex bg-gray-100 rounded-lg p-1">
+                    <button
+                      className={`px-3 py-1 rounded-md text-sm ${
+                        !showOnlyClassroomBooks 
+                          ? 'bg-blue-500 text-white' 
+                          : 'text-gray-700 hover:bg-gray-200'
+                      }`}
+                      onClick={() => setShowOnlyClassroomBooks(false)}
+                    >
+                      All Books (Classroom + OOB)
+                    </button>
+                    <button
+                      className={`px-3 py-1 rounded-md text-sm ${
+                        showOnlyClassroomBooks 
+                          ? 'bg-blue-500 text-white' 
+                          : 'text-gray-700 hover:bg-gray-200'
+                      }`}
+                      onClick={() => setShowOnlyClassroomBooks(true)}
+                    >
+                      Classroom Books Only
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Comprehension Scores Chart */}
@@ -519,42 +597,47 @@ const ClassroomVisualization = () => {
                   </div>
                 </div>
 
-              {/* Comprehension vs Reading Time Scatter Plot */}
-              <div className="bg-white p-6 rounded-lg shadow-md mt-6">
-                <h3 className="text-lg font-semibold mb-4">Comprehension Score vs Reading Time</h3>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart
-                      margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                      <CartesianGrid />
-                      <XAxis
-                        type="number"
-                        dataKey="readingTime"
-                        name="Reading Time"
-                        label={{ value: 'Total Reading Time (minutes)', position: 'bottom' }}
-                      />
-                      <YAxis
-                        type="number"
-                        dataKey="comprehensionScore"
-                        name="Comprehension Score"
-                        label={{ value: 'Comprehension Score', angle: -90, position: 'insideLeft' }}
-                      />
-                      <Tooltip
-                        cursor={{ strokeDasharray: '3 3' }}
-                        formatter={(value, name, props) => [
-                          `${value}${name === 'Reading Time' ? ' minutes' : '%'}`,
-                          `${props.payload.name} - ${name}`
-                        ]}
-                      />
-                      <Scatter
-                        name="Students"
-                        data={prepareComprehensionVsTimeData()}
-                        fill="#8884d8"
-                      />
-                    </ScatterChart>
-                  </ResponsiveContainer>
+                {/* Comprehension vs Reading Time Scatter Plot */}
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-indigo-100 p-2 rounded-full mr-3">
+                      <Activity size={20} className="text-indigo-600" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Comprehension Score vs Reading Time</h2>
+                  </div>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart
+                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <CartesianGrid />
+                        <XAxis
+                          type="number"
+                          dataKey="readingTime"
+                          name="Reading Time"
+                          label={{ value: 'Total Reading Time (minutes)', position: 'bottom' }}
+                        />
+                        <YAxis
+                          type="number"
+                          dataKey="comprehensionScore"
+                          name="Comprehension Score"
+                          label={{ value: 'Comprehension Score', angle: -90, position: 'insideLeft' }}
+                        />
+                        <Tooltip
+                          cursor={{ strokeDasharray: '3 3' }}
+                          formatter={(value, name, props) => [
+                            `${value}${name === 'Reading Time' ? ' minutes' : '%'}`,
+                            `${props.payload.name} - ${name}`
+                          ]}
+                        />
+                        <Scatter
+                          name="Students"
+                          data={prepareComprehensionVsTimeData()}
+                          fill="#8884d8"
+                        />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
 
                 {/* Reading Time Chart */}
                 <div className="bg-white p-6 rounded-lg shadow">
@@ -590,7 +673,12 @@ const ClassroomVisualization = () => {
 
                 {/* Reading Time Trend Line Chart */}
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-lg font-semibold mb-4">Reading Time Trends</h3>
+                  <div className="flex items-center mb-4">
+                    <div className="bg-teal-100 p-2 rounded-full mr-3">
+                      <Activity size={20} className="text-teal-600" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Reading Time Trends</h2>
+                  </div>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={prepareReadingTimeTrendData()}
@@ -665,7 +753,7 @@ const ClassroomVisualization = () => {
                   </div>
                   <div className="h-80 flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                      <RePieChart>
                         <Pie
                           data={prepareStatusDistributionData()}
                           cx="50%"
@@ -685,7 +773,7 @@ const ClassroomVisualization = () => {
                         </Pie>
                         <Tooltip formatter={(value, name, props) => [value, 'Students']} />
                         <Legend />
-                      </PieChart>
+                      </RePieChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
@@ -705,7 +793,7 @@ const ClassroomVisualization = () => {
                       cx="50%" 
                       cy="50%" 
                       outerRadius="80%" 
-                      data={progressData
+                      data={filteredProgressData
                         .filter(student => student.progressData)
                         .sort((a, b) => (b.progressData.avgComprehensionScore || 0) - (a.progressData.avgComprehensionScore || 0))
                         .slice(0, 5)
