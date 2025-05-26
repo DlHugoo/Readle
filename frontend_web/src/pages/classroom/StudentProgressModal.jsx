@@ -14,7 +14,8 @@ const StudentProgressModal = ({
   completedBooks,
   inProgressBooks,
   snakeGameAttempts,
-  ssaAttempts
+  ssaAttempts,
+  predictionAttempts
 }) => {
   const [activeView, setActiveView] = useState('progress');
   const [badges, setBadges] = useState({ all: [], earned: [], inProgress: [] });
@@ -83,6 +84,35 @@ const StudentProgressModal = ({
     }
   };
 
+  const calculateAverageScores = () => {
+    const allBooks = [...completedBooks, ...inProgressBooks];
+    let snakeTotal = 0, snakeCount = 0;
+    let ssaTotal = 0, ssaCount = 0;
+    let predictionTotal = 0, predictionCount = 0;
+
+    allBooks.forEach(book => {
+      const bookId = book.book.bookID;
+      if (snakeGameAttempts && snakeGameAttempts[bookId] > 0) {
+        snakeTotal += calculateSnakeGameScore(snakeGameAttempts[bookId]);
+        snakeCount++;
+      }
+      if (ssaAttempts && ssaAttempts[bookId] > 0) {
+        ssaTotal += calculateSSAScore(ssaAttempts[bookId]);
+        ssaCount++;
+      }
+      if (predictionAttempts && predictionAttempts[bookId] > 0) {
+        predictionTotal += calculatePredictionScore(predictionAttempts[bookId]);
+        predictionCount++;
+      }
+    });
+
+    return {
+      snakeGame: snakeCount > 0 ? Math.round(snakeTotal / snakeCount) : 0,
+      ssa: ssaCount > 0 ? Math.round(ssaTotal / ssaCount) : 0,
+      prediction: predictionCount > 0 ? Math.round(predictionTotal / predictionCount) : 0
+    };
+  };
+
   // Helper function to format reading time
   const formatDuration = (minutes, fallbackDuration) => {
     let mins = minutes;
@@ -111,6 +141,11 @@ const StudentProgressModal = ({
     if (!attempts || attempts <= 0) return 0;
     const score = 100 - ((attempts - 1) * 25);
     return Math.max(score, 0);
+  };
+
+  const calculatePredictionScore = (attempts) => {
+    if (!attempts || attempts <= 0) return 0;
+    return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
   };
 
   const getBadgeImage = (badge) => {
@@ -230,6 +265,34 @@ const StudentProgressModal = ({
                   </div>
                 </div>
 
+                {/* Add Average Activity Scores */}
+                <div className="bg-white rounded-lg shadow p-6 mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-gray-700">Average Activity Scores</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Snake Game Average */}
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600 font-semibold">🐍 Snake Game</span>
+                        <span className="text-2xl font-bold text-green-600">{calculateAverageScores().snakeGame}</span>
+                      </div>
+                    </div>
+                    {/* SSA Average */}
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 font-semibold">🧩 Sequencing</span>
+                        <span className="text-2xl font-bold text-blue-600">{calculateAverageScores().ssa}</span>
+                      </div>
+                    </div>
+                    {/* Prediction Average */}
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-purple-600 font-semibold">🔮 Prediction</span>
+                        <span className="text-2xl font-bold text-purple-600">{calculateAverageScores().prediction}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Books in Progress */}
                 <div className="bg-white rounded-lg shadow p-6 mb-8">
                   <h2 className="text-2xl font-semibold mb-4 text-gray-700">Books in Progress</h2>
@@ -258,14 +321,19 @@ const StudentProgressModal = ({
                               <div className="text-sm text-gray-500 mt-1">
                                 Last read: {book.lastReadAt ? new Date(book.lastReadAt).toLocaleDateString() : 'Never'}<br />
                                 Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
-                                {snakeGameAttempts[book.book.bookID] > 0 && (
+                                {snakeGameAttempts && snakeGameAttempts[book.book.bookID] > 0 && (
                                   <div className="mt-1 text-green-600">
                                     <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
                                   </div>
                                 )}
-                                {ssaAttempts[book.book.bookID] > 0 && (
+                                {ssaAttempts && ssaAttempts[book.book.bookID] > 0 && (
                                   <div className="mt-1 text-blue-600">
                                     <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
+                                  </div>
+                                )}
+                                {predictionAttempts && typeof predictionAttempts[book.book.bookID] === 'number' && predictionAttempts[book.book.bookID] > 0 && (
+                                  <div className="mt-1 text-purple-600">
+                                    <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {calculatePredictionScore(predictionAttempts[book.book.bookID])} points
                                   </div>
                                 )}
                               </div>
@@ -324,14 +392,19 @@ const StudentProgressModal = ({
                             <div className="w-full bg-gray-200 rounded-full h-3 mt-1">
                               <div className="bg-green-500 h-3 rounded-full" style={{ width: '100%' }}></div>
                             </div>
-                            {snakeGameAttempts[book.book.bookID] > 0 && (
+                            {snakeGameAttempts && snakeGameAttempts[book.book.bookID] > 0 && (
                               <div className="mt-2 text-green-600 text-sm">
                                 <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
                               </div>
                             )}
-                            {ssaAttempts[book.book.bookID] > 0 && (
+                            {ssaAttempts && ssaAttempts[book.book.bookID] > 0 && (
                               <div className="mt-1 text-blue-600 text-sm">
                                 <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
+                              </div>
+                            )}
+                            {predictionAttempts && typeof predictionAttempts[book.book.bookID] === 'number' && predictionAttempts[book.book.bookID] > 0 && (
+                              <div className="mt-1 text-purple-600 text-sm">
+                                <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {calculatePredictionScore(predictionAttempts[book.book.bookID])} points
                               </div>
                             )}
                           </div>
