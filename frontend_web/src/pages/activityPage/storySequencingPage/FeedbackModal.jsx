@@ -26,52 +26,66 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
               <p className="text-xl mb-6">
                 You arranged the pictures in the correct order!
               </p>
-              <div className="flex justify-center space-x-2">
+              <div className="flex justify-center space-x-2 mb-6">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="text-3xl animate-star">
                     ⭐
                   </div>
                 ))}
               </div>
+              <div className="flex flex-col space-y-4 mt-6">
+                <button
+                  onClick={handleContinue}
+                  className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-full text-xl font-bold transition-colors"
+                >
+                  Back to Book
+                </button>
+              </div>
             </>
           ) : (
             <>
-              <div className="text-6xl mb-4">🤔</div>
-              <h2 className="text-3xl font-bold text-orange-500 mb-4">
-                Not quite right
-              </h2>
-              <p className="text-xl mb-2">
-                Let's try again! Think about what happened in the story.
-              </p>
-              <p className="text-lg mb-6 font-semibold">
-                {attemptsLeft > 0
-                  ? `You have ${attemptsLeft} ${
-                      attemptsLeft === 1 ? "try" : "tries"
-                    } left`
-                  : "Let's see the correct order"}
-              </p>
+              {attemptsLeft > 0 ? (
+                <>
+                  <div className="text-6xl mb-4">🤔</div>
+                  <h2 className="text-3xl font-bold text-orange-500 mb-4">
+                    Not quite right
+                  </h2>
+                  <p className="text-xl mb-2">
+                    Let's try again! Think about what happened in the story.
+                  </p>
+                  <p className="text-lg mb-6 font-semibold">
+                    You have {attemptsLeft} {attemptsLeft === 1 ? "try" : "tries"} left
+                  </p>
+                  <div className="flex flex-col space-y-4 mt-6">
+                    <button
+                      onClick={onTryAgain}
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-xl font-bold transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">💫</div>
+                  <h2 className="text-3xl font-bold text-purple-600 mb-4">
+                    Great Effort!
+                  </h2>
+                  <p className="text-xl mb-6">
+                    Learning takes time and practice. Keep reading and you'll get better!
+                  </p>
+                  <div className="flex flex-col space-y-4 mt-6">
+                    <button
+                      onClick={handleContinue}
+                      className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-full text-xl font-bold transition-colors"
+                    >
+                      Back to Book
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           )}
-
-          <div className="flex flex-col space-y-4 mt-6">
-            {onTryAgain && (
-              <button
-                onClick={onTryAgain}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-xl font-bold transition-colors"
-              >
-                Try Again
-              </button>
-            )}
-
-            {(isCorrect || attemptsLeft === 0) && (
-              <button
-                onClick={handleContinue}
-                className="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-full text-xl font-bold transition-colors"
-              >
-                {isCorrect ? "Back to Book" : "See Correct Order"}
-              </button>
-            )}
-          </div>
         </div>
       </div>
 

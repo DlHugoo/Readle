@@ -5,7 +5,7 @@ import axios from "axios";
 import StudentNavbar from "../../../components/StudentNavbar";
 import SequencingBoard from "./SequencingBoard";
 import FeedbackModal from "./FeedbackModal";
-import sequenceBg from "../../../assets/sequence-bg1.png";
+import sequenceBg from "../../../assets/sequence-bg2.png";
 
 const StorySequencingPage = () => {
   const { bookId } = useParams();
@@ -44,7 +44,7 @@ const StorySequencingPage = () => {
           setModal({
             open: true,
             message: "Please log in to access this activity.",
-            type: "error"
+            type: "error",
           });
           navigate("/login");
           return;
@@ -54,7 +54,7 @@ const StorySequencingPage = () => {
           setModal({
             open: true,
             message: "This activity is only accessible to students.",
-            type: "error"
+            type: "error",
           });
           navigate("/");
           return;
@@ -65,7 +65,7 @@ const StorySequencingPage = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
             },
           }
         );
@@ -92,16 +92,17 @@ const StorySequencingPage = () => {
         });
       } catch (err) {
         console.error("Failed to fetch SSA:", err);
-        
+
         if (err.response) {
           const errorMessage = err.response.data || "An error occurred";
-          
+
           switch (err.response.status) {
             case 400:
               setModal({
                 open: true,
-                message: "This book doesn't have a Story Sequencing Activity yet.",
-                type: "error"
+                message:
+                  "This book doesn't have a Story Sequencing Activity yet.",
+                type: "error",
               });
               navigate(-1);
               break;
@@ -109,7 +110,7 @@ const StorySequencingPage = () => {
               setModal({
                 open: true,
                 message: "Your session has expired. Please login again.",
-                type: "error"
+                type: "error",
               });
               navigate("/login");
               break;
@@ -117,7 +118,7 @@ const StorySequencingPage = () => {
               setModal({
                 open: true,
                 message: "You don't have permission to access this activity.",
-                type: "error"
+                type: "error",
               });
               navigate("/");
               break;
@@ -125,15 +126,16 @@ const StorySequencingPage = () => {
               setModal({
                 open: true,
                 message: "Failed to load activity. Please try again later.",
-                type: "error"
+                type: "error",
               });
               navigate(-1);
           }
         } else {
           setModal({
             open: true,
-            message: "Failed to connect to the server. Please check your internet connection.",
-            type: "error"
+            message:
+              "Failed to connect to the server. Please check your internet connection.",
+            type: "error",
           });
           navigate(-1);
         }
@@ -208,16 +210,17 @@ const StorySequencingPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <StudentNavbar />
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 h-full">
         <div
-          className="bg-white rounded-xl shadow-lg p-6"
+          className="bg-white rounded-xl shadow-lg p-6 min-h-[calc(95vh-8rem)]"
           style={{
             backgroundImage: `url(${sequenceBg})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
           }}
         >
-          <h1 className="text-3xl font-bold text-center text-sequence-title mb-4">
+          <h1 className="text-3xl font-bold text-center text-seq-title mb-4">
             {storyData.title}
           </h1>
           <p className="text-xl text-sequence-title text-center mb-6">

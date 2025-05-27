@@ -391,7 +391,7 @@ const BookPage = () => {
                 onClick={() => navigate(`/book/${bookId}/complete`)}
                 className="mt-4 px-6 py-3 bg-blue-600 text-white text-lg rounded-full shadow-lg hover:bg-blue-700 transition"
               >
-                Finish Book
+                Finish Reading
               </button>
             </>
           )}
