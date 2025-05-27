@@ -1,8 +1,12 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext"; // Adjust path as needed
+import { useAuth } from "../contexts/AuthContext";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>; // Or a spinner
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;
