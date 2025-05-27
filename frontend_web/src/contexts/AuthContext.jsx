@@ -5,14 +5,12 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // Track initial auth check
   const navigate = useNavigate();
 
   const login = ({ token, role, userId, email }) => {
-    // Save to state
     const userData = { token, role, userId, email };
     setUser(userData);
-
-    // Save to localStorage
     localStorage.setItem("token", token);
     localStorage.setItem("role", role);
     localStorage.setItem("userId", userId);
@@ -37,10 +35,11 @@ export const AuthProvider = ({ children }) => {
     if (token && role && userId && email) {
       setUser({ token, role, userId, email });
     }
+    setLoading(false); // Mark auth check as complete
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
