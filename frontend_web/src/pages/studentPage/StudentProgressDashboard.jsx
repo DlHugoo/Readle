@@ -104,7 +104,7 @@ const StudentProgressDashboard = () => {
                 const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
                 const snakeAttemptsData = {};
                 const ssaAttemptsData = {};
-                const predictionAttemptsData = {}; // Add object for prediction attempts
+                const predictionAttemptsData = {}; // Will store { [bookId]: { isCorrect: boolean|null } }
                 
                 await Promise.all(allBooks.map(async (book) => {
                     try {
@@ -127,7 +127,7 @@ const StudentProgressDashboard = () => {
                             ssaAttemptsData[bookId] = 0;
                         }
                         
-                        // Fetch prediction checkpoint attempts for this book
+                        // Fetch prediction checkpoint attempts for this book (latest attempt)
                         try {
                             // First, get the prediction checkpoint ID for this book
                             const predictionCheckpointRes = await axios.get(
@@ -138,21 +138,32 @@ const StudentProgressDashboard = () => {
                             if (predictionCheckpointRes.data && predictionCheckpointRes.data.id) {
                                 // Use the checkpoint ID from the response
                                 const checkpointId = predictionCheckpointRes.data.id;
-                                
-                                // Now fetch attempts using the correct checkpoint ID
-                                const predictionAttemptsRes = await axios.get(
-                                    `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/count`,
-                                    { headers }
-                                );
-                                console.log(`Prediction attempts for book ${bookId}:`, predictionAttemptsRes.data);
-                                predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+                                // Defensive check: only proceed if both userId and checkpointId are valid numbers
+                                if (!isNaN(Number(userId)) && !isNaN(Number(checkpointId))) {
+                                    // Now fetch the latest attempt using the correct checkpoint ID
+                                    const predictionLatestAttemptRes = await axios.get(
+                                        `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/latest`,
+                                        { headers }
+                                    );
+                                    if (predictionLatestAttemptRes.data && typeof predictionLatestAttemptRes.data.correct === 'boolean') {
+                                        predictionAttemptsData[bookId] = { correct: predictionLatestAttemptRes.data.correct };
+                                    } else {
+                                        predictionAttemptsData[bookId] = { correct: null };
+                                    }
+                                } else {
+                                    predictionAttemptsData[bookId] = { correct: null };
+                                }
                             } else {
                                 console.log(`No prediction checkpoints found for book ${bookId}`);
-                                predictionAttemptsData[bookId] = 0;
+                                predictionAttemptsData[bookId] = { correct: null };
                             }
                         } catch (err) {
-                            console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
-                            predictionAttemptsData[bookId] = 0;
+                            if (err.response && err.response.status === 404) {
+                                predictionAttemptsData[bookId] = { correct: null };
+                            } else {
+                                console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
+                                predictionAttemptsData[bookId] = { correct: null };
+                            }
                         }
                     } catch (err) {
                         console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
@@ -186,12 +197,13 @@ const StudentProgressDashboard = () => {
                         }
                     });
                     
-                    // Calculate average prediction score
+                    // Calculate average prediction score (use correct)
                     let predictionTotal = 0;
                     let predictionCount = 0;
                     Object.keys(predictionAttemptsData).forEach(bookId => {
-                        if (predictionAttemptsData[bookId] > 0) {
-                            predictionTotal += calculatePredictionScore(predictionAttemptsData[bookId]);
+                        const attempt = predictionAttemptsData[bookId];
+                        if (attempt && typeof attempt.correct === 'boolean') {
+                            predictionTotal += attempt.correct ? 100 : 0;
                             predictionCount++;
                         }
                     });
@@ -378,9 +390,9 @@ const StudentProgressDashboard = () => {
                                                         <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
                                                     </div>
                                                 )}
-                                                {predictionAttempts[book.book.bookID] > 0 && (
+                                                {predictionAttempts[book.book.bookID] && typeof predictionAttempts[book.book.bookID].correct === 'boolean' && (
                                                     <div className="mt-1 text-purple-600">
-                                                        <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {calculatePredictionScore(predictionAttempts[book.book.bookID])} points
+                                                        <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {predictionAttempts[book.book.bookID].correct ? 100 : 0} points
                                                     </div>
                                                 )}
                                             </div>
@@ -442,9 +454,9 @@ const StudentProgressDashboard = () => {
                                                         <span role="img" aria-label="puzzle">🧩</span> Sequencing Score: {calculateSSAScore(ssaAttempts[book.book.bookID])} points
                                                     </div>
                                                 )}
-                                                {predictionAttempts[book.book.bookID] > 0 && (
+                                                {predictionAttempts[book.book.bookID] && typeof predictionAttempts[book.book.bookID].correct === 'boolean' && (
                                                     <div className="mt-1 text-purple-600">
-                                                        <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {calculatePredictionScore(predictionAttempts[book.book.bookID])} points
+                                                        <span role="img" aria-label="crystal-ball">🔮</span> Prediction Score: {predictionAttempts[book.book.bookID].correct ? 100 : 0} points
                                                     </div>
                                                 )}
                                             </div>
