@@ -26,6 +26,9 @@ import CreatePredictionCheckpoint from "./pages/activityPage/predictionCheckpoin
 import ProtectedRoute from "./components/ProtectedRoute";
 import UnauthorizedPage from "./pages/unauthorized/UnauthorizedPage";
 
+// ✅ NEW: Verify Email page
+import VerifyEmailPage from "./pages/verifyPage";
+
 function App() {
   return (
     <Routes>
@@ -34,6 +37,9 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+      {/* ✅ NEW: public route for OTP verification */}
+      <Route path="/verify" element={<VerifyEmailPage />} />
 
       {/* Admin Routes */}
       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
@@ -46,10 +52,7 @@ function App() {
         <Route path="/student-classrooms" element={<StudentClassroomPage />} />
         <Route path="/library" element={<StudentLibraryPage />} />
         <Route path="/dashboard" element={<StudentProgressDashboard />} />
-        <Route
-          path="/prediction/:bookId"
-          element={<PredictionCheckpointPage />}
-        />
+        <Route path="/prediction/:bookId" element={<PredictionCheckpointPage />} />
         <Route
           path="/student/classroom-content/:classroomId"
           element={<ClassroomContentPage />}
@@ -57,28 +60,16 @@ function App() {
         <Route path="/book/:bookId" element={<BookPage />} />
         <Route path="/book/:bookId/complete" element={<BookCompletionPage />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
-        <Route
-          path="/book/:bookId/sequencing"
-          element={<StorySequencingPage />}
-        />
+        <Route path="/book/:bookId/sequencing" element={<StorySequencingPage />} />
         <Route path="/student/badges" element={<StudentBadgeDashboard />} />
       </Route>
 
       {/* Teacher Routes */}
       <Route element={<ProtectedRoute allowedRoles={["TEACHER"]} />}>
         <Route path="/classroom" element={<ClassroomManagement />} />
-        <Route
-          path="/classroom-content/:classroomId"
-          element={<ClassroomContent />}
-        />
-        <Route
-          path="/classroom-students/:classroomId"
-          element={<ClassroomStudents />}
-        />
-        <Route
-          path="/classroom-progress/:classroomId"
-          element={<ClassroomProgress />}
-        />
+        <Route path="/classroom-content/:classroomId" element={<ClassroomContent />} />
+        <Route path="/classroom-students/:classroomId" element={<ClassroomStudents />} />
+        <Route path="/classroom-progress/:classroomId" element={<ClassroomProgress />} />
         <Route
           path="/classroom-visualization/:classroomId"
           element={<ClassroomVisualization />}
@@ -90,10 +81,7 @@ function App() {
         <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
-        <Route
-          path="/create-prediction"
-          element={<CreatePredictionCheckpoint />}
-        />
+        <Route path="/create-prediction" element={<CreatePredictionCheckpoint />} />
       </Route>
     </Routes>
   );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext"; // Import the auth context
+import { login as apiLogin } from "../../api/api";    // <-- NEW: API helper
 import mascot from "../../assets/mascot.png";
 
 const LoginPage = () => {
@@ -9,7 +10,9 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Get login function from auth context
+
+  // alias to avoid name clash with apiLogin
+  const { login: authLogin } = useAuth(); // Get login function from auth context
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,61 +35,58 @@ const LoginPage = () => {
     return true;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  if (!validateForm()) return;
+    setIsLoading(true);
+    setErrorMessage("");
 
-  setIsLoading(true);
-  setErrorMessage("");
+    try {
+      // Prefer the shared API helper (adds base URL & headers; stores token)
+      const data = await apiLogin({
+        email: formData.email,
+        password: formData.password,
+      });
+      // data = { token, role, userId }
 
-  try {
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+      // Persist into your auth context
+      authLogin({
+        token: data.token,
+        role: data.role,
+        userId: data.userId,
+        email: formData.email,
+      });
 
-    let data;
-    // Check if the response has JSON content-type before parsing
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      // If no JSON, read text for error handling
-      const text = await response.text();
-      throw new Error(text || "Login failed");
+      // role-based redirect (kept from your code)
+      switch (data.role) {
+        case "TEACHER":
+          navigate("/classroom");
+          break;
+        case "ADMIN":
+          navigate("/admin-dashboard");
+          break;
+        default:
+          navigate("/library");
+      }
+    } catch (err) {
+      // Handle common backend messages
+      const msg = (err && err.message) ? String(err.message) : "";
+
+      // If backend says the email isn’t verified, push them to /verify
+      if (/not\s*verified|verify\s*your\s*email/i.test(msg)) {
+        localStorage.setItem("pendingEmail", formData.email);
+        navigate(`/verify?email=${encodeURIComponent(formData.email)}`);
+        return;
+      }
+
+      // Fallback error (your original text)
+      setErrorMessage("Incorrect email or password. Please try again.");
+      console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
     }
-
-    if (!response.ok) {
-      throw new Error(data.message || "Wrong password/email");
-    }
-
-    login({
-      token: data.token,
-      role: data.role,
-      userId: data.userId,
-      email: formData.email,
-    });
-
-    switch (data.role) {
-      case "TEACHER":
-        navigate("/classroom");
-        break;
-      case "ADMIN":
-        navigate("/admin-dashboard");
-        break;
-      default:
-        navigate("/library");
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    setErrorMessage("Incorrect email or password. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">
@@ -148,13 +148,31 @@ const handleSubmit = async (e) => {
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-800"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Logging in...
                 </>
-              ) : "Log In"}
+              ) : (
+                "Log In"
+              )}
             </button>
 
             {errorMessage && (
@@ -165,20 +183,14 @@ const handleSubmit = async (e) => {
           </form>
 
           <div className="mt-4 text-center">
-            <a
-              href="/forgot-password"
-              className="text-blue-500 hover:underline text-sm"
-            >
+            <a href="/forgot-password" className="text-blue-500 hover:underline text-sm">
               Forgot Password?
             </a>
           </div>
 
           <div className="mt-6 text-center text-sm text-gray-700">
             New to Readle?{" "}
-            <a
-              href="/register"
-              className="text-blue-500 font-medium hover:underline"
-            >
+            <a href="/register" className="text-blue-500 font-medium hover:underline">
               Join now
             </a>
           </div>
