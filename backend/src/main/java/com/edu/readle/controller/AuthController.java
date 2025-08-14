@@ -8,6 +8,7 @@ import com.edu.readle.service.AuthService;
 import com.edu.readle.service.BadgeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -41,5 +42,10 @@ public class AuthController {
         badgeService.trackUserLogin(user.getId());
 
         return ResponseEntity.ok(new AuthResponse(token, user.getRole().name(), user.getId()));
+    }
+    
+    @GetMapping("/microsoft")
+    public RedirectView microsoftLogin() {
+        return new RedirectView("/oauth2/authorization/microsoft");
     }
 }

@@ -20,7 +20,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins("http://localhost:5173") // React dev server
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .exposedHeaders("Authorization") // ✅ Needed for token to be passed in fetch/Axios
+                .exposedHeaders("Authorization", "token", "role", "userId", "email") // Expose headers for OAuth2 redirect
                 .allowCredentials(true);
     }
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext"; // Import the auth context
 import mascot from "../../assets/mascot.png";
+import MicrosoftLoginButton from "../../components/MicrosoftLoginButton";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -173,15 +174,21 @@ const handleSubmit = async (e) => {
             </a>
           </div>
 
-          <div className="mt-6 text-center text-sm text-gray-700">
-            New to Readle?{" "}
-            <a
-              href="/register"
-              className="text-blue-500 font-medium hover:underline"
-            >
-              Join now
-            </a>
-          </div>
+          <div className="mt-4 text-center text-sm text-gray-500">
+              - OR -
+            </div>
+            
+            <MicrosoftLoginButton />
+            
+            <div className="mt-6 text-center text-sm text-gray-700">
+              New to Readle?{" "}
+              <a
+                href="/register"
+                className="text-blue-500 font-medium hover:underline"
+              >
+                Join now
+              </a>
+            </div>
         </div>
       </div>
     </div>

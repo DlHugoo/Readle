@@ -22,10 +22,17 @@ public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
     private final CustomUserDetailsService customUserDetailsService;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
-    public SecurityConfig(JwtFilter jwtFilter, CustomUserDetailsService customUserDetailsService) {
+    public SecurityConfig(JwtFilter jwtFilter, 
+                         CustomUserDetailsService customUserDetailsService,
+                         CustomOAuth2UserService customOAuth2UserService,
+                         OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler) {
         this.jwtFilter = jwtFilter;
         this.customUserDetailsService = customUserDetailsService;
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
     }
 
     @Bean
@@ -37,7 +44,7 @@ public class SecurityConfig {
             .authorizeHttpRequests()
 
             // ✅ Allow public access to authentication & error endpoints
-            .requestMatchers("/api/auth/**", "/error").permitAll()
+            .requestMatchers("/api/auth/**", "/error", "/login/oauth2/code/**", "/oauth2/**").permitAll()
 
             // ✅ Allow admin/teacher registration if needed
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
@@ -63,6 +70,15 @@ public class SecurityConfig {
             // ✅ All other requests must be authenticated
             .anyRequest().authenticated()
             .and()
+
+            // ✅ Configure OAuth2 login
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .defaultSuccessUrl("http://localhost:5173/oauth2/redirect", true)
+            )
 
             // ✅ Plug in JWT filter BEFORE Spring's login filter
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

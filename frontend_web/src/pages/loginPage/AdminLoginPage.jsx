@@ -1,5 +1,6 @@
 import { useState } from "react";
 import mascot from "../../assets/mascot.png";
+import MicrosoftLoginButton from "../../components/MicrosoftLoginButton";
 
 const AdminLoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -119,6 +120,12 @@ const AdminLoginPage = () => {
             )}
           </form>
 
+          <div className="mt-4 text-center text-sm text-gray-500">
+            - OR -
+          </div>
+          
+          <MicrosoftLoginButton />
+          
           <div className="mt-6 text-center text-sm text-gray-700">
             <a href="/" className="text-blue-500 font-medium hover:underline">
               Back to Home
