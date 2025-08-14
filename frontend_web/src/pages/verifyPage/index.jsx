@@ -11,7 +11,11 @@ export default function VerifyEmailPage() {
   const [params] = useSearchParams();
 
   const stored = localStorage.getItem("pendingEmail") || "";
-  const [email, setEmail] = useState(params.get("email") || stored);
+  const initialEmail = params.get("email") || stored;
+
+  // read-only email (no input)
+  const [email] = useState(initialEmail);
+
   const [code, setCode] = useState(Array(DIGITS).fill(""));
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -41,7 +45,6 @@ export default function VerifyEmailPage() {
     const next = [...code];
     for (let i = 0; i < DIGITS; i++) next[i] = text[i] || "";
     setCode(next);
-    // focus last filled or first
     const last = Math.min(text.length, DIGITS) - 1;
     inputsRef.current[last > 0 ? last : 0]?.focus();
     e.preventDefault();
@@ -54,7 +57,7 @@ export default function VerifyEmailPage() {
 
     const joined = code.join("");
     if (!email) {
-      setError("Please enter your email.");
+      setError("Missing email. Go back and try again.");
       return;
     }
     if (joined.length !== DIGITS) {
@@ -80,7 +83,7 @@ export default function VerifyEmailPage() {
     setOk("");
     try {
       if (!email) {
-        setError("Please enter your email first.");
+        setError("Missing email. Go back and try again.");
         return;
       }
       await resendOtp({ email });
@@ -96,7 +99,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-50 p-4">
       <div className="flex flex-col md:flex-row max-w-4xl w-full bg-white rounded-xl shadow-xl overflow-hidden">
-        {/* Left panel (brand) */}
+        {/* Left panel */}
         <div className="w-full md:w-1/2 bg-blue-box p-10 flex flex-col justify-center items-center text-white">
           <h2 className="text-3xl font-bold mb-6 text-center">
             Almost there!
@@ -105,7 +108,7 @@ export default function VerifyEmailPage() {
           <img src={mascot} alt="Readle Mascot" className="w-96 h-auto" />
         </div>
 
-        {/* Right panel (form) */}
+        {/* Right panel */}
         <div className="w-full md:w-1/2 p-10">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 text-center">
             Verify your email
@@ -117,20 +120,7 @@ export default function VerifyEmailPage() {
           </p>
 
           <form onSubmit={onVerify}>
-            {/* Email (editable so user can fix typos) */}
-            <div className="mb-5">
-              <input
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* OTP inputs */}
+            {/* OTP boxes */}
             <div
               className="flex items-center justify-between gap-2 mb-4"
               onPaste={onPaste}
@@ -153,7 +143,6 @@ export default function VerifyEmailPage() {
               ))}
             </div>
 
-            {/* Alerts */}
             {error && (
               <div className="mb-4 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg px-4 py-2">
                 {error}
@@ -165,7 +154,6 @@ export default function VerifyEmailPage() {
               </div>
             )}
 
-            {/* Verify button */}
             <button
               type="submit"
               className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-4 rounded-lg transition duration-300 flex justify-center items-center"
@@ -201,7 +189,6 @@ export default function VerifyEmailPage() {
             </button>
           </form>
 
-          {/* Resend + Back */}
           <div className="mt-5 flex flex-col items-center gap-3">
             <button
               onClick={onResend}
