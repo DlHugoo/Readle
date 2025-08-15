@@ -8,15 +8,15 @@ import java.util.Objects;
 @Table(name = "users")
 public class UserEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
-    @Column
-    private String firstName;
+    // NEW: link to Microsoft account (OIDC "sub")
+    @Column(unique = true)                 // nullable, but unique when present
+    private String microsoftId;
 
-    @Column
-    private String lastName;
+    @Column private String firstName;
+    @Column private String lastName;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -31,14 +31,16 @@ public class UserEntity {
     @Column(nullable = false)
     private Role role;
 
-    /** --- Email verification --- **/
     @Column(nullable = false)
-    private boolean emailVerified = false;          // default: not verified
+    private boolean emailVerified = false;
 
     @Column
-    private LocalDateTime emailVerifiedAt;          // set when verification succeeds
+    private LocalDateTime emailVerifiedAt;
 
-    // Getters and Setters
+  // Getters and Setters
+    public String getMicrosoftId() { return microsoftId; }
+    public void setMicrosoftId(String microsoftId) { this.microsoftId = microsoftId; }
+  
     public Long getId() {
         return userId;
     }

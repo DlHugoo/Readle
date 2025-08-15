@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import mascot from "../../assets/mascot.png";
 import { register as apiRegister } from "../../api/api";
 
+// === NEW: backend base (env with fallback) ===
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+
 // ✅ Reusable Error Modal
 const ErrorModal = ({ message, onClose }) => (
   <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
@@ -74,7 +77,6 @@ const SignupPage = () => {
       // Go to /verify (the verify page will POST /api/auth/verify-email)
       nav(`/verify?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
-      // Common server responses: conflict/exists, validation errors, etc.
       const msg = (err && err.message) || "";
       if (/exist/i.test(msg) || /duplicate/i.test(msg) || /conflict/i.test(msg)) {
         showErrorModal("User already exists. Try logging in or use a different email.");
@@ -84,6 +86,14 @@ const SignupPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // === NEW: Microsoft signup
+  const handleMicrosoftSignup = () => {
+    // Optional: if you want to require role before OAuth, uncomment:
+    // const role = localStorage.getItem("userRole");
+    // if (!role) return showErrorModal("Please select a role before continuing.");
+    window.location.href = `${API_BASE}/auth/microsoft/start`;
   };
 
   return (
@@ -131,7 +141,7 @@ const SignupPage = () => {
               />
             </div>
 
-            <div className="mb-8 relative">
+            <div className="mb-4 relative">
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -160,6 +170,30 @@ const SignupPage = () => {
               }`}
             >
               {loading ? "Creating account…" : "Sign Up"}
+            </button>
+
+            {/* === NEW: Divider + Microsoft button === */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="px-3 text-xs text-gray-500 uppercase tracking-wide">
+                or
+              </span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleMicrosoftSignup}
+              className="w-full border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3"
+            >
+              {/* Inline Microsoft “four squares” so you don’t need an asset */}
+              <svg width="20" height="20" viewBox="0 0 23 23" aria-hidden="true">
+                <rect width="10" height="10" x="1" y="1" />
+                <rect width="10" height="10" x="12" y="1" />
+                <rect width="10" height="10" x="1" y="12" />
+                <rect width="10" height="10" x="12" y="12" />
+              </svg>
+              Continue with Microsoft
             </button>
 
             <p className="text-sm text-gray-600 mt-6 text-center">
