@@ -1,12 +1,15 @@
 package com.edu.readle.service;
 
+import com.edu.readle.entity.Role;
 import com.edu.readle.entity.UserEntity;
 import com.edu.readle.repository.UserRepository;
 import com.edu.readle.security.JwtService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -32,17 +35,40 @@ public class AuthService {
     }
 
     public String register(UserEntity user) {
+        final String email = user.getEmail();
+        if (email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
+        }
+        if (userRepository.findByEmail(email).isPresent()) {
+            // nicer 409 instead of a DB constraint stacktrace
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+        }
+
+        // defaults & sanitation
+        if (user.getRole() == null) user.setRole(Role.STUDENT);          // <-- enum, not String
+        if (user.getUsername() == null || user.getUsername().isBlank()) {
+            // simplest: reuse email as username to satisfy NOT NULL + UNIQUE
+            user.setUsername(email);
+        }
+        // ensure emailVerified starts as false (your field is primitive so it’s already false)
+        user.setEmailVerified(false);
+
+        // hash & persist
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-        // Track first login for new users to award the welcome badge
-        badgeService.trackUserLogin(user.getId());
-        return jwtService.generateToken(user.getEmail(), user.getId());
+        UserEntity saved = userRepository.save(user);
+
+        // first-login badge bookkeeping (your original behavior)
+        badgeService.trackUserLogin(saved.getId());
+
+        // return JWT (email + id payload per your JwtService)
+        return jwtService.generateToken(saved.getEmail(), saved.getId());
     }
 
     public String authenticate(String email, String password) {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
         Optional<UserEntity> user = userRepository.findByEmail(email);
-        return user.map(u -> jwtService.generateToken(u.getEmail(), u.getId()))
-                   .orElseThrow(() -> new RuntimeException("User not found"));
+        return user
+            .map(u -> jwtService.generateToken(u.getEmail(), u.getId()))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 }

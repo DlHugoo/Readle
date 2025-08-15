@@ -34,28 +34,37 @@ public class AuthController {
     }
 
     /**
-     * Create the user (emailVerified defaults to false), then send an OTP to their email.
-     * Returns a simple message; token will be issued only after successful login (post-verification).
+     * Registers a user (emailVerified defaults to false) and sends an OTP.
+     * We intentionally DO NOT return a token here; token is issued on /login after verification.
      */
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@RequestBody UserEntity user) throws Exception {
-        // Persist the user using your existing flow (ensure emailVerified is false by default)
+    public ResponseEntity<Map<String, Object>> register(@RequestBody UserEntity user) {
         authService.register(user);
 
-        // Send verification code
-        String displayName = user.getFirstName() != null && !user.getFirstName().isBlank()
+        String displayName = (user.getFirstName() != null && !user.getFirstName().isBlank())
                 ? user.getFirstName()
-                : (user.getUsername() != null ? user.getUsername() : "there");
-        emailVerificationService.sendCode(user.getEmail(), displayName);
+                : (user.getUsername() != null && !user.getUsername().isBlank() ? user.getUsername() : "there");
 
-        return ResponseEntity.ok(Map.of("message", "Check your email for the verification code."));
-    }
+        // make sendCode(...) return boolean in EmailVerificationService
+        boolean emailSent = emailVerificationService.sendCodeWithStatus(user.getEmail(), displayName);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "message", emailSent
+                        ? "Check your email for the verification code."
+                        : "We created your account but couldn’t send the email right now. Please try Resend.",
+                "emailSent", emailSent
+        ));
+}
 
     /**
      * Verify the OTP. On success, the user's emailVerified flag is set to true.
      */
     @PostMapping("/verify-email")
     public ResponseEntity<Map<String, String>> verifyEmail(@RequestBody VerifyRequest req) {
+        if (req.getEmail() == null || req.getEmail().isBlank()
+                || req.getCode() == null || req.getCode().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email and code are required.");
+        }
         emailVerificationService.verifyCode(req.getEmail(), req.getCode());
         return ResponseEntity.ok(Map.of("message", "Email verified. You can now log in."));
     }
@@ -65,10 +74,15 @@ public class AuthController {
      */
     @PostMapping("/resend")
     public ResponseEntity<Map<String, String>> resend(@RequestBody ResendRequest req) throws Exception {
+        if (req.getEmail() == null || req.getEmail().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required.");
+        }
         String displayName = userRepository.findByEmail(req.getEmail())
-                .map(u -> u.getFirstName() != null && !u.getFirstName().isBlank() ? u.getFirstName()
-                        : (u.getUsername() != null ? u.getUsername() : "there"))
+                .map(u -> (u.getFirstName() != null && !u.getFirstName().isBlank())
+                        ? u.getFirstName()
+                        : (u.getUsername() != null && !u.getUsername().isBlank() ? u.getUsername() : "there"))
                 .orElse("there");
+
         emailVerificationService.sendCode(req.getEmail(), displayName);
         return ResponseEntity.ok(Map.of("message", "A new verification code has been sent."));
     }
@@ -78,6 +92,11 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        if (request.getEmail() == null || request.getEmail().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email and password are required.");
+        }
+
         UserEntity user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found with email: " + request.getEmail()));
