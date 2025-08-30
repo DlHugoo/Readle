@@ -9,6 +9,10 @@ public class BadgeDTO {
     private String achievementCriteria;
     private int thresholdValue;
 
+    // Default constructor for JSON deserialization
+    public BadgeDTO() {
+    }
+
     // Constructor
     public BadgeDTO(Long id, String name, String description, String badgeType, 
                    String imageUrl, String achievementCriteria, int thresholdValue) {
