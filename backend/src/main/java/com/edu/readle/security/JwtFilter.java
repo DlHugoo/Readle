@@ -36,7 +36,7 @@ public class JwtFilter extends OncePerRequestFilter {
         // Never filter preflight
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
 
-        // Skip only OAuth/static/error/health — NOT /api/auth/**
+        // Skip public endpoints that don't need JWT validation
         List<String> skip = List.of(
                 "/oauth2/**",
                 "/auth/**",          // includes /auth/microsoft/callback
@@ -45,7 +45,11 @@ public class JwtFilter extends OncePerRequestFilter {
                 "/assets/**",
                 "/",
                 "/index.html",
-                "/actuator/health"
+                "/actuator/health",
+                "/api/auth/login",
+                "/api/auth/register",
+                "/api/auth/verify-email",
+                "/api/auth/resend"
         );
         for (String p : skip) {
             if (PATH.match(p, uri)) return true;

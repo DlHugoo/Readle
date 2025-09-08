@@ -26,4 +26,6 @@ public interface UserBadgeRepository extends JpaRepository<UserBadgeEntity, Long
     
     @Query("SELECT COUNT(ub) FROM UserBadgeEntity ub WHERE ub.user = :user AND ub.currentProgress >= ub.badge.thresholdValue")
     Long countEarnedBadgesByUser(@Param("user") UserEntity user);
+    
+    List<UserBadgeEntity> findByBadge(BadgeEntity badge);
 }

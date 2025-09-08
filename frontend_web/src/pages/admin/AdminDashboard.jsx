@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Upload, PlusCircle } from "lucide-react";
+import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import BadgeManagement from "../../components/BadgeManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("books"); // "books" or "badges"
   const [books, setBooks] = useState([]);
   const [newBook, setNewBook] = useState({
     title: "",
@@ -16,8 +18,10 @@ const AdminDashboard = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showAddBookModal, setShowAddBookModal] = useState(false);
+  const [alertModal, setAlertModal] = useState({ show: false, type: "", message: "" });
 
-  // ✅ Edit state
+  // Edit state
   const [editingBook, setEditingBook] = useState(null);
   const [editFields, setEditFields] = useState({
     title: "",
@@ -29,6 +33,12 @@ const AdminDashboard = () => {
   const [editImageFile, setEditImageFile] = useState(null);
   const [editImagePreview, setEditImagePreview] = useState(null);
   const [menuOpenIndex, setMenuOpenIndex] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+
+  // Constants for file validation
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
   useEffect(() => {
     const role = localStorage.getItem("role");
@@ -45,6 +55,7 @@ const AdminDashboard = () => {
       setBooks(response.data);
     } catch (error) {
       console.error("Failed to fetch books", error);
+      showAlertModal("error", "Failed to fetch books. Please try again later.");
     }
   };
 
@@ -59,6 +70,20 @@ const AdminDashboard = () => {
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        showAlertModal("error", `File "${file.name}" exceeds the maximum size of 5MB.`);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+      
+      // Validate file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        showAlertModal("error", `File "${file.name}" is not a supported image format. Please use JPEG, PNG, GIF, or WebP.`);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
@@ -66,12 +91,36 @@ const AdminDashboard = () => {
     }
   };
 
-  const uploadImage = async () => {
-    if (!imageFile) return null;
+  const handleEditImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        showAlertModal("error", `File "${file.name}" exceeds the maximum size of 5MB.`);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+      
+      // Validate file type
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        showAlertModal("error", `File "${file.name}" is not a supported image format. Please use JPEG, PNG, GIF, or WebP.`);
+        e.target.value = ""; // Reset the file input
+        return;
+      }
+
+      setEditImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setEditImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file) => {
+    if (!file) return null;
 
     const token = localStorage.getItem("token");
     const formData = new FormData();
-    formData.append("file", imageFile);
+    formData.append("file", file);
 
     try {
       const response = await axios.post("/api/books/upload-image", formData, {
@@ -88,15 +137,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const showAlertModal = (type, message) => {
+    setAlertModal({ show: true, type, message });
+  };
+
+  const closeAlertModal = () => {
+    setAlertModal({ show: false, type: "", message: "" });
+  };
+
   const addBook = async () => {
     const { title, author, difficultyLevel, genre } = newBook;
     if (!title || !author || !difficultyLevel) {
-      setError("Please fill in all fields.");
+      showAlertModal("error", "Please fill in all required fields.");
       return;
     }
 
     if (difficultyLevel < 1 || difficultyLevel > 3) {
-      setError("Difficulty level must be between 1 and 3.");
+      showAlertModal("error", "Difficulty level must be between 1 and 3.");
       return;
     }
 
@@ -106,7 +163,13 @@ const AdminDashboard = () => {
 
       let imageURL = null;
       if (imageFile) {
-        imageURL = await uploadImage();
+        try {
+          imageURL = await uploadImage(imageFile);
+          showAlertModal("success", "Image uploaded successfully!");
+        } catch (error) {
+          showAlertModal("error", `Failed to upload image: ${error.message}`);
+          return;
+        }
       }
 
       const response = await axios.post(
@@ -123,32 +186,45 @@ const AdminDashboard = () => {
       );
 
       setBooks([...books, response.data]);
-      setSuccess("Book added successfully!");
+      showAlertModal("success", "Book added successfully!");
       setNewBook({ title: "", author: "", difficultyLevel: 1, genre: "" });
       setImageFile(null);
       setImagePreview(null);
-      setError("");
+      setShowAddBookModal(false);
     } catch (err) {
       console.error("Add book error:", err);
       const msg = err.response?.data?.message || "Failed to add book.";
-      setError(msg);
+      showAlertModal("error", msg);
     }
   };
 
-  const deleteBook = async (bookID) => {
+  const handleDeleteClick = (book) => {
+    setSelectedBook(book);
+    setShowDeleteModal(true);
+    setMenuOpenIndex(null);
+  };
+
+  const confirmDeleteBook = async () => {
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`/api/books/${bookID}`, {
+      await axios.delete(`/api/books/${selectedBook.bookID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBooks(books.filter((b) => b.bookID !== bookID));
+      setBooks(books.filter((b) => b.bookID !== selectedBook.bookID));
+      showAlertModal("success", "Book deleted successfully!");
+      setShowDeleteModal(false);
     } catch (error) {
       console.error("Failed to delete book:", error);
-      setError("Failed to delete book.");
+      
+      // Show a more specific error message
+      if (error.response && error.response.status === 500) {
+        showAlertModal("error", "Cannot delete this book because it has associated content (pages or questions). Please remove the content first.");
+      } else {
+        showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "An unknown error occurred"}`);
+      }
     }
   };
 
-  // ✅ Open Edit
   const openEditModal = (book, index) => {
     setEditingBook(book);
     setEditFields({
@@ -158,7 +234,7 @@ const AdminDashboard = () => {
       difficultyLevel: book.difficultyLevel,
       imageURL: book.imageURL,
     });
-    setEditImagePreview(book.imageURL ? `http://localhost:8080${book.imageURL}` : null);
+    setEditImagePreview(book.imageURL ? `http://localhost:3000${book.imageURL}` : null);
     setEditImageFile(null);
     setMenuOpenIndex(null);
   };
@@ -183,7 +259,13 @@ const AdminDashboard = () => {
     let imageURL = editFields.imageURL;
 
     if (editImageFile) {
-      imageURL = await uploadEditImage();
+      try {
+        imageURL = await uploadEditImage();
+        showAlertModal("success", "Image uploaded successfully!");
+      } catch (error) {
+        showAlertModal("error", `Failed to upload image: ${error.message}`);
+        return;
+      }
     }
 
     const updated = {
@@ -201,9 +283,11 @@ const AdminDashboard = () => {
       setBooks((prev) =>
         prev.map((b) => (b.bookID === res.data.bookID ? res.data : b))
       );
+      showAlertModal("success", "Book updated successfully!");
       setEditingBook(null);
     } catch (err) {
       console.error("Failed to update book:", err);
+      showAlertModal("error", "An error occurred while updating the book.");
     }
   };
 
@@ -216,119 +300,417 @@ const AdminDashboard = () => {
     "★".repeat(Math.max(1, Math.min(level, 3)));
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-blue-800">📚 Admin Dashboard</h1>
+    <div className="w-full min-h-screen bg-gray-50">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col pt-6">
+        <div className="p-6 max-w-7xl mx-auto w-full">
+          {/* Page Title */}
+          <h1 className="text-3xl font-bold mb-6 text-[#3B82F6] flex items-center">
+            <BookOpen size={32} className="mr-3 text-[#3B82F6]" />
+            Admin Dashboard
+          </h1>
 
-      {/* Book Form */}
-      <div className="bg-white shadow-md p-6 rounded-lg mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700">Add a Book</h2>
-        <input type="text" name="title" placeholder="Title" value={newBook.title} onChange={handleChange} className="w-full p-2 border rounded mb-2" />
-        <input type="text" name="author" placeholder="Author" value={newBook.author} onChange={handleChange} className="w-full p-2 border rounded mb-2" />
-        <input type="text" name="genre" placeholder="Genre (optional)" value={newBook.genre} onChange={handleChange} className="w-full p-2 border rounded mb-2" />
-        <input type="number" name="difficultyLevel" placeholder="Difficulty Level (1–3)" value={newBook.difficultyLevel} onChange={handleChange} className="w-full p-2 border rounded mb-2" min="1" max="3" />
-
-        <label className="block mb-2 font-medium">Book Cover Image</label>
-        <label className="flex items-center gap-2 cursor-pointer mb-4">
-          <Upload />
-          <span className="text-blue-600">Upload image</span>
-          <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-        </label>
-
-        {imagePreview && (
-          <div className="mb-4 w-32 h-40 border border-gray-300 rounded overflow-hidden">
-            <img src={imagePreview} alt="Preview" className="object-cover w-full h-full" />
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              onClick={() => setActiveTab("books")}
+              className={`py-2 px-4 font-semibold text-gray-700 ${
+                activeTab === "books"
+                  ? "border-b-2 border-[#3B82F6] text-[#3B82F6]"
+                  : "hover:text-gray-900"
+              }`}
+            >
+              Books
+            </button>
+            <button
+              onClick={() => setActiveTab("badges")}
+              className={`py-2 px-4 font-semibold text-gray-700 ${
+                activeTab === "badges"
+                  ? "border-b-2 border-[#3B82F6] text-[#3B82F6]"
+                  : "hover:text-gray-900"
+              }`}
+            >
+              Badges
+            </button>
           </div>
-        )}
 
-        <button onClick={addBook} className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold px-6 py-2 rounded">
-          <PlusCircle className="inline-block mr-2" />
-          Add Book
-        </button>
-        {error && <p className="text-red-600 mt-2">{error}</p>}
-        {success && <p className="text-green-600 mt-2">{success}</p>}
-      </div>
-
-      {/* Book List */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4 text-gray-700">Books List</h2>
-        {books.length === 0 ? (
-          <p className="text-gray-500">No books available.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {books.map((book, index) => (
-              <div
-                key={book.bookID}
-                className="bg-white shadow-md rounded p-3 hover:shadow-lg transition relative"
-                onClick={() => handleBookClick(book.bookID)}
-              >
-                <button
-                  className="absolute top-2 right-2 text-gray-500 text-xl hover:text-black"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpenIndex(menuOpenIndex === index ? null : index);
-                  }}
-                >
-                  ⋮
-                </button>
-
-                {menuOpenIndex === index && (
-                  <div className="absolute top-8 right-2 bg-white border rounded shadow z-10 w-32">
-                    <button className="block w-full px-4 py-2 text-left hover:bg-gray-100" onClick={() => openEditModal(book, index)}>
-                      ✏️ Edit
-                    </button>
-                    <button className="block w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600" onClick={() => deleteBook(book.bookID)}>
-                      🗑️ Delete
-                    </button>
+          {/* Content based on active tab */}
+          {activeTab === "books" && (
+            <>
+              {/* Admin Information Card */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl shadow-md mb-5 border border-blue-100">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-[#3B82F6] mb-1">
+                      Book Management
+                    </h2>
+                    <p className="text-sm text-gray-500 mb-1">
+                      Add, edit, and manage books in the Readle platform
+                    </p>
                   </div>
-                )}
-
-                <div className="h-40 bg-gray-100 flex items-center justify-center overflow-hidden mb-3">
-                  {book.imageURL ? (
-                    <img src={`http://localhost:8080${book.imageURL}`} alt={book.title} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-gray-400 text-sm">No Image</span>
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold">{book.title}</h3>
-                <p className="text-sm text-gray-600">by {book.author}</p>
-                <p className="text-yellow-500 text-lg">{getDifficultyStars(book.difficultyLevel)}</p>
-                <div className="flex justify-between mt-2">
-                  <button onClick={() => navigate(`/book-editor/${book.bookID}`)} className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">Manage</button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Edit Modal */}
-      {editingBook && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Edit Book</h2>
-            <input type="text" placeholder="Title" value={editFields.title} onChange={(e) => setEditFields({ ...editFields, title: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-            <input type="text" placeholder="Author" value={editFields.author} onChange={(e) => setEditFields({ ...editFields, author: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-            <input type="text" placeholder="Genre" value={editFields.genre} onChange={(e) => setEditFields({ ...editFields, genre: e.target.value })} className="w-full mb-2 p-2 border rounded" />
-            <input type="number" min="1" max="3" placeholder="Difficulty Level" value={editFields.difficultyLevel} onChange={(e) => setEditFields({ ...editFields, difficultyLevel: parseInt(e.target.value) || 1 })} className="w-full mb-2 p-2 border rounded" />
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <button
+                  onClick={() => setShowAddBookModal(true)}
+                  className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={24} />
+                    <span>Add New Book to Library</span>
+                  </div>
+                  <PlusCircle size={20} />
+                </button>
+              </div>
 
-            <label className="block mb-2">Change Cover Image</label>
-            <input type="file" accept="image/*" onChange={(e) => {
-              const file = e.target.files[0];
-              setEditImageFile(file);
-              const reader = new FileReader();
-              reader.onloadend = () => setEditImagePreview(reader.result);
-              reader.readAsDataURL(file);
-            }} className="mb-2" />
+              {/* Book List */}
+              <div className="mt-6">
+                <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                  <BookOpen size={20} className="mr-2 text-blue-500" />
+                  <span>Books Library</span>
+                </h2>
+                
+                {books.length === 0 ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                    <p className="text-gray-500 mb-3">No books available in the library.</p>
+                    <button
+                      onClick={() => setShowAddBookModal(true)}
+                      className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    >
+                      <PlusCircle size={16} className="mr-2" />
+                      Add Your First Book
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {books.map((book, index) => (
+                      <div
+                        key={book.bookID}
+                        className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 relative"
+                        onClick={() => handleBookClick(book.bookID)}
+                      >
+                        {/* Book Cover Image */}
+                        <div className="h-48 bg-gray-200 flex items-center justify-center">
+                          {book.imageURL ? (
+                            <img
+                              src={`http://localhost:3000${book.imageURL}`}
+                              alt={book.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-gray-500">No Image</span>
+                          )}
+                        </div>
 
-            {editImagePreview && <img src={editImagePreview} alt="Preview" className="mb-2 w-full h-40 object-cover rounded" />}
+                        {/* Book Details */}
+                        <div className="p-3">
+                          <h3 className="text-lg font-bold text-[#3B82F6] truncate">
+                            {book.title}
+                          </h3>
+                          <p className="text-sm text-gray-600">by {book.author}</p>
+                          <p className="text-sm text-gray-600 mt-1 flex items-center">
+                            Difficulty:{" "}
+                            <span className="ml-2 text-yellow-500 text-2xl">
+                              {getDifficultyStars(book.difficultyLevel)}
+                            </span>
+                          </p>
+                        </div>
 
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setEditingBook(null)} className="bg-gray-300 px-4 py-2 rounded">Cancel</button>
-              <button onClick={submitEdit} className="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
-            </div>
-          </div>
+                        {/* 3-dot Menu */}
+                        <button
+                          className="absolute top-2 right-2 text-gray-700 hover:text-black text-2xl"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering other events
+                            setMenuOpenIndex(index === menuOpenIndex ? null : index);
+                          }}
+                        >
+                          ⋮
+                        </button>
+
+                        {menuOpenIndex === index && (
+                          <div className="absolute top-0 right-10 bg-white border rounded shadow-md z-10 w-40">
+                            <button
+                              className="block w-full text-left px-4 py-2 hover:bg-yellow-200 text-yellow-600 font-semibold"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent triggering other events
+                                openEditModal(book, index);
+                              }}
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              className="block w-full text-left px-4 py-2 hover:bg-red-200 text-red-600 font-semibold"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent triggering other events
+                                handleDeleteClick(book);
+                              }}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add Book Modal */}
+              {showAddBookModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg">
+                    <h2 className="text-xl font-bold mb-4 text-[#3B82F6]">Add a New Book</h2>
+
+                    <input
+                      type="text"
+                      name="title"
+                      placeholder="Book Title"
+                      value={newBook.title}
+                      onChange={handleChange}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                    />
+
+                    <input
+                      type="text"
+                      name="author"
+                      placeholder="Author"
+                      value={newBook.author}
+                      onChange={handleChange}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                    />
+
+                    <input
+                      type="text"
+                      name="genre"
+                      placeholder="Genre"
+                      value={newBook.genre}
+                      onChange={handleChange}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                    />
+
+                    <input
+                      type="number"
+                      name="difficultyLevel"
+                      placeholder="Difficulty Level (1-3)"
+                      value={newBook.difficultyLevel}
+                      onChange={handleChange}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                      min="1"
+                      max="3"
+                    />
+
+                    {/* Image Preview */}
+                    {imagePreview && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Book Cover Preview:</p>
+                        <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                          <img 
+                            src={imagePreview} 
+                            alt="Book Cover Preview" 
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Redesigned File Upload Button */}
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Book Cover Image</p>
+                      <p className="text-xs text-gray-500 mb-2">
+                        Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                      </p>
+                      <label 
+                        htmlFor="bookImage" 
+                        className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
+                      >
+                        <Upload size={20} className="text-blue-500" />
+                        <span className="text-blue-600 font-medium">Choose Image File</span>
+                      </label>
+                      <input
+                        type="file"
+                        id="bookImage"
+                        name="bookImage"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden" // Hide the actual input
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setShowAddBookModal(false)}
+                        className="bg-gray-300 px-4 py-2 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={addBook}
+                        className="bg-[#FACC14] text-white px-4 py-2 rounded hover:bg-yellow-400"
+                      >
+                        Add Book
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Modal */}
+              {editingBook && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg">
+                    <h2 className="text-xl font-bold mb-4 text-[#3B82F6]">Edit Book</h2>
+
+                    <input
+                      type="text"
+                      placeholder="Book Title"
+                      value={editFields.title}
+                      onChange={(e) => setEditFields({ ...editFields, title: e.target.value })}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder="Author"
+                      value={editFields.author}
+                      onChange={(e) => setEditFields({ ...editFields, author: e.target.value })}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder="Genre"
+                      value={editFields.genre}
+                      onChange={(e) => setEditFields({ ...editFields, genre: e.target.value })}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                    />
+
+                    <input
+                      type="number"
+                      min="1"
+                      max="3"
+                      placeholder="Difficulty Level"
+                      value={editFields.difficultyLevel}
+                      onChange={(e) => setEditFields({ ...editFields, difficultyLevel: parseInt(e.target.value) || 1 })}
+                      className="w-full mb-3 p-3 border border-gray-300 rounded"
+                    />
+
+                    {/* Image Preview */}
+                    {editImagePreview && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Current Book Cover:</p>
+                        <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                          <img 
+                            src={editImagePreview} 
+                            alt="Book Cover Preview" 
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Redesigned File Upload Button */}
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Change Book Cover</p>
+                      <p className="text-xs text-gray-500 mb-2">
+                        Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                      </p>
+                      <label 
+                        htmlFor="editBookImage" 
+                        className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
+                      >
+                        <Upload size={20} className="text-blue-500" />
+                        <span className="text-blue-600 font-medium">Choose New Image</span>
+                      </label>
+                      <input
+                        type="file"
+                        id="editBookImage"
+                        name="editBookImage"
+                        accept="image/*"
+                        onChange={handleEditImageSelect}
+                        className="hidden" // Hide the actual input
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setEditingBook(null)}
+                        className="bg-gray-300 px-4 py-2 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={submitEdit}
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Delete Confirmation Modal */}
+              {showDeleteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                    <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
+                    <p className="mb-6">
+                      Are you sure you want to delete the book "{selectedBook?.title}"? This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setShowDeleteModal(false)}
+                        className="px-4 py-2 bg-gray-300 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={confirmDeleteBook}
+                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Alert Modal */}
+              {alertModal.show && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                    <div className="flex items-center mb-4">
+                      {alertModal.type === "success" ? (
+                        <CheckCircle className="text-green-500 mr-3" size={24} />
+                      ) : (
+                        <AlertCircle className="text-red-500 mr-3" size={24} />
+                      )}
+                      <h3 className="text-lg font-medium">
+                        {alertModal.type === "success" ? "Success" : "Error"}
+                      </h3>
+                    </div>
+                    <p className="mb-6">{alertModal.message}</p>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={closeAlertModal}
+                        className={`px-4 py-2 rounded text-white ${
+                          alertModal.type === "success" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
+                        }`}
+                      >
+                        OK
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === "badges" && <BadgeManagement />}
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import axios from 'axios';
 import StudentNavbar from '../../components/StudentNavbar';
 import { jwtDecode } from 'jwt-decode';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'http://localhost:3000';
 
 const StudentBadgeDashboard = () => {
   const [userId, setUserId] = useState(null);
@@ -22,12 +22,12 @@ const StudentBadgeDashboard = () => {
         const decoded = jwtDecode(token);
         console.log("Decoded token:", decoded);
         
-        // Use userId directly from the token
-        setUserId(decoded.userId);
+        // Use uid from the token (not userId)
+        setUserId(decoded.uid);
         
-        // If userId is not available in the token, log an error
-        if (!decoded.userId) {
-          console.error("No userId found in token:", decoded);
+        // If uid is not available in the token, log an error
+        if (!decoded.uid) {
+          console.error("No uid found in token:", decoded);
           setError("User ID not found in authentication token");
         }
       } catch (e) {

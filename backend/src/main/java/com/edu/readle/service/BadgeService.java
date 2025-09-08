@@ -87,28 +87,57 @@ public class BadgeService {
         return convertToDTO(badgeRepository.save(badge));
     }
 
+    // Update existing badge
+    @Transactional
+    public BadgeDTO updateBadge(Long badgeId, BadgeDTO badgeDTO) {
+        BadgeEntity existingBadge = badgeRepository.findById(badgeId)
+                .orElseThrow(() -> new RuntimeException("Badge not found"));
+        
+        existingBadge.setName(badgeDTO.getName());
+        existingBadge.setDescription(badgeDTO.getDescription());
+        existingBadge.setBadgeType(badgeDTO.getBadgeType());
+        existingBadge.setImageUrl(badgeDTO.getImageUrl());
+        existingBadge.setAchievementCriteria(badgeDTO.getAchievementCriteria());
+        existingBadge.setThresholdValue(badgeDTO.getThresholdValue());
+        
+        return convertToDTO(badgeRepository.save(existingBadge));
+    }
+
+    // Delete badge
+    @Transactional
+    public void deleteBadge(Long badgeId) {
+        BadgeEntity badge = badgeRepository.findById(badgeId)
+                .orElseThrow(() -> new RuntimeException("Badge not found"));
+        
+        // Check if any users have this badge
+        List<UserBadgeEntity> userBadges = userBadgeRepository.findByBadge(badge);
+        if (!userBadges.isEmpty()) {
+            throw new RuntimeException("Cannot delete badge. It is currently assigned to " + userBadges.size() + " user(s).");
+        }
+        
+        badgeRepository.delete(badge);
+    }
+
     // Update user's progress towards a badge
     @Transactional
     public UserBadgeDTO updateUserBadgeProgress(Long userId, String achievementCriteria, int progressValue) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // Skip badge updates for non-student users
-        if (user.getRole() != null && user.getRole() != Role.STUDENT) {
-            // Create a dummy response with zero progress for non-students
-            BadgeEntity dummyBadge = badgeRepository.findByAchievementCriteria(achievementCriteria)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No badges found with criteria: " + achievementCriteria));
-            
-            BadgeDTO badgeDTO = convertToDTO(dummyBadge);
-            return new UserBadgeDTO(null, badgeDTO, false, null, 0, dummyBadge.getThresholdValue());
-        }
-        
         // Find all badges with this criteria
         List<BadgeEntity> badges = badgeRepository.findByAchievementCriteria(achievementCriteria);
         if (badges.isEmpty()) {
-            throw new RuntimeException("No badges found with criteria: " + achievementCriteria);
+            // If no badges exist for this criteria, return null or throw a specific exception
+            // This prevents the system from crashing when no badges are configured
+            return null;
+        }
+        
+        // Skip badge updates for non-student users
+        if (user.getRole() != null && user.getRole() != Role.STUDENT) {
+            // Create a dummy response with zero progress for non-students
+            BadgeEntity dummyBadge = badges.get(0);
+            BadgeDTO badgeDTO = convertToDTO(dummyBadge);
+            return new UserBadgeDTO(null, badgeDTO, false, null, 0, dummyBadge.getThresholdValue());
         }
         
         // For simplicity, we'll use the first badge found
@@ -153,8 +182,11 @@ public class BadgeService {
         // Update "Bookworm" badge progress
         UserBadgeDTO bookwormBadge = updateUserBadgeProgress(userId, "BOOKS_READ", completedBooksCount.intValue());
         
-        // Return list of updated badges
-        return List.of(bookwormBadge);
+        // Return list of updated badges (only if badge exists)
+        if (bookwormBadge != null) {
+            return List.of(bookwormBadge);
+        }
+        return new ArrayList<>();
     }
 
     // Convert entity to DTO
@@ -188,13 +220,15 @@ public class BadgeService {
     // Track user login and award "Welcome Aboard" badge
     @Transactional
     public UserBadgeDTO trackUserLogin(Long userId) {
-        return updateUserBadgeProgress(userId, "LOGIN_COUNT", 1);
+        UserBadgeDTO result = updateUserBadgeProgress(userId, "LOGIN_COUNT", 1);
+        return result != null ? result : new UserBadgeDTO(null, null, false, null, 0, 0);
     }
 
     // Track book completion and award "Bookworm" badge
     @Transactional
     public UserBadgeDTO trackBookCompletion(Long userId) {
-        return updateUserBadgeProgress(userId, "BOOKS_COMPLETED", 1);
+        UserBadgeDTO result = updateUserBadgeProgress(userId, "BOOKS_COMPLETED", 1);
+        return result != null ? result : new UserBadgeDTO(null, null, false, null, 0, 0);
     }
 
     // Track genres read and award "Genre Explorer" badge
@@ -207,7 +241,8 @@ public class BadgeService {
         // Find the badge for genre exploration
         List<BadgeEntity> badges = badgeRepository.findByAchievementCriteria("GENRES_READ");
         if (badges.isEmpty()) {
-            throw new RuntimeException("No badges found with criteria: GENRES_READ");
+            // If no badges exist for this criteria, return null
+            return null;
         }
         
         BadgeEntity badge = badges.get(0);
@@ -249,13 +284,15 @@ public class BadgeService {
     // Track reading time and award "Reading Marathoner" badge
     @Transactional
     public UserBadgeDTO trackReadingTime(Long userId, int minutesRead) {
-        return updateUserBadgeProgress(userId, "READING_TIME", minutesRead);
+        UserBadgeDTO result = updateUserBadgeProgress(userId, "READING_TIME", minutesRead);
+        return result != null ? result : new UserBadgeDTO(null, null, false, null, 0, 0);
     }
 
     // Track pages read and award "Page Turner" badge
     @Transactional
     public UserBadgeDTO trackPagesRead(Long userId, int pagesRead) {
-        return updateUserBadgeProgress(userId, "PAGES_READ", pagesRead);
+        UserBadgeDTO result = updateUserBadgeProgress(userId, "PAGES_READ", pagesRead);
+        return result != null ? result : new UserBadgeDTO(null, null, false, null, 0, 0);
     }
 
     // Check all badge progress for a user
@@ -271,11 +308,20 @@ public class BadgeService {
         int readingTimeMinutes = 0; // Example value
         int pagesRead = 0; // Example value
         
-        updatedBadges.add(updateUserBadgeProgress(userId, "LOGIN_COUNT", loginCount));
-        updatedBadges.add(updateUserBadgeProgress(userId, "BOOKS_COMPLETED", booksCompleted));
-        updatedBadges.add(updateUserBadgeProgress(userId, "GENRES_READ", genresRead));
-        updatedBadges.add(updateUserBadgeProgress(userId, "READING_TIME", readingTimeMinutes));
-        updatedBadges.add(updateUserBadgeProgress(userId, "PAGES_READ", pagesRead));
+        UserBadgeDTO loginBadge = updateUserBadgeProgress(userId, "LOGIN_COUNT", loginCount);
+        if (loginBadge != null) updatedBadges.add(loginBadge);
+        
+        UserBadgeDTO booksBadge = updateUserBadgeProgress(userId, "BOOKS_COMPLETED", booksCompleted);
+        if (booksBadge != null) updatedBadges.add(booksBadge);
+        
+        UserBadgeDTO genresBadge = updateUserBadgeProgress(userId, "GENRES_READ", genresRead);
+        if (genresBadge != null) updatedBadges.add(genresBadge);
+        
+        UserBadgeDTO readingTimeBadge = updateUserBadgeProgress(userId, "READING_TIME", readingTimeMinutes);
+        if (readingTimeBadge != null) updatedBadges.add(readingTimeBadge);
+        
+        UserBadgeDTO pagesBadge = updateUserBadgeProgress(userId, "PAGES_READ", pagesRead);
+        if (pagesBadge != null) updatedBadges.add(pagesBadge);
         
         return updatedBadges;
     }

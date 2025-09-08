@@ -63,6 +63,21 @@ public class BadgeController {
         return ResponseEntity.ok(badgeService.updateUserBadgeProgress(userId, achievementCriteria, progressValue));
     }
 
+    // Update existing badge (ADMIN only)
+    @PutMapping("/{badgeId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BadgeDTO> updateBadge(@PathVariable Long badgeId, @RequestBody BadgeDTO badgeDTO) {
+        return ResponseEntity.ok(badgeService.updateBadge(badgeId, badgeDTO));
+    }
+
+    // Delete badge (ADMIN only)
+    @DeleteMapping("/{badgeId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteBadge(@PathVariable Long badgeId) {
+        badgeService.deleteBadge(badgeId);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/user/{userId}/check-books")
     public ResponseEntity<List<UserBadgeDTO>> checkAndAwardBookRelatedBadges(@PathVariable Long userId) {
         return ResponseEntity.ok(badgeService.checkAndAwardBookRelatedBadges(userId));
