@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import StudentNavbar from '../../components/StudentNavbar';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'http://localhost:3000';
 
 // Define the scoring functions outside the component
 // This ensures they're available everywhere in the file

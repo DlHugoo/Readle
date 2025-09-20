@@ -76,7 +76,7 @@ const CreatePredictionCheckpoint = () => {
       const token = localStorage.getItem("token");
       setLoading(true);
       axios
-        .get(`http://localhost:8080/api/prediction-checkpoints/by-book/${selectedBookId}`, {
+        .get(`http://localhost:3000/api/prediction-checkpoints/by-book/${selectedBookId}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         .then((res) => {
@@ -92,7 +92,7 @@ const CreatePredictionCheckpoint = () => {
                   id: `${Date.now()}-${idx}`,
                   file: null,
                   preview: img.imageUrl.startsWith("/uploads")
-                    ? `http://localhost:8080${img.imageUrl}`
+                    ? `http://localhost:3000${img.imageUrl}`
                     : img.imageUrl,
                   originalId: img.id,
                   position: img.position
@@ -104,7 +104,7 @@ const CreatePredictionCheckpoint = () => {
                 id: `${Date.now()}-option-${idx}`,
                 file: null,
                 preview: opt.imageUrl.startsWith("/uploads")
-                  ? `http://localhost:8080${opt.imageUrl}`
+                  ? `http://localhost:3000${opt.imageUrl}`
                   : opt.imageUrl,
                 originalId: opt.id,
                 isCorrect: opt.isCorrect
@@ -139,7 +139,7 @@ const CreatePredictionCheckpoint = () => {
       
       // Always fetch pages when selectedBookId is available, regardless of books array
       axios
-        .get(`http://localhost:8080/api/pages/${selectedBookId}`)
+        .get(`http://localhost:3000/api/pages/${selectedBookId}`)
         .then((response) => {
           setBookPageCount(response.data.length || 0);
         })
@@ -245,7 +245,7 @@ const CreatePredictionCheckpoint = () => {
         formData.append("uploadType", "prediction");
 
         const response = await axios.post(
-          "http://localhost:8080/api/books/upload-image",
+          "http://localhost:3000/api/books/upload-image",
           formData,
           {
             headers: {
@@ -269,7 +269,7 @@ const CreatePredictionCheckpoint = () => {
 
       // Create the prediction checkpoint
       await axios.post(
-        "http://localhost:8080/api/prediction-checkpoints",
+        "http://localhost:3000/api/prediction-checkpoints",
         {
           title,
           bookId: selectedBookId,

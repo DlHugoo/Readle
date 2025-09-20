@@ -153,7 +153,7 @@ const StudentLibraryPage = () => {
 
         const headers = { Authorization: `Bearer ${token}` };
         const response = await axios.get(
-          `http://localhost:8080/api/progress/in-progress/${userId}`,
+          `http://localhost:3000/api/progress/in-progress/${userId}`,
           { headers }
         );
 
