@@ -29,7 +29,7 @@ const BookPageEditor = () => {
   const getFullImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('/uploads')) {
-      return `http://localhost:8080${url}`;
+      return `http://localhost:3000${url}`;
     }
     return url;
   };

@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
-    return `http://localhost:8080${url}`;
+    return `http://localhost:3000${url}`;
   }
   return url;
 };
@@ -63,7 +63,7 @@ const BookPage = () => {
             const token = localStorage.getItem("token");
             try {
               const progressRes = await axios.get(
-                `http://localhost:8080/api/progress/book/${storedUserId}/${bookRes.data.bookID}`,
+                `http://localhost:3000/api/progress/book/${storedUserId}/${bookRes.data.bookID}`,
                 { headers: { Authorization: `Bearer ${token}` } }
               );
 
@@ -125,7 +125,7 @@ const BookPage = () => {
     // First try to get existing progress
     axios
       .get(
-        `http://localhost:8080/api/progress/book/${storedUserId}/${book.bookID}`,
+        `http://localhost:3000/api/progress/book/${storedUserId}/${book.bookID}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((res) => {
@@ -152,7 +152,7 @@ const BookPage = () => {
           console.log("No existing progress found, creating new tracker");
           axios
             .post(
-              `http://localhost:8080/api/progress/start/${storedUserId}/${book.bookID}`,
+              `http://localhost:3000/api/progress/start/${storedUserId}/${book.bookID}`,
               {},
               { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -185,7 +185,7 @@ const BookPage = () => {
       const token = localStorage.getItem("token");
       axios
         .put(
-          `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${
+          `http://localhost:3000/api/progress/update/${trackerId}?pageNumber=${
             currentPageIndex + 1
           }&readingTimeMinutes=1`,
           {},
@@ -206,7 +206,7 @@ const BookPage = () => {
       try {
         // 1) Load the checkpoint metadata for this book
         const { data: checkpoint } = await axios.get(
-          `http://localhost:8080/api/prediction-checkpoints/by-book/${bookId}`,
+          `http://localhost:3000/api/prediction-checkpoints/by-book/${bookId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -216,7 +216,7 @@ const BookPage = () => {
 
           // 3) Ask how many times the user has tried this checkpoint
           const { data: attemptCount } = await axios.get(
-            `http://localhost:8080/api/prediction-checkpoint-attempts/user/${userId}` +
+            `http://localhost:3000/api/prediction-checkpoint-attempts/user/${userId}` +
               `/checkpoint/${checkpointId}/count`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -245,7 +245,7 @@ const BookPage = () => {
       if (trackerId) {
         try {
           await axios.put(
-            `http://localhost:8080/api/progress/update/${trackerId}` +
+            `http://localhost:3000/api/progress/update/${trackerId}` +
               `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
@@ -268,7 +268,7 @@ const BookPage = () => {
         const pageNumber = prevIndex + 1;
         axios
           .put(
-            `http://localhost:8080/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`,
+            `http://localhost:3000/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )

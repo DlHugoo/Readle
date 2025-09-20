@@ -232,7 +232,7 @@ const ClassroomContentManager = () => {
     setBookGenre(book.genre);
     setBookDifficulty(book.difficultyLevel);
     setBookImageURL(book.imageURL);
-    setImagePreview(book.imageURL ? `http://localhost:8080${book.imageURL}` : null);
+    setImagePreview(book.imageURL ? `http://localhost:3000${book.imageURL}` : null);
     setShowEditModal(true);
   };
 
@@ -414,7 +414,7 @@ const ClassroomContentManager = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {classroomContent.map((book, index) => {
                   // Construct the full image URL
-                  const backendBaseUrl = "http://localhost:8080"; // Backend URL
+                  const backendBaseUrl = "http://localhost:3000"; // Backend URL
                   const fullImageUrl = `${backendBaseUrl}${book.imageURL}`;
 
                   return (
