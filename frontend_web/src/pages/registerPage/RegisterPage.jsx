@@ -2,7 +2,7 @@ import { useState } from "react";
 import logo from "../../assets/logo-final.png";
 import student from "../../assets/student.png";
 import teacher from "../../assets/teacher.png";
-import SignupForm from "./SignupPage"; // Import the signup form component
+import SignupForm from "./SignupPage";
 
 const RegisterPage = () => {
   const [selectedRole, setSelectedRole] = useState(null);
@@ -10,23 +10,17 @@ const RegisterPage = () => {
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
+    // store for the signup page (and backend payload)
     localStorage.setItem("userRole", role);
-    console.log(`Selected role: ${role}`);
-    // Show signup form after a short delay for better UX
-    setTimeout(() => {
-      setShowSignup(true);
-    }, 300);
+    // show the form after a tiny delay (nice UX)
+    setTimeout(() => setShowSignup(true), 300);
   };
 
-  // If signup form should be shown, render that instead
-  if (showSignup) {
-    return <SignupForm />;
-  }
+  if (showSignup) return <SignupForm />;
 
-  // Otherwise show the role selection screen
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      {/* Header with more space above */}
+      {/* Header */}
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Welcome to</h1>
         <div className="flex justify-center items-center">
@@ -34,14 +28,12 @@ const RegisterPage = () => {
         </div>
       </div>
 
-      {/* Cards with more generous spacing and larger cards */}
+      {/* Role cards */}
       <div className="flex flex-col md:flex-row gap-10 mb-20 w-full max-w-4xl justify-center px-4">
         <div
-          className={`bg-white rounded-lg shadow-lg p-10 flex flex-col items-center transition-all duration-300 cursor-pointer
-                      hover:shadow-xl hover:scale-105 w-full md:w-5/12 h-80
-                      ${
-                        selectedRole === "student" ? "ring-4 ring-blue-400" : ""
-                      }`}
+          className={`bg-white rounded-lg shadow-lg p-10 flex flex-col items-center transition-all duration-300 cursor-pointer hover:shadow-xl hover:scale-105 w-full md:w-5/12 h-80 ${
+            selectedRole === "student" ? "ring-4 ring-blue-400" : ""
+          }`}
           onClick={() => handleRoleSelect("student")}
         >
           <div className="flex-grow flex items-center justify-center">
@@ -51,11 +43,9 @@ const RegisterPage = () => {
         </div>
 
         <div
-          className={`bg-white rounded-lg shadow-lg p-10 flex flex-col items-center transition-all duration-300 cursor-pointer
-                      hover:shadow-xl hover:scale-105 w-full md:w-5/12 h-80
-                      ${
-                        selectedRole === "teacher" ? "ring-4 ring-blue-400" : ""
-                      }`}
+          className={`bg-white rounded-lg shadow-lg p-10 flex flex-col items-center transition-all duration-300 cursor-pointer hover:shadow-xl hover:scale-105 w-full md:w-5/12 h-80 ${
+            selectedRole === "teacher" ? "ring-4 ring-blue-400" : ""
+          }`}
           onClick={() => handleRoleSelect("teacher")}
         >
           <div className="flex-grow flex items-center justify-center">
@@ -65,13 +55,10 @@ const RegisterPage = () => {
         </div>
       </div>
 
-      {/* Footer with more space below */}
+      {/* Footer */}
       <div className="text-center mt-auto pb-8">
         <p className="text-gray-700 text-lg mb-2">Already have an account?</p>
-        <a
-          href="/login"
-          className="text-btn-blue text-xl font-medium hover:underline"
-        >
+        <a href="/login" className="text-btn-blue text-xl font-medium hover:underline">
           Log in
         </a>
       </div>

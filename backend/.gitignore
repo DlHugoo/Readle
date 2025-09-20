@@ -31,3 +31,27 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ---- Secrets & environment files (do NOT commit) ----
+# backend
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# frontend (if you later add envs there too)
+frontend_web/.env
+frontend_web/.env.*
+!frontend_web/.env.example
+
+# Optional: project-root .env (in case one appears)
+.env
+.env.*
+!.env.example
+
+# ---- Frontend build artifacts ----
+frontend_web/node_modules/
+frontend_web/dist/
+
+# Logs
+*.log
+

@@ -19,7 +19,7 @@ public class UserBadgeEntity {
     @JoinColumn(name = "badge_id", nullable = false)
     private BadgeEntity badge;
 
-    @Column(nullable = false)
+    @Column
     private LocalDateTime earnedAt;
 
     @Column
@@ -32,7 +32,7 @@ public class UserBadgeEntity {
     public UserBadgeEntity(UserEntity user, BadgeEntity badge) {
         this.user = user;
         this.badge = badge;
-        this.earnedAt = LocalDateTime.now();
+        this.earnedAt = null; // Will be set when badge is earned
         this.currentProgress = 0;
     }
 

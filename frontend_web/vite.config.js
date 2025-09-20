@@ -1,12 +1,17 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+// vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8080', // Forward /api requests to Spring Boot
-    },
-  },
-});
+      '/api': { target: 'http://localhost:3000', changeOrigin: true },
+      '/oauth2': { target: 'http://localhost:3000', changeOrigin: true },
+      // Only these two exact paths for your flow:
+      '/auth/microsoft/start': { target: 'http://localhost:3000', changeOrigin: true },
+      '/auth/microsoft/callback': { target: 'http://localhost:3000', changeOrigin: true },
+      // ❌ Do NOT add '/auth': ... (that would swallow /authCallback)
+    }
+  }
+})

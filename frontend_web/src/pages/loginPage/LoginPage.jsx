@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext"; // Import the auth context
+import { useAuth } from "../../contexts/AuthContext";
+import { login as apiLogin } from "../../api/api";
 import mascot from "../../assets/mascot.png";
+
+// NEW: backend base (env with fallback)
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -9,7 +13,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Get login function from auth context
+
+  const { login: authLogin } = useAuth(); // from context
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,47 +27,29 @@ const LoginPage = () => {
       setErrorMessage("Please fill in both email and password.");
       return false;
     }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setErrorMessage("Please enter a valid email address.");
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const data = await apiLogin({
+        email: formData.email,
+        password: formData.password,
       });
+      // data = { token, role, userId }
 
-      let data;
-      // Check if the response has JSON content-type before parsing
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        // If no JSON, read text for error handling
-        const text = await response.text();
-        throw new Error(text || "Login failed");
-      }
-
-      if (!response.ok) {
-        throw new Error(data.message || "Wrong password/email");
-      }
-
-      login({
+      authLogin({
         token: data.token,
         role: data.role,
         userId: data.userId,
@@ -79,12 +66,23 @@ const LoginPage = () => {
         default:
           navigate("/library");
       }
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch (err) {
+      const msg = (err && err.message) ? String(err.message) : "";
+      if (/not\s*verified|verify\s*your\s*email/i.test(msg)) {
+        localStorage.setItem("pendingEmail", formData.email);
+        navigate(`/verify?email=${encodeURIComponent(formData.email)}`);
+        return;
+      }
       setErrorMessage("Incorrect email or password. Please try again.");
+      console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // NEW: Microsoft login
+  const handleMicrosoftLogin = () => {
+    window.location.href = `${API_BASE}/auth/microsoft/start`;
   };
 
   return (
@@ -119,7 +117,7 @@ const LoginPage = () => {
               />
             </div>
 
-            <div className="mb-6 relative">
+            <div className="mb-4 relative">
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -174,6 +172,30 @@ const LoginPage = () => {
               )}
             </button>
 
+            {/* NEW: Divider + Microsoft button */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="px-3 text-xs text-gray-500 uppercase tracking-wide">
+                or
+              </span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleMicrosoftLogin}
+              className="w-full border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3"
+              disabled={isLoading}
+            >
+              <svg width="20" height="20" viewBox="0 0 23 23" aria-hidden="true">
+                <rect width="10" height="10" x="1" y="1" />
+                <rect width="10" height="10" x="12" y="1" />
+                <rect width="10" height="10" x="1" y="12" />
+                <rect width="10" height="10" x="12" y="12" />
+              </svg>
+              Continue with Microsoft
+            </button>
+
             {errorMessage && (
               <div className="mt-4 text-center text-sm text-red-600 bg-red-100 border border-red-300 rounded-lg px-4 py-2">
                 {errorMessage}
@@ -182,20 +204,14 @@ const LoginPage = () => {
           </form>
 
           <div className="mt-4 text-center">
-            <a
-              href="/forgot-password"
-              className="text-white hover:underline text-sm"
-            >
+            <a href="/forgot-password" className="text-blue-500 hover:underline text-sm">
               Forgot Password?
             </a>
           </div>
 
           <div className="mt-6 text-center text-sm text-gray-700">
             New to Readle?{" "}
-            <a
-              href="/register"
-              className="text-blue-500 font-medium hover:underline"
-            >
+            <a href="/register" className="text-blue-500 font-medium hover:underline">
               Join now
             </a>
           </div>
