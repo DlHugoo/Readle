@@ -167,7 +167,7 @@ const ClassroomManagement = () => {
       fetchClassrooms();
     } catch (error) {
       console.error("Delete error:", error);
-      showNotification('error', 'Deletion Failed', 'Error deleting classroom.');
+      showNotification('error', 'Deletion Failed', 'This book has existing progress linked to it. To maintain data integrity, deletion is disabled.');
     } finally {
       setShowDeleteModal(false);
       setSelectedClassroom(null);
