@@ -81,10 +81,10 @@ public class ImagenService {
         }
     }
 
-    public List<String> generateBookPageImages(String storyContent, String readingLevel, int numberOfImages) {
+    public List<String> generateBookPageImages(String storyContent, int numberOfImages) {
         try {
             // Create a more specific prompt based on story content
-            String prompt = createBookPagePrompt(storyContent, readingLevel);
+            String prompt = createBookPagePrompt(storyContent);
             return generateEducationalImages(prompt, numberOfImages);
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate book page images: " + e.getMessage(), e);
@@ -100,14 +100,12 @@ public class ImagenService {
                 userPrompt);
     }
 
-    private String createBookPagePrompt(String storyContent, String readingLevel) {
+    private String createBookPagePrompt(String storyContent) {
         return String.format(
-                "Educational book illustration for %s reading level. " +
-                        "Story context: %s. " +
+                "Educational book illustration based on story content: %s. " +
                         "Child-friendly, colorful, engaging illustration that helps with reading comprehension. " +
                         "Simple composition, clear visual elements, culturally appropriate for elementary students. " +
                         "Focus on positive educational themes and avoid any inappropriate content.",
-                readingLevel,
                 storyContent.length() > 200 ? storyContent.substring(0, 200) + "..." : storyContent);
     }
 }

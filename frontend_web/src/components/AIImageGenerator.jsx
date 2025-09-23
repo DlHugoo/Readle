@@ -69,7 +69,6 @@ const AIImageGenerator = ({
         "/api/imagen/generate-book-page",
         {
           storyContent: storyContent,
-          readingLevel: readingLevel || "elementary",
           numberOfImages: 4,
         },
         {

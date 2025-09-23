@@ -59,23 +59,17 @@ public class ImagenController {
     public ResponseEntity<?> generateBookPageImages(@RequestBody Map<String, Object> request) {
         try {
             String storyContent = (String) request.get("storyContent");
-            String readingLevel = (String) request.get("readingLevel");
             Integer numberOfImages = (Integer) request.getOrDefault("numberOfImages", 1);
 
             if (storyContent == null || storyContent.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Story content is required"));
             }
 
-            if (readingLevel == null || readingLevel.trim().isEmpty()) {
-                readingLevel = "elementary"; // Default reading level
-            }
-
             if (numberOfImages < 1 || numberOfImages > 4) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Number of images must be between 1 and 4"));
             }
 
-            List<String> generatedImages = imagenService.generateBookPageImages(storyContent, readingLevel,
-                    numberOfImages);
+            List<String> generatedImages = imagenService.generateBookPageImages(storyContent, numberOfImages);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
