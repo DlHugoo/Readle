@@ -62,7 +62,7 @@ const TeacherCreateSSA = () => {
     // Only fetch books if no book ID was passed
     if (!passedBookId) {
       axios
-        .get("http://localhost:8080/api/books")
+        .get("http://localhost:3000/api/books")
         .then((res) => setBooks(res.data))
         .catch(console.error);
     }
@@ -75,7 +75,7 @@ const TeacherCreateSSA = () => {
     const token = localStorage.getItem("token");
     
     axios
-      .get(`http://localhost:8080/api/ssa/by-book/${selectedBookId}`, {
+      .get(`http://localhost:3000/api/ssa/by-book/${selectedBookId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then((res) => {
@@ -87,7 +87,7 @@ const TeacherCreateSSA = () => {
               id: `${Date.now()}-${idx}`,
               file: null,
               preview: img.imageUrl.startsWith("/uploads")
-                ? `http://localhost:8080${img.imageUrl}`
+                ? `http://localhost:3000${img.imageUrl}`
                 : img.imageUrl,
               originalId: img.id
             }))
@@ -219,7 +219,7 @@ const TeacherCreateSSA = () => {
 
           try {
             const res = await axios.post(
-              "http://localhost:8080/api/books/upload-image",
+              "http://localhost:3000/api/books/upload-image",
               formData,
               {
                 headers: { Authorization: `Bearer ${token}` }, // Include token in headers
@@ -239,7 +239,7 @@ const TeacherCreateSSA = () => {
       );
 
       await axios.post(
-        "http://localhost:8080/api/ssa/create",
+        "http://localhost:3000/api/ssa/create",
         {
           title,
           bookId: selectedBookId,
@@ -258,7 +258,7 @@ const TeacherCreateSSA = () => {
       
       // Refresh the data after creating
       axios
-        .get(`http://localhost:8080/api/ssa/by-book/${selectedBookId}`)
+        .get(`http://localhost:3000/api/ssa/by-book/${selectedBookId}`)
         .then((res) => {
           if (res.data && res.data.images && res.data.images.length > 0) {
             setExistingSSA(res.data);
@@ -268,7 +268,7 @@ const TeacherCreateSSA = () => {
                 id: `${Date.now()}-${idx}`,
                 file: null,
                 preview: img.imageUrl.startsWith("/uploads")
-                  ? `http://localhost:8080${img.imageUrl}`
+                  ? `http://localhost:3000${img.imageUrl}`
                   : img.imageUrl,
                 originalId: img.id
               }))

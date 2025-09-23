@@ -24,12 +24,16 @@ const BookPageEditor = () => {
   // Add modal state
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+  const [modalTitle, setModalTitle] = useState('');
+  
+  // Add delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // Helper function to get full image URL
   const getFullImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith('/uploads')) {
-      return `http://localhost:8080${url}`;
+      return `http://localhost:3000${url}`;
     }
     return url;
   };
@@ -141,6 +145,22 @@ const BookPageEditor = () => {
   
   // Create a new page
   const createNewPage = async () => {
+    // Validate that the book has all required fields
+    if (!book) {
+      setModalTitle('Error');
+      setModalMessage('Book information is not available. Please try again.');
+      setShowModal(true);
+      return;
+    }
+    
+    // Check for required book fields
+    if (!book.title || !book.author || !book.genre || !book.difficultyLevel) {
+      setModalTitle('Incomplete Book Information');
+      setModalMessage('The book is missing required information. Please make sure the book has a title, author, genre, and difficulty level before adding pages.');
+      setShowModal(true);
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(`/api/pages/${bookId}`, {
@@ -169,12 +189,71 @@ const BookPageEditor = () => {
       setIsEditing(true);
     } catch (err) {
       console.error('Error creating new page:', err);
-      setError(err.response?.data?.message || err.message);
+      setModalTitle('Error');
+      setModalMessage(err.response?.data?.message || err.message);
+      setShowModal(true);
     }
   };
   
+  // Delete the current page - now opens the confirmation modal instead of window.confirm
+  const deletePage = () => {
+    setShowDeleteModal(true);
+  };
+
+  // Actual delete function that gets called after confirmation
+  const confirmDeletePage = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const currentPage = pages[currentPageIndex];
+      
+      // Use the correct delete endpoint with pageID instead of id
+      await axios.delete(`/api/pages/${bookId}/page/${currentPage.id || currentPage.pageID}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      // Remove the page from the array
+      const updatedPages = pages.filter((_, index) => index !== currentPageIndex);
+      setPages(updatedPages);
+      
+      // Adjust current page index if needed
+      if (updatedPages.length === 0) {
+        // No pages left
+        setCurrentPageIndex(0);
+        setPageContent('');
+        setImagePreview(null);
+      } else if (currentPageIndex >= updatedPages.length) {
+        // If we deleted the last page, go to the new last page
+        setCurrentPageIndex(updatedPages.length - 1);
+        setPageContent(updatedPages[updatedPages.length - 1].content || '');
+        setImagePreview(getFullImageUrl(updatedPages[updatedPages.length - 1].imageUrl || updatedPages[updatedPages.length - 1].imageURL) || null);
+      } else {
+        // Stay on the same index but update content
+        setPageContent(updatedPages[currentPageIndex].content || '');
+        setImagePreview(getFullImageUrl(updatedPages[currentPageIndex].imageUrl || updatedPages[currentPageIndex].imageURL) || null);
+      }
+      
+      setIsEditing(false);
+      setShowDeleteModal(false);
+    } catch (err) {
+      console.error('Error deleting page:', err);
+      setModalTitle('Error');
+      setModalMessage(err.response?.data?.message || err.message);
+      setShowModal(true);
+    }
+  };
+
   // Save the current page
   const savePage = async () => {
+    // Validate that the page content is not empty
+    if (!pageContent || pageContent.trim() === '') {
+    setModalTitle('Empty Content');
+    setModalMessage('Page content cannot be empty. Please add some content before saving.');
+    setShowModal(true);
+    return;
+  }
+    
     try {
       const token = localStorage.getItem('token');
       const currentPage = pages[currentPageIndex];
@@ -240,53 +319,12 @@ const BookPageEditor = () => {
       setPageImage(null);
     } catch (err) {
       console.error('Error saving page:', err);
-      setError(err.response?.data?.message || err.message);
+      setModalTitle('Error');
+      setModalMessage(err.response?.data?.message || err.message);
+      setShowModal(true);
     }
   };
   
-  // Delete the current page
-  const deletePage = async () => {
-    if (window.confirm('Are you sure you want to delete this page? This action cannot be undone.')) {
-      try {
-        const token = localStorage.getItem('token');
-        const currentPage = pages[currentPageIndex];
-        
-        // Use the correct delete endpoint with pageID instead of id
-        await axios.delete(`/api/pages/${bookId}/page/${currentPage.id || currentPage.pageID}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        // Remove the page from the array
-        const updatedPages = pages.filter((_, index) => index !== currentPageIndex);
-        setPages(updatedPages);
-        
-        // Adjust current page index if needed
-        if (updatedPages.length === 0) {
-          // No pages left
-          setCurrentPageIndex(0);
-          setPageContent('');
-          setImagePreview(null);
-        } else if (currentPageIndex >= updatedPages.length) {
-          // If we deleted the last page, go to the new last page
-          setCurrentPageIndex(updatedPages.length - 1);
-          setPageContent(updatedPages[updatedPages.length - 1].content || '');
-          setImagePreview(getFullImageUrl(updatedPages[updatedPages.length - 1].imageUrl || updatedPages[updatedPages.length - 1].imageURL) || null);
-        } else {
-          // Stay on the same index but update content
-          setPageContent(updatedPages[currentPageIndex].content || '');
-          setImagePreview(getFullImageUrl(updatedPages[currentPageIndex].imageUrl || updatedPages[currentPageIndex].imageURL) || null);
-        }
-        
-        setIsEditing(false);
-      } catch (err) {
-        console.error('Error deleting page:', err);
-        setError(err.response?.data?.message || err.message);
-      }
-    }
-  };
-
   // Go back to classroom content
   const goBackToClassroom = () => {
     navigate(-1);
@@ -524,7 +562,7 @@ const BookPageEditor = () => {
           </div>
         </div>
         
-        {/* Modal for error messages */}
+         {/* Modal for error messages */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
@@ -533,7 +571,7 @@ const BookPageEditor = () => {
                   <AlertCircle className="h-6 w-6 text-red-500" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900">Can not Upload File</h3>
+                  <h3 className="text-lg font-medium text-gray-900">{modalTitle || 'Can not Upload File'}</h3>
                   <p className="mt-2 text-sm text-gray-500">{modalMessage}</p>
                 </div>
               </div>
@@ -544,6 +582,40 @@ const BookPageEditor = () => {
                   onClick={() => setShowModal(false)}
                 >
                   OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+
+        {/* Delete confirmation modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 mr-3">
+                  <AlertCircle className="h-6 w-6 text-red-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900">Confirm Deletion</h3>
+                  <p className="mt-2 text-sm text-gray-500">Are you sure you want to delete this page? This action cannot be undone.</p>
+                </div>
+              </div>
+              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={confirmDeletePage}
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
                 </button>
               </div>
             </div>

@@ -56,7 +56,7 @@ const ClassroomContentPage = () => {
   }, [classroomId]);
 
   const getImageUrl = (path) =>
-    path?.startsWith("/uploads") ? `http://localhost:8080${path}` : path;
+    path?.startsWith("/uploads") ? `http://localhost:3000${path}` : path;
 
   const estimateReadTime = (pageCount) => {
     const pages = parseInt(pageCount);

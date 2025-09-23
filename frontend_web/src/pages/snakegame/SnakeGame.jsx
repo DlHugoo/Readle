@@ -48,7 +48,7 @@ const SnakeGame = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (userId && bookId && token) {
-      axios.get(`http://localhost:8080/api/progress/book/${userId}/${bookId}`, {
+      axios.get(`http://localhost:3000/api/progress/book/${userId}/${bookId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => setTrackerId(res.data.id))
@@ -58,7 +58,7 @@ const SnakeGame = () => {
 
   const fetchPages = async () => {
     try {
-      const res = await axios.get(`http://localhost:8080/api/pages/${bookId}`);
+      const res = await axios.get(`http://localhost:3000/api/pages/${bookId}`);
       const pagesData = res.data.sort((a, b) => a.pageNumber - b.pageNumber);
       setPages(pagesData);
     } catch (err) {
@@ -89,7 +89,7 @@ const fetchQuestions = async () => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(
-      `http://localhost:8080/api/snake-questions/book/${bookId}`,
+      `http://localhost:3000/api/snake-questions/book/${bookId}`,
       {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -189,7 +189,7 @@ const fetchQuestions = async () => {
 
     setIsCreatingAttempt(true);
     try {
-      await axios.post(`http://localhost:8080/api/snake-attempts`, null, {
+      await axios.post(`http://localhost:3000/api/snake-attempts`, null, {
         params: {
           userId: userId,
           bookId: bookId,
@@ -258,7 +258,7 @@ const fetchQuestions = async () => {
               if (trackerId) {
                 const token = localStorage.getItem("token");
                 axios.put(
-                  `http://localhost:8080/api/progress/complete/${trackerId}`,
+                  `http://localhost:3000/api/progress/complete/${trackerId}`,
                   {},
                   { headers: { Authorization: `Bearer ${token}` } }
                 ).catch(err => console.error("Failed to mark book as completed:", err));
@@ -331,7 +331,7 @@ const resetGame = () => {
   
   const token = localStorage.getItem("token");
   axios
-    .get(`http://localhost:8080/api/snake-questions/book/${bookId}`, {
+    .get(`http://localhost:3000/api/snake-questions/book/${bookId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

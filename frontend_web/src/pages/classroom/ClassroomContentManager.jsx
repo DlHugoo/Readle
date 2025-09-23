@@ -181,6 +181,27 @@ const ClassroomContentManager = () => {
       return;
     }
 
+    // Validate required fields
+    if (!bookTitle.trim()) {
+      showAlertModal("error", "Book title is required.");
+      return;
+    }
+    
+    if (!bookAuthor.trim()) {
+      showAlertModal("error", "Author name is required.");
+      return;
+    }
+    
+    if (!bookGenre.trim()) {
+      showAlertModal("error", "Genre is required.");
+      return;
+    }
+    
+    if (!bookDifficulty.trim()) {
+      showAlertModal("error", "Difficulty level is required.");
+      return;
+    }
+
     try {
       // First upload the image if one is selected
       let imageURL = null;
@@ -232,7 +253,7 @@ const ClassroomContentManager = () => {
     setBookGenre(book.genre);
     setBookDifficulty(book.difficultyLevel);
     setBookImageURL(book.imageURL);
-    setImagePreview(book.imageURL ? `http://localhost:8080${book.imageURL}` : null);
+    setImagePreview(book.imageURL ? `http://localhost:3000${book.imageURL}` : null);
     setShowEditModal(true);
   };
 
@@ -268,7 +289,7 @@ const ClassroomContentManager = () => {
       if (error.response && error.response.status === 500) {
         showAlertModal("error", "Cannot delete this book because it has associated content (pages or questions). Please remove the content first.");
       } else {
-        showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "An unknown error occurred"}`);
+        showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "This book has existing progress linked to it. To maintain data integrity, deletion is disabled."}`);
       }
     }
   };
@@ -414,7 +435,7 @@ const ClassroomContentManager = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {classroomContent.map((book, index) => {
                   // Construct the full image URL
-                  const backendBaseUrl = "http://localhost:8080"; // Backend URL
+                  const backendBaseUrl = "http://localhost:3000"; // Backend URL
                   const fullImageUrl = `${backendBaseUrl}${book.imageURL}`;
 
                   return (

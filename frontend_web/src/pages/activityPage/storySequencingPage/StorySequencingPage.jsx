@@ -25,7 +25,7 @@ const StorySequencingPage = () => {
     const token = localStorage.getItem("token");
     if (userId && bookId && token) {
       axios
-        .get(`http://localhost:8080/api/progress/book/${userId}/${bookId}`, {
+        .get(`http://localhost:3000/api/progress/book/${userId}/${bookId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setTrackerId(res.data.id))
@@ -61,7 +61,7 @@ const StorySequencingPage = () => {
         }
 
         const res = await axios.get(
-          `http://localhost:8080/api/ssa/by-book/${bookId}`,
+          `http://localhost:3000/api/ssa/by-book/${bookId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -86,7 +86,7 @@ const StorySequencingPage = () => {
           images: images.map((img) => ({
             id: img.id,
             url: img.imageUrl.startsWith("/uploads")
-              ? `http://localhost:8080${img.imageUrl}`
+              ? `http://localhost:3000${img.imageUrl}`
               : img.imageUrl,
           })),
         });
@@ -157,7 +157,7 @@ const StorySequencingPage = () => {
       }
 
       const res = await axios.post(
-        `http://localhost:8080/api/ssa/${storyData.ssaId}/check`,
+        `http://localhost:3000/api/ssa/${storyData.ssaId}/check`,
         { attemptedSequence: sequenceIds },
         {
           headers: {
@@ -177,7 +177,7 @@ const StorySequencingPage = () => {
       if (res.data.correct && trackerId) {
         axios
           .put(
-            `http://localhost:8080/api/progress/complete/${trackerId}`,
+            `http://localhost:3000/api/progress/complete/${trackerId}`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )
