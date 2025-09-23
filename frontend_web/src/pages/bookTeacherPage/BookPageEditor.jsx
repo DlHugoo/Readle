@@ -515,6 +515,20 @@ const BookPageEditor = () => {
                               PNG, GIF, WebP
                             </p>
 
+                            {/* File Input */}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="mx-auto text-sm text-gray-500
+                                file:py-2 file:px-4
+                                file:rounded-md file:border-0
+                                file:text-sm file:font-semibold
+                              file:bg-blue-50 file:text-blue-700
+                              hover:file:bg-blue-100"
+                            />
+
+                            <div className="text-xs text-gray-400 mb-2">or</div>
                             {/* AI Generation Button */}
                             <button
                               onClick={() => setShowAIGenerator(true)}
@@ -523,20 +537,6 @@ const BookPageEditor = () => {
                               <Wand2 size={16} className="mr-2" />
                               Generate with AI
                             </button>
-
-                            <div className="text-xs text-gray-400 mb-2">or</div>
-
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageChange}
-                              className="block w-full text-sm text-gray-500
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-md file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-blue-50 file:text-blue-700
-                                hover:file:bg-blue-100"
-                            />
                           </div>
                         </div>
                       )}
