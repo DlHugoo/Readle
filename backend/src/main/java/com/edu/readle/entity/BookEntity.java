@@ -21,6 +21,9 @@ public class BookEntity {
     private String imageURL;
 
     @Column(nullable = false)
+    private boolean archived = false;
+
+    @Column(nullable = false)
     private boolean visibleToAll = false;
 
     @Column
@@ -115,6 +118,14 @@ public class BookEntity {
 
     public void setImageURL(String imageURL) {
         this.imageURL = imageURL;
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
     }
 
     public List<PageEntity> getPages() {

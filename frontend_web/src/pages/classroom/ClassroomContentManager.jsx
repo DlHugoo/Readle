@@ -17,6 +17,7 @@ const ClassroomContentManager = () => {
   const [selectedBook, setSelectedBook] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [alertModal, setAlertModal] = useState({ show: false, type: "", message: "" }); // State for alert modal
   const [sidebarOpen, setSidebarOpen] = useState(false); // State for sidebar
   const [codeCopied, setCodeCopied] = useState(false); // State to track if code was copied
@@ -65,7 +66,8 @@ const ClassroomContentManager = () => {
         }
         setClassroomName(response.data.name || "Unknown Classroom");
         setClassroomCode(response.data.classroomCode || ""); // Set classroom code
-        setClassroomContent(response.data.books || []); // Fetch books associated with the classroom
+        // Fetch only active (non-archived) books using the dedicated endpoint
+        await fetchActiveBooks();
       } catch (error) {
         console.error("Failed to fetch classroom details. Status:", error.response?.status, "Error:", error.message);
       }
@@ -73,6 +75,19 @@ const ClassroomContentManager = () => {
 
     fetchClassroomDetails();
   }, [classroomId]);
+
+  // Fetch only active (non-archived) books for the classroom
+  const fetchActiveBooks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`/api/classrooms/${classroomId}/books`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setClassroomContent(res.data || []);
+    } catch (e) {
+      console.error('Failed to load active books for classroom:', e);
+    }
+  };
 
   // Function to copy classroom code to clipboard
   const copyClassroomCode = () => {
@@ -259,7 +274,25 @@ const ClassroomContentManager = () => {
 
   const handleDeleteClick = (book) => {
     setSelectedBook(book);
-    setShowDeleteModal(true);
+    // Determine if deletable; if not, offer archive
+    checkIfBookCanBeDeleted(book.bookID);
+  };
+
+  const checkIfBookCanBeDeleted = async (bookId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`/api/books/${bookId}/can-delete`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data === true) {
+        setShowDeleteModal(true);
+      } else {
+        setShowArchiveModal(true);
+      }
+    } catch (e) {
+      // Default to archive option if unsure
+      setShowArchiveModal(true);
+    }
   };
 
   const confirmDeleteBook = async () => {
@@ -291,6 +324,26 @@ const ClassroomContentManager = () => {
       } else {
         showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "This book has existing progress linked to it. To maintain data integrity, deletion is disabled."}`);
       }
+    }
+  };
+
+  const confirmArchiveBook = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showAlertModal("error", "You must be logged in to archive a book.");
+      return;
+    }
+    try {
+      await axios.put(`/api/books/${selectedBook.bookID}/archive`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showAlertModal("success", "Book archived successfully!");
+      // Refresh active books to ensure archived items are excluded
+      await fetchActiveBooks();
+      setShowArchiveModal(false);
+    } catch (error) {
+      console.error("Error archiving book:", error);
+      showAlertModal("error", "Failed to archive book.");
     }
   };
 
@@ -411,6 +464,16 @@ const ClassroomContentManager = () => {
                 <span>Digital Library & Book Selection</span>
               </div>
               <PlusCircle size={20} />
+            </button>
+
+            <button
+              onClick={() => navigate(`/classroom-archived/${classroomId}`)}
+              className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <BookOpen size={24} />
+                <span>View Archived Books</span>
+              </div>
             </button>
           </div>
 
@@ -726,6 +789,33 @@ const ClassroomContentManager = () => {
                     className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                   >
                     Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Archive Confirmation Modal */}
+          {showArchiveModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+              <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                <h2 className="text-xl font-semibold mb-4">Archive Book</h2>
+                <p className="mb-4">
+                  This book has content and/or student progress. Deletion is disabled to preserve records.
+                </p>
+                <p className="mb-6">Would you like to archive "{selectedBook?.title}" instead?</p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setShowArchiveModal(false)}
+                    className="px-4 py-2 bg-gray-300 rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmArchiveBook}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  >
+                    Archive
                   </button>
                 </div>
               </div>
