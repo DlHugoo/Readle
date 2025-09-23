@@ -181,6 +181,27 @@ const ClassroomContentManager = () => {
       return;
     }
 
+    // Validate required fields
+    if (!bookTitle.trim()) {
+      showAlertModal("error", "Book title is required.");
+      return;
+    }
+    
+    if (!bookAuthor.trim()) {
+      showAlertModal("error", "Author name is required.");
+      return;
+    }
+    
+    if (!bookGenre.trim()) {
+      showAlertModal("error", "Genre is required.");
+      return;
+    }
+    
+    if (!bookDifficulty.trim()) {
+      showAlertModal("error", "Difficulty level is required.");
+      return;
+    }
+
     try {
       // First upload the image if one is selected
       let imageURL = null;
@@ -268,7 +289,7 @@ const ClassroomContentManager = () => {
       if (error.response && error.response.status === 500) {
         showAlertModal("error", "Cannot delete this book because it has associated content (pages or questions). Please remove the content first.");
       } else {
-        showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "An unknown error occurred"}`);
+        showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "This book has existing progress linked to it. To maintain data integrity, deletion is disabled."}`);
       }
     }
   };

@@ -740,103 +740,113 @@ const filteredStudents = progressData.map(student => {
                 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Student
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Books Completed
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Books In Progress
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last Activity
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Total Reading Time
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Avg. Comprehension
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredStudents.map((student, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-blue-600 font-semibold">
-                                  {student.firstName?.charAt(0) || '?'}{student.lastName?.charAt(0) || ''}
+                  {filteredStudents.length === 0 ? (
+                    <div className="text-center py-10">
+                      <div className="text-gray-400 mb-4">
+                        <Users size={64} className="mx-auto" />
+                      </div>
+                      <p className="text-gray-500 text-lg">No students enrolled yet.</p>
+                      <p className="text-gray-400 mt-2">Share your classroom code or add students manually to get started!</p>
+                    </div>
+                  ) : (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Student
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Books Completed
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Books In Progress
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Last Activity
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total Reading Time
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Avg. Comprehension
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredStudents.map((student, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <span className="text-blue-600 font-semibold">
+                                    {student.firstName?.charAt(0) || '?'}{student.lastName?.charAt(0) || ''}
+                                  </span>
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {student.firstName} {student.lastName}
+                                  </div>
+                                  <div className="text-sm text-gray-500">{student.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {student.progressData?.completedCount || 0}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {student.progressData?.inProgressCount || 0}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {student.progressData?.lastActivityDate 
+                                ? new Date(student.progressData.lastActivityDate).toLocaleDateString()
+                                : 'Never'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatTime(student.progressData?.totalReadingTimeMinutes || 0)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
+                                  <div 
+                                    className="bg-blue-600 h-2.5 rounded-full" 
+                                    style={{ width: `${student.progressData?.avgComprehensionScore || 0}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-sm text-gray-500">
+                                  {student.progressData?.avgComprehensionScore || 0}%
                                 </span>
                               </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {student.firstName} {student.lastName}
-                                </div>
-                                <div className="text-sm text-gray-500">{student.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.progressData?.completedCount || 0}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.progressData?.inProgressCount || 0}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.progressData?.lastActivityDate 
-                              ? new Date(student.progressData.lastActivityDate).toLocaleDateString()
-                              : 'Never'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatTime(student.progressData?.totalReadingTimeMinutes || 0)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
-                                <div 
-                                  className="bg-blue-600 h-2.5 rounded-full" 
-                                  style={{ width: `${student.progressData?.avgComprehensionScore || 0}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-sm text-gray-500">
-                                {student.progressData?.avgComprehensionScore || 0}%
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span 
+                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                  ${student.progressData?.status === 'On Track' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'}`}
+                              >
+                                {student.progressData?.status || 'Unknown'}
                               </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span 
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${student.progressData?.status === 'On Track' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'}`}
-                            >
-                              {student.progressData?.status || 'Unknown'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button
-                              onClick={() => openStudentModal(student)}
-                              className="text-blue-600 hover:text-blue-800 flex items-center"
-                            >
-                              <Eye size={16} className="mr-1" />
-                              View Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <button
+                                onClick={() => openStudentModal(student)}
+                                className="text-blue-600 hover:text-blue-800 flex items-center"
+                              >
+                                <Eye size={16} className="mr-1" />
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </>
