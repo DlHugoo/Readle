@@ -4,6 +4,7 @@ import com.edu.readle.dto.BookDTO;
 import com.edu.readle.entity.BookEntity;
 import com.edu.readle.service.BookService;
 import io.jsonwebtoken.io.IOException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,7 @@ public class BookController {
     private final BookService bookService;
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max file size
 
+    @Autowired
     public BookController(BookService bookService) {
         this.bookService = bookService;
     }
@@ -75,14 +77,47 @@ public class BookController {
 
     // 🔹 Delete book
     @DeleteMapping("/{bookId}")
-    public void deleteBook(@PathVariable Long bookId) {
+    public ResponseEntity<Void> deleteBook(@PathVariable Long bookId) {
         bookService.deleteBook(bookId);
+        return ResponseEntity.ok().build();
+    }
+
+    // 🔹 Check if book can be deleted (no content or progress)
+    @GetMapping("/{bookId}/can-delete")
+    public ResponseEntity<Boolean> canDeleteBook(@PathVariable Long bookId) {
+        // A book can be deleted if it has no pages/activities and no progress
+        Optional<BookEntity> bookOpt = bookService.getBookById(bookId);
+        if (bookOpt.isEmpty()) return ResponseEntity.notFound().build();
+        BookEntity book = bookOpt.get();
+        boolean hasPages = book.getPages() != null && !book.getPages().isEmpty();
+        boolean hasSnake = book.getSnakeQuestions() != null && !book.getSnakeQuestions().isEmpty();
+        boolean hasProgress = false;
+        try {
+            // Lazy check using repository method countByBook
+            hasProgress = bookService.hasProgress(book);
+        } catch (Exception ignored) {}
+        boolean canDelete = !(hasPages || hasSnake || hasProgress);
+        return ResponseEntity.ok(canDelete);
     }
 
     // 🔹 TEACHER: Update classroom-specific book
     @PutMapping("/{bookId}")
     public Optional<BookEntity> updateBook(@PathVariable Long bookId, @RequestBody BookDTO updatedBookDTO) {
         return bookService.updateBook(bookId, updatedBookDTO);
+    }
+
+    // 🔹 Archive a book (soft-hide from active views)
+    @PutMapping("/{bookId}/archive")
+    public ResponseEntity<Void> archiveBook(@PathVariable Long bookId) {
+        bookService.archiveBook(bookId);
+        return ResponseEntity.ok().build();
+    }
+
+    // 🔹 Unarchive a book
+    @PutMapping("/{bookId}/unarchive")
+    public ResponseEntity<Void> unarchiveBook(@PathVariable Long bookId) {
+        bookService.unarchiveBook(bookId);
+        return ResponseEntity.ok().build();
     }
 
     // 🔹 Upload book cover image

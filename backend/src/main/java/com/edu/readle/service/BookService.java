@@ -11,15 +11,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import com.edu.readle.repository.StudentProgressTrackerRepository;
+
 @Service
 public class BookService {
 
     private final BookRepository bookRepository;
     private final ClassroomRepository classroomRepository;
+    private final StudentProgressTrackerRepository progressRepository;
 
-    public BookService(BookRepository bookRepository, ClassroomRepository classroomRepository) {
+    public BookService(BookRepository bookRepository, ClassroomRepository classroomRepository, StudentProgressTrackerRepository progressRepository) {
         this.bookRepository = bookRepository;
         this.classroomRepository = classroomRepository;
+        this.progressRepository = progressRepository;
     }
 
     // 🔹 For student "For You" section
@@ -76,6 +80,7 @@ public class BookService {
         book.setGenre(bookDTO.getGenre());
         book.setDifficultyLevel(bookDTO.getDifficultyLevel());
         book.setImageURL(bookDTO.getImageURL());
+        book.setArchived(false);
 
         if (bookDTO.getClassroomId() != null) {
             Classroom classroom = classroomRepository.findById(bookDTO.getClassroomId())
@@ -104,6 +109,22 @@ public class BookService {
             }
 
             return bookRepository.save(book);
+        });
+    }
+
+    @Transactional
+    public void archiveBook(Long bookId) {
+        bookRepository.findById(bookId).ifPresent(book -> {
+            book.setArchived(true);
+            bookRepository.save(book);
+        });
+    }
+
+    @Transactional
+    public void unarchiveBook(Long bookId) {
+        bookRepository.findById(bookId).ifPresent(book -> {
+            book.setArchived(false);
+            bookRepository.save(book);
         });
     }
 
@@ -137,12 +158,19 @@ public class BookService {
     }
 
     public List<BookEntity> getBooksByClassroomId(Long classroomId) {
-        Classroom classroom = classroomRepository.findById(classroomId)
-                .orElseThrow(() -> new RuntimeException("Classroom not found"));
-        return classroom.getBooks();
+        // Only return active (non-archived) books
+        return bookRepository.findByClassroomIdAndArchivedFalse(classroomId);
     }
 
     public List<BookEntity> getBooksWithoutClassroom() {
         return bookRepository.findByClassroomIsNull();
+    }
+
+    public List<BookEntity> getArchivedBooksByClassroomId(Long classroomId) {
+        return bookRepository.findByClassroomIdAndArchivedTrue(classroomId);
+    }
+
+    public boolean hasProgress(BookEntity book) {
+        return progressRepository.countByBook(book) > 0;
     }
 }

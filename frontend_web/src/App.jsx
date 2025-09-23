@@ -21,6 +21,7 @@ import StudentBadgeDashboard from "./pages/studentPage/StudentBadgeDashboard";
 import ClassroomProgress from "./pages/classroom/ClassroomProgress";
 import BookCompletionPage from "./pages/studentPage/BookCompletionPage";
 import ClassroomVisualization from "./pages/classroom/ClassroomVisualization";
+import ArchivedBooks from "./pages/classroom/ArchivedBooks";
 import AdminLoginPage from "./pages/loginPage/AdminLoginPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import PredictionCheckpointPage from "./pages/activityPage/predictionCheckpoint/PredictionCheckpointPage";
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/classroom-students/:classroomId" element={<ClassroomStudents />} />
         <Route path="/classroom-progress/:classroomId" element={<ClassroomProgress />} />
         <Route path="/classroom-visualization/:classroomId" element={<ClassroomVisualization />} />
+        <Route path="/classroom-archived/:classroomId" element={<ArchivedBooks />} />
       </Route>
 
       {/* Teacher + Admin */}

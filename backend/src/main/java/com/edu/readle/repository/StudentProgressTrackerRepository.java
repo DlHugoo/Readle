@@ -20,15 +20,17 @@ public interface StudentProgressTrackerRepository extends JpaRepository<StudentP
     
     Optional<StudentProgressTracker> findByUserAndBook(UserEntity user, BookEntity book);
     
-    @Query("SELECT spt FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = true ORDER BY spt.endTime DESC")
+    @Query("SELECT spt FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = true AND spt.book.archived = false ORDER BY spt.endTime DESC")
     List<StudentProgressTracker> findCompletedBooksByUser(@Param("user") UserEntity user);
     
-    @Query("SELECT spt FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = false ORDER BY spt.lastReadAt DESC")
+    @Query("SELECT spt FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = false AND spt.book.archived = false ORDER BY spt.lastReadAt DESC")
     List<StudentProgressTracker> findInProgressBooksByUser(@Param("user") UserEntity user);
     
-    @Query("SELECT COUNT(spt) FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = true")
+    @Query("SELECT COUNT(spt) FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = true AND spt.book.archived = false")
     Long countCompletedBooksByUser(@Param("user") UserEntity user);
     
-    @Query("SELECT COUNT(spt) FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = false")
+    @Query("SELECT COUNT(spt) FROM StudentProgressTracker spt WHERE spt.user = :user AND spt.isCompleted = false AND spt.book.archived = false")
     Long countInProgressBooksByUser(@Param("user") UserEntity user);
+
+    Long countByBook(BookEntity book);
 } 

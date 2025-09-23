@@ -10,4 +10,6 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     // Optional: add custom queries here if needed
     List<BookEntity> findByClassroomIsNull();
     List<BookEntity> findByVisibleToAllTrue();
+    List<BookEntity> findByClassroomIdAndArchivedFalse(Long classroomId);
+    List<BookEntity> findByClassroomIdAndArchivedTrue(Long classroomId);
 }
