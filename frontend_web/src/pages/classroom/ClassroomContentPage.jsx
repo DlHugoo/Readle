@@ -41,7 +41,10 @@ const ClassroomContentPage = () => {
 
         if (!response.ok) throw new Error("Failed to load books.");
         const data = await response.json();
-        setBooks(data);
+
+        // Filter out archived books
+        const activeBooks = data.filter((book) => !book.archived);
+        setBooks(activeBooks);
         setError(null);
       } catch (err) {
         console.error(err);
