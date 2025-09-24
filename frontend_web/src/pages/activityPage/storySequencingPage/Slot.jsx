@@ -11,7 +11,7 @@ const Slot = ({ id, image, index }) => {
     <div
       ref={setNodeRef}
       id={id}
-      className={`w-28 h-28 md:w-32 md:h-32 border-4 ${borderStyle} ${borderColor} rounded-xl bg-slot-color flex items-center justify-center`}
+      className={`w-36 h-36 md:w-44 md:h-44 border-4 ${borderStyle} ${borderColor} rounded-xl bg-slot-color flex items-center justify-center`}
     >
       {image ? (
         <img

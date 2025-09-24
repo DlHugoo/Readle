@@ -107,7 +107,7 @@ const SequencingBoard = ({ images, onSubmit, reshuffleTrigger }) => {
         </div>
         <div
           id="pool"
-          className="flex flex-wrap justify-center gap-4 p-4 rounded-xl"
+          className={`flex flex-wrap justify-center gap-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm shadow-lg mx-auto border border-white/20 ${availableImages.length > 4 ? 'w-full max-w-4xl' : availableImages.length > 2 ? 'w-full max-w-2xl' : 'w-full max-w-xl'}`}
         >
           {availableImages.map((img) => (
             <ImageCard key={img.uid} id={img.uid} url={img.url} />

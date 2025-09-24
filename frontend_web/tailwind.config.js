@@ -16,7 +16,8 @@ export default {
         'story-title': '#0780C6',
         'sequence-title': '#0F7CB7',
         'slot-color': '#FFF4D7',
-        'seq-text': '#c8a675'
+        'seq-text': '#c8a675',
+        'seq-title': '#1F8559'
       },
       backgroundImage: {
         'login-bg': "url('./src/assets/login-bg.png')",

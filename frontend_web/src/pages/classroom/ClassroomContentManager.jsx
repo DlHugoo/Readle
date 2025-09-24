@@ -601,15 +601,21 @@ const ClassroomContentManager = () => {
                   className="w-full mb-3 p-3 border border-gray-300 rounded"
                 />
 
-                <input
-                  type="text"
+                <select
                   id="bookGenre"
                   name="bookGenre"
-                  placeholder="Genre"
                   value={bookGenre}
                   onChange={(e) => setBookGenre(e.target.value)}
-                  className="w-full mb-3 p-3 border border-gray-300 rounded"
-                />
+                  className="w-full mb-3 p-3 border border-gray-300 rounded text-gray-700"
+                  required
+                >
+                  <option value="">Select a genre</option>
+                  <option value="Fiction">Fiction</option>
+                  <option value="Nonfiction">Nonfiction</option>
+                  <option value="Mystery">Mystery</option>
+                  <option value="Fantasy">Fantasy</option>
+                  <option value="Fable">Fable</option>
+                </select>
 
                 <input
                   type="text"
