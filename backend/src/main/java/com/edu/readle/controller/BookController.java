@@ -161,4 +161,11 @@ public class BookController {
             return ResponseEntity.status(500).body("An unexpected error occurred: " + e.getMessage());
         }
     }
+
+    // 🔹 Get archived books for a classroom
+    @GetMapping("/classroom/{classroomId}/archived")
+    public ResponseEntity<List<BookEntity>> getArchivedBooks(@PathVariable Long classroomId) {
+        List<BookEntity> archivedBooks = bookService.getArchivedBooksByClassroomId(classroomId);
+        return ResponseEntity.ok(archivedBooks);
+    }
 }

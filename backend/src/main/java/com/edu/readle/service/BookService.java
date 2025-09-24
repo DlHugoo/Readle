@@ -167,7 +167,7 @@ public class BookService {
     }
 
     public List<BookEntity> getArchivedBooksByClassroomId(Long classroomId) {
-        return bookRepository.findByClassroomIdAndArchivedTrue(classroomId);
+        return bookRepository.findByClassroomIdAndArchivedTrueOrderByTitleAsc(classroomId);
     }
 
     public boolean hasProgress(BookEntity book) {

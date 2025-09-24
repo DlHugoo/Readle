@@ -23,8 +23,13 @@ const ArchivedBooks = () => {
     const fetchAll = async () => {
       try {
         const [cls, res] = await Promise.all([
-          axios.get(`/api/classrooms/${classroomId}`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`/api/classrooms/${classroomId}/books/archived`, { headers: { Authorization: `Bearer ${token}` } })
+          axios.get(`/api/classrooms/${classroomId}`, { 
+            headers: { Authorization: `Bearer ${token}` } 
+          }),
+          // Updated endpoint
+          axios.get(`/api/books/classroom/${classroomId}/archived`, { 
+            headers: { Authorization: `Bearer ${token}` } 
+          })
         ]);
         setClassroomName(cls.data.name || 'Classroom');
         setBooks(res.data || []);
@@ -42,10 +47,16 @@ const ArchivedBooks = () => {
   const unarchive = async (bookId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/books/${bookId}/unarchive`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setBooks(prev => prev.filter(b => b.bookID !== bookId));
+      await axios.put(`/api/books/${bookId}/unarchive`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Refresh the archived books list
+      const res = await axios.get(`/api/books/classroom/${classroomId}/archived`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBooks(res.data || []);
     } catch (e) {
-      // noop
+      setError('Failed to unarchive book');
     }
   };
 
