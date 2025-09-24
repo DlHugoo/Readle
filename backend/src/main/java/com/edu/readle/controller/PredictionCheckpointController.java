@@ -24,7 +24,7 @@ public class PredictionCheckpointController {
     private PredictionCheckpointService checkpointService;
 
     @GetMapping("/by-book/{bookId}")
-    public ResponseEntity<?> getCheckpointByBook(@PathVariable Long bookId) {
+    public ResponseEntity<?> getCheckpointByBook(@PathVariable("bookId") Long bookId) {
         try {
             PredictionCheckpointEntity checkpoint = checkpointService.getActivityByBookId(bookId);
 
@@ -63,7 +63,7 @@ public class PredictionCheckpointController {
 
     @PostMapping("/{checkpointId}/check")
     public ResponseEntity<?> submitPrediction(
-            @PathVariable Long checkpointId,
+            @PathVariable("checkpointId") Long checkpointId,
             @RequestBody Map<String, Long> body) {
 
         Long selectedImageId = body.get("selectedImageId");
@@ -80,8 +80,8 @@ public class PredictionCheckpointController {
 
     @GetMapping("/book/{bookId}/page/{pageNumber}")
     public ResponseEntity<List<PredictionCheckpointEntity>> getCheckpointsUpToPage(
-            @PathVariable Long bookId,
-            @PathVariable Integer pageNumber) {
+            @PathVariable("bookId") Long bookId,
+            @PathVariable("pageNumber") Integer pageNumber) {
         List<PredictionCheckpointEntity> checkpoints = checkpointService.getCheckpointsUpToPage(bookId, pageNumber);
         return ResponseEntity.ok(checkpoints);
     }

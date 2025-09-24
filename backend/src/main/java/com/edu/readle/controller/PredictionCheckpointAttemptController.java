@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 // Add these imports at the top
 import com.edu.readle.repository.UserRepository;
@@ -30,26 +31,26 @@ public class PredictionCheckpointAttemptController {
     private PredictionImageRepository imageRepository;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PredictionCheckpointAttemptEntity>> getUserAttempts(@PathVariable Long userId) {
+    public ResponseEntity<List<PredictionCheckpointAttemptEntity>> getUserAttempts(@PathVariable("userId") Long userId) {
         List<PredictionCheckpointAttemptEntity> attempts = attemptService.getAttemptsByUser(userId);
         return ResponseEntity.ok(attempts);
     }
 
     @GetMapping("/checkpoint/{checkpointId}")
-    public ResponseEntity<List<PredictionCheckpointAttemptEntity>> getCheckpointAttempts(@PathVariable Long checkpointId) {
+    public ResponseEntity<List<PredictionCheckpointAttemptEntity>> getCheckpointAttempts(@PathVariable("checkpointId") Long checkpointId) {
         List<PredictionCheckpointAttemptEntity> attempts = attemptService.getAttemptsByCheckpoint(checkpointId);
         return ResponseEntity.ok(attempts);
     }
 
     @GetMapping("/user/{userId}/checkpoint/{checkpointId}/latest")
-    public ResponseEntity<?> getLatestAttempt(@PathVariable Long userId, @PathVariable Long checkpointId) {
+    public ResponseEntity<?> getLatestAttempt(@PathVariable("userId") Long userId, @PathVariable("checkpointId") Long checkpointId) {
         return attemptService.getLatestAttempt(userId, checkpointId)
-                .map(ResponseEntity::ok)
+                .map(a -> ResponseEntity.ok(Map.of("correct", a.isCorrect())))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}/checkpoint/{checkpointId}/count")
-    public ResponseEntity<Long> getAttemptCount(@PathVariable Long userId, @PathVariable Long checkpointId) {
+    public ResponseEntity<Long> getAttemptCount(@PathVariable("userId") Long userId, @PathVariable("checkpointId") Long checkpointId) {
         long count = attemptService.getAttemptCount(userId, checkpointId);
         return ResponseEntity.ok(count);
     }
