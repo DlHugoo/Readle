@@ -204,22 +204,23 @@ const ClassroomStudents = () => {
       
       
   
-      // In the fetchStudentProgress function, modify the attempts fetching section:
+      // Fetch attempts for each book (snake, ssa, prediction)
       const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
       const snakeAttemptsData = {};
       const ssaAttemptsData = {};
-      const predictionAttemptsData = {}; // Add this line
-      
+      const predictionAttemptsData = {}; // Will store numeric attempts per book to match StudentProgressModal expectations
+
       await Promise.all(allBooks.map(async (book) => {
         try {
           const bookId = book.book.bookID;
+          // Snake game attempts count
           const snakeAttemptsRes = await axios.get(
-            `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
+            `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`,
             { headers }
           );
           snakeAttemptsData[bookId] = snakeAttemptsRes.data;
-          
-          // Fetch SSA attempts for this book
+
+          // SSA attempts count
           try {
             const ssaAttemptsRes = await axios.get(
               `${API_BASE_URL}/api/ssa-attempts/user/${userId}/book/${bookId}/count`,
@@ -230,27 +231,50 @@ const ClassroomStudents = () => {
             console.error(`Error fetching SSA attempts for book ${bookId}:`, err);
             ssaAttemptsData[bookId] = 0;
           }
-      
-          // Add prediction attempts fetching
+
+          // Prediction activity: get checkpoint by book, then latest attempt correctness
           try {
-            const predictionAttemptsRes = await axios.get(
-              `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
+            const predictionCheckpointRes = await axios.get(
+              `${API_BASE_URL}/api/prediction-checkpoints/by-book/${bookId}`,
               { headers }
             );
-            predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+
+            if (predictionCheckpointRes.data && predictionCheckpointRes.data.id) {
+              const checkpointId = predictionCheckpointRes.data.id;
+              if (!isNaN(Number(userId)) && !isNaN(Number(checkpointId))) {
+                const predictionLatestAttemptRes = await axios.get(
+                  `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/latest`,
+                  { headers }
+                );
+                if (predictionLatestAttemptRes.data && typeof predictionLatestAttemptRes.data.correct === 'boolean') {
+                  // Map correctness to numeric attempts: 1 if correct (100 pts), 2 if incorrect (0 pts)
+                  predictionAttemptsData[bookId] = predictionLatestAttemptRes.data.correct ? 1 : 2;
+                } else {
+                  predictionAttemptsData[bookId] = undefined;
+                }
+              } else {
+                predictionAttemptsData[bookId] = undefined;
+              }
+            } else {
+              predictionAttemptsData[bookId] = undefined;
+            }
           } catch (err) {
-            console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
-            predictionAttemptsData[bookId] = 0;
+            if (err.response && err.response.status === 404) {
+              predictionAttemptsData[bookId] = undefined;
+            } else {
+              console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
+              predictionAttemptsData[bookId] = undefined;
+            }
           }
         } catch (err) {
           console.error(`Error fetching snake game attempts for book ${book.book.bookID}:`, err);
           snakeAttemptsData[book.book.bookID] = 0;
         }
       }));
-      
+
       setSnakeGameAttempts(snakeAttemptsData);
       setSSAAttempts(ssaAttemptsData);
-      setPredictionAttempts(predictionAttemptsData); // Add this line
+      setPredictionAttempts(predictionAttemptsData); // numeric mapping for modal compatibility
       
     } catch (error) {
       console.error('Error fetching student progress:', error);

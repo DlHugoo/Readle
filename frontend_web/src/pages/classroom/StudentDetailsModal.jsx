@@ -153,8 +153,7 @@ const StudentDetailsModal = ({
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
                             {selectedStudent.progressData.predictionAttemptsData?.[bookId] > 0 ? (
                               <span className="text-purple-600">
-                                {calculatePredictionScore(selectedStudent.progressData.predictionAttemptsData[bookId])} points 
-                                ({selectedStudent.progressData.predictionAttemptsData[bookId]} attempts)
+                                {calculatePredictionScore(selectedStudent.progressData.predictionAttemptsData[bookId])} points
                               </span>
                             ) : (
                               <span className="text-gray-400">Not attempted</span>
@@ -234,8 +233,7 @@ const StudentDetailsModal = ({
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
                             {selectedStudent.progressData.predictionAttemptsData?.[bookId] > 0 ? (
                               <span className="text-purple-600">
-                                {calculatePredictionScore(selectedStudent.progressData.predictionAttemptsData[bookId])} points 
-                                ({selectedStudent.progressData.predictionAttemptsData[bookId]} attempts)
+                                {calculatePredictionScore(selectedStudent.progressData.predictionAttemptsData[bookId])} points
                               </span>
                             ) : (
                               <span className="text-gray-400">Not attempted</span>
