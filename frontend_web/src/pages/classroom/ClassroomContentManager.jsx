@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate  } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check } from "lucide-react";
+import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check, Sparkles, Star, Heart, Zap, GraduationCap, Users, Edit, Trash2, Archive, MoreVertical, X } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from 'axios'; // Import axios
 
@@ -19,7 +19,7 @@ const ClassroomContentManager = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [alertModal, setAlertModal] = useState({ show: false, type: "", message: "" }); // State for alert modal
-  const [sidebarOpen, setSidebarOpen] = useState(false); // State for sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true); // State for sidebar (always open by default)
   const [codeCopied, setCodeCopied] = useState(false); // State to track if code was copied
 
   // States for the "Add/Edit Book" modal
@@ -408,104 +408,199 @@ const ClassroomContentManager = () => {
   };
 
   return (
-    <div className="w-full min-h-screen flex">
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex">
       {/* Sidebar */}
       <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
       
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
+      <div className={`flex-1 flex flex-col pt-20 transition-all duration-150 ease-out ${sidebarOpen ? 'pl-72' : 'pl-0'}`}>
         {/* Navigation Bar - Full Width */}
-        <div className="w-full">
+        <div className="w-full fixed top-0 left-0 right-0 z-40">
           <TeahcerNav />
         </div>
         
-        <div className="p-4 max-w-7xl mx-auto w-full">
-          {/* Sidebar Toggle Button */}
-          <button 
-            onClick={toggleSidebar}
-            className="mb-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
-          >
-            <Menu size={24} />
-          </button>
-          
-          {/* Page Title */}
-          <h1 className="text-2xl font-semibold text-gray-700 mb-4">
-            📚 Classroom Content Management
-          </h1>
-
-          {/* Enhanced Classroom Information Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl shadow-md mb-5 border border-blue-100">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-              <div>
-                <h2 className="text-2xl font-extrabold text-[#3B82F6] mb-1">
-                  {classroomName}
-                </h2>
-                <p className="text-sm text-gray-500 mb-1">
-                  Classroom ID: <span className="font-mono">{classroomId}</span>
-                </p>
-              </div>
+        {/* Simplified decorative elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200/10 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-purple-200/10 rounded-full blur-lg"></div>
+        </div>
+        
+        <div className="px-4 sm:px-8 lg:px-12 py-4 max-w-8xl mx-auto w-full relative z-10">
+          {/* Enhanced Header Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              {/* Sidebar Toggle Button */}
+              <button 
+                onClick={toggleSidebar}
+                className="group p-3 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-150 ease-out"
+              >
+                <Menu size={20} className="text-blue-600 group-hover:text-blue-700" />
+              </button>
               
-              {/* Classroom Code Display */}
-              <div className="mt-2 md:mt-0 bg-white p-3 rounded-lg shadow-sm border border-blue-200">
-                <p className="text-sm font-medium text-gray-600 mb-1">Classroom Code:</p>
-                <div className="flex items-center">
-                  <span className="font-mono text-xl font-bold text-indigo-600 mr-2">{classroomCode}</span>
-                  <button 
-                    onClick={copyClassroomCode}
-                    className="p-1 rounded-md hover:bg-gray-100 transition-colors"
-                    title="Copy classroom code"
-                  >
-                    {codeCopied ? <Check size={18} className="text-green-500" /> : <Copy size={18} className="text-gray-500" />}
-                  </button>
+              {/* Simplified decorative elements */}
+              <div className="hidden md:flex items-center space-x-2">
+                <Sparkles className="text-yellow-500" size={20} />
+                <Star className="text-purple-500" size={16} />
+              </div>
+            </div>
+            
+            {/* Professional Header */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Content Management</h1>
+                    <p className="text-gray-600 text-lg">Curate and manage your classroom's digital library</p>
+                  </div>
+                  <div className="hidden lg:flex items-center space-x-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{classroomContent.length}</div>
+                      <div className="text-sm text-gray-500">Active Books</div>
+                    </div>
+                    <div className="w-px h-12 bg-gray-300"></div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">{classroomName}</div>
+                      <div className="text-sm text-gray-500">Classroom</div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Share this code with students to join the classroom</p>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          {/* Enhanced Classroom Information Card */}
+          <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-xl mb-8 border border-white/50 relative overflow-hidden">
+            {/* Decorative gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+            
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Users size={32} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
+                    {classroomName}
+                  </h2>
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <span className="mr-2">Classroom ID:</span>
+                    <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{classroomId}</span>
+                  </p>
+                </div>
+              </div>
+              
+              {/* Enhanced Classroom Code Display */}
+              <div className="bg-gradient-to-br from-white to-blue-50 p-4 rounded-xl shadow-lg border border-blue-200/50 min-w-[280px]">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-gray-700 flex items-center">
+                    <Sparkles size={16} className="mr-2 text-yellow-500" />
+                    Classroom Code
+                  </p>
+                  <Heart size={16} className="text-red-400" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    {classroomCode}
+                  </span>
+                  <button 
+                    onClick={copyClassroomCode}
+                    className="group p-2 rounded-lg hover:bg-blue-100 transition-all duration-300 hover:scale-110"
+                    title="Copy classroom code"
+                  >
+                    {codeCopied ? 
+                      <Check size={20} className="text-green-500" /> : 
+                      <Copy size={20} className="text-gray-500 group-hover:text-blue-600" />
+                    }
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 flex items-center">
+                  <Zap size={12} className="mr-1 text-yellow-500" />
+                  Share this code with students to join
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Action Buttons */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <button
               onClick={() => handleSelectModule("library")}
-              className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-between"
+              className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-200 ease-out hover:shadow-2xl relative overflow-hidden"
             >
-              <div className="flex items-center gap-2">
-                <BookOpen size={24} />
-                <span>Digital Library & Book Selection</span>
+              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <BookOpen size={24} />
+                  </div>
+                  <div className="text-left">
+                    <span className="block text-lg font-bold">Digital Library</span>
+                    <span className="block text-sm opacity-90">Add & manage books</span>
+                  </div>
+                </div>
+                <PlusCircle size={24} className="group-hover:rotate-90 transition-transform duration-300" />
               </div>
-              <PlusCircle size={20} />
             </button>
 
             <button
               onClick={() => navigate(`/classroom-archived/${classroomId}`)}
-              className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-between"
+              className="group bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-200 ease-out hover:shadow-2xl relative overflow-hidden border border-gray-300"
             >
-              <div className="flex items-center gap-2">
-                <BookOpen size={24} />
-                <span>View Archived Books</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-200/20 to-gray-300/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center">
+                    <Archive size={24} className="text-white" />
+                  </div>
+                  <div className="text-left">
+                    <span className="block text-lg font-bold">Archived Books</span>
+                    <span className="block text-sm text-gray-600">View archived content</span>
+                  </div>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 group-hover:bg-gray-300 rounded-lg flex items-center justify-center transition-colors duration-300">
+                  <Star size={16} className="text-gray-600 group-hover:text-gray-700" />
+                </div>
               </div>
             </button>
           </div>
 
-          {/* Display Classroom Content */}
-          <div className="mt-4">
-            <h2 className="text-xl font-semibold text-gray-700 mb-3 flex items-center">
-              <BookOpen size={20} className="mr-2 text-blue-500" />
-              <span>Classroom Content</span>
-            </h2>
+          {/* Enhanced Content Section */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <h2 className="text-3xl font-bold text-gray-800">Library Collection</h2>
+                <Sparkles size={24} className="text-yellow-500" />
+              </div>
+              <div className="hidden md:flex items-center space-x-2 text-gray-500">
+                <Heart size={16} className="text-red-400" />
+                <span className="text-sm">{classroomContent.length} books</span>
+              </div>
+            </div>
+            
             {classroomContent.length === 0 ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-                <p className="text-gray-500 mb-3">No content added yet for this classroom.</p>
-                <button
-                  onClick={() => handleSelectModule("library")}
-                  className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                >
-                  <PlusCircle size={16} className="mr-2" />
-                  Add Your First Book
-                </button>
+              <div className="bg-white/70 backdrop-blur-sm border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50"></div>
+                <div className="relative z-10">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <BookOpen size={48} className="text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">Start Your Digital Library</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    No books added yet. Create an engaging learning experience by adding your first book to the classroom library.
+                  </p>
+                  <button
+                    onClick={() => handleSelectModule("library")}
+                    className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl"
+                  >
+                    <PlusCircle size={20} className="mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                    <span className="font-semibold">Add Your First Book</span>
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
                 {classroomContent.map((book, index) => {
                   // Construct the full image URL
                   const backendBaseUrl = "http://localhost:3000"; // Backend URL
@@ -514,67 +609,93 @@ const ClassroomContentManager = () => {
                   return (
                     <div
                       key={book.bookID}
-                      className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 relative"
+                      className="group bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden transition-all duration-200 ease-out relative border border-white/50 hover:shadow-2xl cursor-pointer"
                       onClick={() => handleBookClick(book.bookID)}
                     >
+                      {/* Simplified decorative elements */}
+                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                      <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+
                       {/* Book Cover Image */}
-                      <div className="h-48 bg-gray-200 flex items-center justify-center">
+                      <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
                         {book.imageURL ? (
                           <img
-                            src={fullImageUrl} // Use the full image URL here
+                            src={fullImageUrl}
                             alt={book.title}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200 ease-out"
                           />
                         ) : (
-                          <span className="text-gray-500">No Image</span>
+                          <div className="flex flex-col items-center justify-center text-gray-400">
+                            <BookOpen size={48} className="mb-2" />
+                            <span className="text-sm">No Image</span>
+                          </div>
                         )}
+                        {/* Gradient overlay on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                       </div>
 
-                      {/* Book Details */}
-                      <div className="p-3">
-                        <h3 className="text-lg font-bold text-[#3B82F6] truncate">
+                      {/* Enhanced Book Details */}
+                      <div className="p-4 relative">
+                        <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate mb-2 group-hover:from-blue-700 group-hover:to-purple-700 transition-all duration-200 ease-out">
                           {book.title}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1 flex items-center">
-                          Difficulty:{" "}
-                          <span className="ml-2 text-yellow-500 text-2xl">
-                            {"★".repeat(book.difficultyLevel)}
-                          </span>
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1">
+                            <span className="text-xs text-gray-600 font-medium">Difficulty:</span>
+                            <div className="flex items-center">
+                              {[...Array(3)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={14}
+                                  className={`${
+                                    i < book.difficultyLevel
+                                      ? 'text-yellow-400 fill-current'
+                                      : 'text-gray-300'
+                                  } transition-colors duration-200 ease-out`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500 font-medium">
+                            {book.genre}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* 3-dot Menu */}
+                      {/* Enhanced 3-dot Menu */}
                       <button
-                        className="absolute top-2 right-2 text-gray-700 hover:text-black text-2xl"
+                        className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-white transition-all duration-200 ease-out shadow-lg hover:shadow-xl"
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent triggering other events
+                          e.stopPropagation();
                           setMenuOpenIndex(index === menuOpenIndex ? null : index);
                         }}
                       >
-                        ⋮
+                        <MoreVertical size={16} />
                       </button>
 
                       {menuOpenIndex === index && (
-                        <div className="absolute top-0 right-10 bg-white border rounded shadow-md z-10 w-40">
+                        <div className="absolute top-12 right-3 bg-white/95 backdrop-blur-sm border border-white/50 rounded-xl shadow-2xl z-20 w-44 overflow-hidden transition-all duration-150 ease-out">
                           <button
-                            className="block w-full text-left px-4 py-2 hover:bg-yellow-200 text-yellow-600 font-semibold"
+                            className="flex items-center w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 text-yellow-600 font-medium transition-all duration-150 ease-out group/item"
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent triggering other events
+                              e.stopPropagation();
                               handleEditClick(book);
-                              setMenuOpenIndex(null); // Close the menu after clicking
+                              setMenuOpenIndex(null);
                             }}
                           >
-                            ✏️ Edit
+                            <Edit size={16} className="mr-3 group-hover/item:scale-105 transition-transform duration-150 ease-out" />
+                            Edit Book
                           </button>
                           <button
-                            className="block w-full text-left px-4 py-2 hover:bg-red-200 text-red-600 font-semibold"
+                            className="flex items-center w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 text-red-600 font-medium transition-all duration-150 ease-out group/item"
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent triggering other events
+                              e.stopPropagation();
                               handleDeleteClick(book);
-                              setMenuOpenIndex(null); // Close the menu after clicking
+                              setMenuOpenIndex(null);
                             }}
                           >
-                            🗑️ Delete
+                            <Trash2 size={16} className="mr-3 group-hover/item:scale-105 transition-transform duration-150 ease-out" />
+                            Delete Book
                           </button>
                         </div>
                       )}
@@ -585,283 +706,425 @@ const ClassroomContentManager = () => {
             )}
           </div>
 
-          {/* Add Book Modal */}
+          {/* Enhanced Add Book Modal */}
           {showContentModal && selectedModule === "library" && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg">
-                <h2 className="text-xl font-bold mb-4 text-[#3B82F6]">Add a New Book</h2>
-
-                <input
-                  type="text"
-                  id="bookTitle"
-                  name="bookTitle"
-                  placeholder="Book Title"
-                  value={bookTitle}
-                  onChange={(e) => setBookTitle(e.target.value)}
-                  className="w-full mb-3 p-3 border border-gray-300 rounded"
-                />
-
-                <input
-                  type="text"
-                  id="bookAuthor"
-                  name="bookAuthor"
-                  placeholder="Author"
-                  value={bookAuthor}
-                  onChange={(e) => setBookAuthor(e.target.value)}
-                  className="w-full mb-3 p-3 border border-gray-300 rounded"
-                />
-
-                <select
-                  id="bookGenre"
-                  name="bookGenre"
-                  value={bookGenre}
-                  onChange={(e) => setBookGenre(e.target.value)}
-                  className="w-full mb-3 p-3 border border-gray-300 rounded text-gray-700"
-                  required
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 pt-24">
+              <div className="bg-white/95 backdrop-blur-lg p-6 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-y-auto border border-white/50 relative overflow-hidden transform animate-in zoom-in-95 duration-300">
+                {/* Decorative gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5"></div>
+                
+                {/* Close button */}
+                <button
+                  onClick={closeAddBookModal}
+                  className="absolute top-4 right-4 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                 >
-                  <option value="">Select a genre</option>
-                  <option value="Fiction">Fiction</option>
-                  <option value="Nonfiction">Nonfiction</option>
-                  <option value="Mystery">Mystery</option>
-                  <option value="Fantasy">Fantasy</option>
-                  <option value="Fable">Fable</option>
-                </select>
+                  <X size={20} className="text-gray-600" />
+                </button>
+                
+                <div className="relative z-10">
+                  {/* Enhanced Header */}
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Add New Book</h2>
+                    <p className="text-gray-600">Expand your classroom library with engaging content</p>
+                  </div>
 
-                <input
-                  type="text"
-                  id="bookDifficulty"
-                  name="bookDifficulty"
-                  placeholder="Difficulty Level (1-3)"
-                  value={bookDifficulty}
-                  onChange={(e) => setBookDifficulty(e.target.value)}
-                  className="w-full mb-3 p-3 border border-gray-300 rounded"
-                />
+                  {/* Enhanced Form Fields */}
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Book Title</label>
+                      <input
+                        type="text"
+                        id="bookTitle"
+                        name="bookTitle"
+                        placeholder="Enter book title"
+                        value={bookTitle}
+                        onChange={(e) => setBookTitle(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                      />
+                    </div>
 
-                {/* Image Preview */}
-                {imagePreview && (
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Book Cover Preview:</p>
-                    <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                      <img 
-                        src={imagePreview} 
-                        alt="Book Cover Preview" 
-                        className="max-h-full max-w-full object-contain"
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Author</label>
+                      <input
+                        type="text"
+                        id="bookAuthor"
+                        name="bookAuthor"
+                        placeholder="Enter author name"
+                        value={bookAuthor}
+                        onChange={(e) => setBookAuthor(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Genre</label>
+                      <select
+                        id="bookGenre"
+                        name="bookGenre"
+                        value={bookGenre}
+                        onChange={(e) => setBookGenre(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-700"
+                        required
+                      >
+                        <option value="">Select a genre</option>
+                        <option value="Fiction">Fiction</option>
+                        <option value="Nonfiction">Nonfiction</option>
+                        <option value="Mystery">Mystery</option>
+                        <option value="Fantasy">Fantasy</option>
+                        <option value="Fable">Fable</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Difficulty Level</label>
+                      <input
+                        type="text"
+                        id="bookDifficulty"
+                        name="bookDifficulty"
+                        placeholder="1-3 (1=Easy, 2=Medium, 3=Hard)"
+                        value={bookDifficulty}
+                        onChange={(e) => setBookDifficulty(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm"
                       />
                     </div>
                   </div>
-                )}
 
-                {/* Redesigned File Upload Button */}
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Book Cover Image</p>
-                  <p className="text-xs text-gray-500 mb-2">
-                    Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
-                  </p>
-                  <label 
-                    htmlFor="bookImage" 
-                    className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
-                  >
-                    <Upload size={20} className="text-blue-500" />
-                    <span className="text-blue-600 font-medium">Choose Image File</span>
-                  </label>
-                  <input
-                    type="file"
-                    id="bookImage"
-                    name="bookImage"
-                    accept="image/*"
-                    onChange={handleImageFileSelect}
-                    className="hidden" // Hide the actual input
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={closeAddBookModal}
-                    className="bg-gray-300 px-4 py-2 rounded"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddBook}
-                    className="bg-[#FACC14] text-white px-4 py-2 rounded hover:bg-yellow-400"
-                  >
-                    Add Book
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Edit Modal */}
-          {showEditModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                <h2 className="text-xl font-semibold mb-4">Edit Book</h2>
-
-                <input
-                  type="text"
-                  placeholder="Book Title"
-                  value={bookTitle}
-                  onChange={(e) => setBookTitle(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Author"
-                  value={bookAuthor}
-                  onChange={(e) => setBookAuthor(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Genre"
-                  value={bookGenre}
-                  onChange={(e) => setBookGenre(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Difficulty Level"
-                  value={bookDifficulty}
-                  onChange={(e) => setBookDifficulty(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-
-                {/* Image Preview */}
-                {imagePreview && (
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Current Book Cover:</p>
-                    <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                      <img 
-                        src={imagePreview} 
-                        alt="Book Cover Preview" 
-                        className="max-h-full max-w-full object-contain"
-                      />
+                  {/* Enhanced Image Preview */}
+                  {imagePreview && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Book Cover Preview</label>
+                      <div className="w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center border-2 border-gray-200 shadow-inner">
+                        <img 
+                          src={imagePreview} 
+                          alt="Book Cover Preview" 
+                          className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Redesigned File Upload Button */}
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Change Book Cover</p>
-                  <p className="text-xs text-gray-500 mb-2">
-                    Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
-                  </p>
-                  <label 
-                    htmlFor="editBookImage" 
-                    className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
-                  >
-                    <Upload size={20} className="text-blue-500" />
-                    <span className="text-blue-600 font-medium">Choose New Image</span>
-                  </label>
-                  <input
-                    type="file"
-                    id="editBookImage"
-                    name="editBookImage"
-                    accept="image/*"
-                    onChange={handleImageFileSelect}
-                    className="hidden" // Hide the actual input
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 bg-gray-300 rounded"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={submitEditBook}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Confirmation Modal */}
-          {showDeleteModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
-                <p className="mb-6">
-                  Are you sure you want to delete the book "{selectedBook?.title}"? This action cannot be undone.
-                </p>
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    className="px-4 py-2 bg-gray-300 rounded"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDeleteBook}
-                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Archive Confirmation Modal */}
-          {showArchiveModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                <h2 className="text-xl font-semibold mb-4">Archive Book</h2>
-                <p className="mb-4">
-                  This book has content and/or student progress. Deletion is disabled to preserve records.
-                </p>
-                <p className="mb-6">Would you like to archive "{selectedBook?.title}" instead?</p>
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => setShowArchiveModal(false)}
-                    className="px-4 py-2 bg-gray-300 rounded"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmArchiveBook}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                  >
-                    Archive
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Alert Modal */}
-          {alertModal.show && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                <div className="flex items-center mb-4">
-                  {alertModal.type === "success" ? (
-                    <CheckCircle className="text-green-500 mr-3" size={24} />
-                  ) : (
-                    <AlertCircle className="text-red-500 mr-3" size={24} />
                   )}
-                  <h3 className="text-lg font-medium">
-                    {alertModal.type === "success" ? "Success" : "Error"}
-                  </h3>
+
+                  {/* Enhanced File Upload */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Book Cover Image</label>
+                    <p className="text-xs text-gray-500 mb-3 flex items-center">
+                      <Sparkles size={12} className="mr-1 text-yellow-500" />
+                      Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                    </p>
+                    <label 
+                      htmlFor="bookImage" 
+                      className="group flex items-center justify-center gap-3 w-full p-4 border-2 border-dashed border-blue-300 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 cursor-pointer transition-all duration-300 hover:border-blue-400"
+                    >
+                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Upload size={20} className="text-white" />
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-blue-600 font-bold">Choose Image File</span>
+                        <span className="block text-gray-500 text-sm">or drag and drop here</span>
+                      </div>
+                    </label>
+                    <input
+                      type="file"
+                      id="bookImage"
+                      name="bookImage"
+                      accept="image/*"
+                      onChange={handleImageFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* Enhanced Action Buttons */}
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={closeAddBookModal}
+                      className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddBook}
+                      className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                    >
+                      Add Book
+                    </button>
+                  </div>
                 </div>
-                <p className="mb-6">{alertModal.message}</p>
-                <div className="flex justify-end">
-                  <button
-                    onClick={closeAlertModal}
-                    className={`px-4 py-2 rounded text-white ${
-                      alertModal.type === "success" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
-                    }`}
-                  >
-                    OK
-                  </button>
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Edit Modal */}
+          {showEditModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 pt-24">
+              <div className="bg-white/95 backdrop-blur-lg p-6 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[75vh] overflow-y-auto border border-white/50 relative overflow-hidden transform animate-in zoom-in-95 duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5"></div>
+                
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 z-20"
+                >
+                  <X size={16} className="text-gray-600" />
+                </button>
+                
+                <div className="relative z-10">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Edit Book</h2>
+                    <p className="text-gray-600">Update book information and details</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Book Title</label>
+                      <input
+                        type="text"
+                        placeholder="Enter book title"
+                        value={bookTitle}
+                        onChange={(e) => setBookTitle(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Author</label>
+                      <input
+                        type="text"
+                        placeholder="Enter author name"
+                        value={bookAuthor}
+                        onChange={(e) => setBookAuthor(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Genre</label>
+                      <input
+                        type="text"
+                        placeholder="Enter genre"
+                        value={bookGenre}
+                        onChange={(e) => setBookGenre(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Difficulty Level</label>
+                      <input
+                        type="text"
+                        placeholder="1-5 (1=Easy, 5=Hard)"
+                        value={bookDifficulty}
+                        onChange={(e) => setBookDifficulty(e.target.value)}
+                        className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Enhanced Image Preview */}
+                  {imagePreview && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Current Book Cover</label>
+                      <div className="w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center border-2 border-gray-200 shadow-inner">
+                        <img 
+                          src={imagePreview} 
+                          alt="Book Cover Preview" 
+                          className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Enhanced File Upload */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Change Book Cover</label>
+                    <p className="text-xs text-gray-500 mb-3 flex items-center">
+                      <Sparkles size={12} className="mr-1 text-yellow-500" />
+                      Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                    </p>
+                    <label 
+                      htmlFor="editBookImage" 
+                      className="group flex items-center justify-center gap-3 w-full p-4 border-2 border-dashed border-yellow-300 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 cursor-pointer transition-all duration-300 hover:border-yellow-400"
+                    >
+                      <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Upload size={20} className="text-white" />
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-yellow-600 font-bold">Choose New Image</span>
+                        <span className="block text-gray-500 text-sm">or drag and drop here</span>
+                      </div>
+                    </label>
+                    <input
+                      type="file"
+                      id="editBookImage"
+                      name="editBookImage"
+                      accept="image/*"
+                      onChange={handleImageFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={submitEditBook}
+                      className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Delete Confirmation Modal */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 pt-24">
+              <div className="bg-white/95 backdrop-blur-lg p-8 rounded-3xl shadow-2xl w-full max-w-lg border border-white/50 relative overflow-hidden transform animate-in zoom-in-95 duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5"></div>
+                
+                <div className="relative z-10">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                      <Trash2 size={32} className="text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Confirm Deletion</h2>
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                      <p className="text-gray-700 mb-2">
+                        Are you sure you want to delete the book:
+                      </p>
+                      <p className="font-bold text-red-600 text-lg">"{selectedBook?.title}"</p>
+                      <p className="text-sm text-red-500 mt-2 flex items-center justify-center">
+                        <AlertCircle size={16} className="mr-2" />
+                        This action cannot be undone
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmDeleteBook}
+                      className="px-8 py-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                    >
+                      Delete Book
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Archive Confirmation Modal */}
+          {showArchiveModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 pt-24">
+              <div className="bg-white/95 backdrop-blur-lg p-8 rounded-3xl shadow-2xl w-full max-w-lg border border-white/50 relative overflow-hidden transform animate-in zoom-in-95 duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5"></div>
+                
+                <div className="relative z-10">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                      <Archive size={32} className="text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Archive Book</h2>
+                    
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                      <div className="flex items-start space-x-3">
+                        <AlertCircle size={20} className="text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-left">
+                          <p className="text-gray-700 mb-2">
+                            This book has content and/or student progress. Deletion is disabled to preserve records.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      <p className="text-gray-700 mb-2">
+                        Would you like to archive:
+                      </p>
+                      <p className="font-bold text-blue-600 text-lg">"{selectedBook?.title}"</p>
+                      <p className="text-sm text-blue-500 mt-2">
+                        Archived books can be restored later if needed
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end gap-4">
+                    <button
+                      onClick={() => setShowArchiveModal(false)}
+                      className="px-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmArchiveBook}
+                      className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                    >
+                      Archive Book
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Alert Modal */}
+          {alertModal.show && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 pt-24">
+              <div className="bg-white/95 backdrop-blur-lg p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/50 relative overflow-hidden transform animate-in zoom-in-95 duration-300">
+                <div className={`absolute inset-0 ${
+                  alertModal.type === "success" 
+                    ? "bg-gradient-to-br from-green-500/5 to-emerald-500/5" 
+                    : "bg-gradient-to-br from-red-500/5 to-pink-500/5"
+                }`}></div>
+                
+                <div className="relative z-10">
+                  <div className="text-center mb-6">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl ${
+                      alertModal.type === "success"
+                        ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                        : "bg-gradient-to-br from-red-500 to-pink-600"
+                    }`}>
+                      {alertModal.type === "success" ? (
+                        <CheckCircle size={32} className="text-white" />
+                      ) : (
+                        <AlertCircle size={32} className="text-white" />
+                      )}
+                    </div>
+                    <h3 className={`text-2xl font-bold mb-4 ${
+                      alertModal.type === "success" ? "text-green-700" : "text-red-700"
+                    }`}>
+                      {alertModal.type === "success" ? "Success!" : "Error"}
+                    </h3>
+                    <div className={`rounded-xl p-4 ${
+                      alertModal.type === "success"
+                        ? "bg-green-50 border border-green-200"
+                        : "bg-red-50 border border-red-200"
+                    }`}>
+                      <p className="text-gray-700">{alertModal.message}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center">
+                    <button
+                      onClick={closeAlertModal}
+                      className={`px-8 py-3 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl ${
+                        alertModal.type === "success"
+                          ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                          : "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700"
+                      }`}
+                    >
+                      OK
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

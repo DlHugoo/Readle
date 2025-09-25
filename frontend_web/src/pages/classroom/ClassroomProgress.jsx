@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye, Download } from "lucide-react";
+import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye, Download, Sparkles, Star, Heart, Zap } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import StudentDetailsModal from './StudentDetailsModal';
 import axios from "axios";
@@ -11,7 +11,7 @@ const API_BASE_URL = 'http://localhost:3000';
 const ClassroomProgress = () => {
   const { classroomId } = useParams();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Always open by default
   const [classroomName, setClassroomName] = useState("");
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -567,45 +567,88 @@ const filteredStudents = progressData.map(student => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <TeahcerNav />
-      
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex">
       {/* Sidebar */}
       <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
       
       {/* Main Content */}
-      <div className={`pt-[72px] transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
-        <div className="p-6">
-          {/* Header with toggle sidebar button */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <button
+      <div className={`flex-1 flex flex-col pt-20 transition-all duration-150 ease-out ${sidebarOpen ? 'pl-72' : 'pl-0'}`}>
+        {/* Navigation Bar - Full Width */}
+        <div className="w-full fixed top-0 left-0 right-0 z-40">
+          <TeahcerNav />
+        </div>
+        
+        {/* Simplified decorative elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200/10 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-purple-200/10 rounded-full blur-lg"></div>
+        </div>
+        
+        <div className="px-4 sm:px-8 lg:px-12 py-4 max-w-8xl mx-auto w-full relative z-10">
+          {/* Enhanced Header Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              {/* Sidebar Toggle Button */}
+              <button 
                 onClick={toggleSidebar}
-                className="mr-4 p-2 rounded-md hover:bg-gray-200"
+                className="group p-3 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-150 ease-out"
               >
-                <Menu size={24} />
-              </button>
-              <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Progress Dashboard</h1>
-            </div>
-            
-            <div className="flex gap-2">
-              {/* Add Export CSV Button */}
-              <button
-                onClick={exportToCSV}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                <Download size={18} />
-                Export CSV
+                <Menu size={20} className="text-blue-600 group-hover:text-blue-700" />
               </button>
               
-              <button
-                onClick={navigateToVisualization}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <BarChart size={18} />
-                View Visualizations
-              </button>
+              {/* Simplified decorative elements */}
+              <div className="hidden md:flex items-center space-x-2">
+                <Sparkles className="text-yellow-500" size={20} />
+                <Star className="text-purple-500" size={16} />
+              </div>
             </div>
+            
+            {/* Professional Header */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Progress Dashboard</h1>
+                    <p className="text-gray-600 text-lg">Monitor and track student learning progress</p>
+                  </div>
+                  <div className="hidden lg:flex items-center space-x-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{students.length}</div>
+                      <div className="text-sm text-gray-500">Enrolled Students</div>
+                    </div>
+                    <div className="w-px h-12 bg-gray-300"></div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">{classroomName}</div>
+                      <div className="text-sm text-gray-500">Classroom</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Action Buttons */}
+          <div className="mb-8 flex flex-col sm:flex-row gap-4 justify-end">
+            <button
+              onClick={exportToCSV}
+              className="group relative flex items-center gap-3 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 text-white px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 ease-out overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-green-400 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+              <Download size={22} className="relative z-10" />
+              <span className="font-bold text-lg relative z-10">Export CSV</span>
+              <Zap size={18} className="relative z-10 group-hover:rotate-12 transition-transform duration-200 ease-out" />
+            </button>
+            
+            <button
+              onClick={navigateToVisualization}
+              className="group relative flex items-center gap-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 ease-out overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+              <BarChart size={22} className="relative z-10" />
+              <span className="font-bold text-lg relative z-10">View Visualizations</span>
+              <Zap size={18} className="relative z-10 group-hover:rotate-12 transition-transform duration-200 ease-out" />
+            </button>
           </div>
           
           {/* Error message */}
@@ -623,150 +666,194 @@ const filteredStudents = progressData.map(student => {
             </div>
           ) : (
             <>
-              {/* Book Filter Toggle */}
-              <div className="mb-6 bg-white p-4 rounded-lg shadow">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium">Show books:</span>
-                  <div className="flex bg-gray-100 rounded-lg p-1">
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        !showOnlyClassroomBooks 
-                          ? 'bg-blue-500 text-white' 
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }`}
-                      onClick={() => setShowOnlyClassroomBooks(false)}
-                    >
-                      All Books (Classroom + OOB)
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        showOnlyClassroomBooks 
-                          ? 'bg-blue-500 text-white' 
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }`}
-                      onClick={() => setShowOnlyClassroomBooks(true)}
-                    >
-                      Classroom Books Only
-                    </button>
+              {/* Enhanced Book Filter Toggle */}
+              <div className="mb-8 bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                      <span className="font-semibold text-gray-700 text-lg">Show books:</span>
+                    </div>
+                    <div className="flex bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl p-1 shadow-inner">
+                      <button
+                        className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                          !showOnlyClassroomBooks 
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg' 
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                        onClick={() => setShowOnlyClassroomBooks(false)}
+                      >
+                        All Books (Classroom + OOB)
+                      </button>
+                      <button
+                        className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                          showOnlyClassroomBooks 
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg' 
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                        onClick={() => setShowOnlyClassroomBooks(true)}
+                      >
+                        Classroom Books Only
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              {/* Summary Widgets */}
+              {/* Enhanced Summary Widgets */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {/* Total Books Read */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center">
-                    <div className="bg-blue-100 p-3 rounded-full mr-4">
-                      <BookOpen size={24} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-gray-500 text-sm">Total Books Read</h3>
-                      <p className="text-3xl font-bold text-blue-600">{summaryStats.totalBooksRead}</p>
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/50 relative overflow-hidden transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg mr-4">
+                        <BookOpen size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-gray-500 text-sm font-semibold">Total Books Read</h3>
+                        <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{summaryStats.totalBooksRead}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
                 {/* Average Reading Time */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center">
-                    <div className="bg-green-100 p-3 rounded-full mr-4">
-                      <Clock size={24} className="text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-gray-500 text-sm">Avg. Reading Time</h3>
-                      <p className="text-3xl font-bold text-green-600">{formatTime(summaryStats.averageReadingTime)}</p>
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/50 relative overflow-hidden transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg mr-4">
+                        <Clock size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-gray-500 text-sm font-semibold">Avg. Reading Time</h3>
+                        <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{formatTime(summaryStats.averageReadingTime)}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
                 {/* Top Performers */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-start">
-                    <div className="bg-yellow-100 p-3 rounded-full mr-4">
-                      <Award size={24} className="text-yellow-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-gray-500 text-sm">Top Performers</h3>
-                      <ul className="mt-2">
-                        {summaryStats.topPerformers.map((student, index) => (
-                          <li key={index} className="text-sm">
-                            {student.firstName} {student.lastName}
-                          </li>
-                        ))}
-                      </ul>
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/50 relative overflow-hidden transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-start">
+                      <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg mr-4">
+                        <Award size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-gray-500 text-sm font-semibold">Top Performers</h3>
+                        <ul className="mt-2">
+                          {summaryStats.topPerformers.map((student, index) => (
+                            <li key={index} className="text-sm font-medium text-gray-700">
+                              {student.firstName} {student.lastName}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
                 {/* Students Needing Attention */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-start">
-                    <div className="bg-red-100 p-3 rounded-full mr-4">
-                      <AlertTriangle size={24} className="text-red-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-gray-500 text-sm">Needs Attention</h3>
-                      <p className="text-3xl font-bold text-red-600">
-                        {summaryStats.studentsNeedingAttention.length}
-                      </p>
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/50 relative overflow-hidden transform hover:scale-105 transition-all duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-start">
+                      <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg mr-4">
+                        <AlertTriangle size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-gray-500 text-sm font-semibold">Needs Attention</h3>
+                        <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+                          {summaryStats.studentsNeedingAttention.length}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* Student Progress Table */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="p-4 border-b">
-                  <h2 className="text-xl font-semibold text-gray-800">Student Progress</h2>
-                </div>
-                
-                {/* Search and Filter Controls */}
-                <div className="p-4 bg-gray-50 border-b">
-                  <div className="flex flex-wrap gap-4">
-                    {/* Search */}
-                    <div className="flex items-center bg-white rounded-md px-3 py-2 border">
-                      <Search size={18} className="text-gray-400 mr-2" />
-                      <input
-                        type="text"
-                        placeholder="Search students..."
-                        className="outline-none text-sm"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                    
-                    {/* Performance Filter */}
-                    <div className="flex items-center bg-white rounded-md px-3 py-2 border">
-                      <Filter size={18} className="text-gray-400 mr-2" />
-                      <select
-                        className="outline-none text-sm bg-transparent"
-                        value={filterByPerformance}
-                        onChange={(e) => setFilterByPerformance(e.target.value)}
-                      >
-                        <option value="all">All Performance</option>
-                        <option value="high">High (80%+)</option>
-                        <option value="medium">Medium (60-79%)</option>
-                        <option value="low">Low (Below 60%)</option>
-                      </select>
-                    </div>
-                    
-                    {/* Activity Filter */}
-                    <div className="flex items-center bg-white rounded-md px-3 py-2 border">
-                      <Clock size={18} className="text-gray-400 mr-2" />
-                      <select
-                        className="outline-none text-sm bg-transparent"
-                        value={filterByActivity}
-                        onChange={(e) => setFilterByActivity(e.target.value)}
-                      >
-                        <option value="all">All Activity</option>
-                        <option value="recent">Recent (Last 7 days)</option>
-                        <option value="week">Last 7-30 days</option>
-                        <option value="month">Over 30 days ago</option>
-                      </select>
+              {/* Enhanced Student Progress Table Container */}
+              <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden border border-white/50">
+                {/* Redesigned Header */}
+                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 text-white relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full transform translate-x-32 -translate-y-32"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-3xl font-bold flex items-center mb-2">
+                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                            <Users size={24} />
+                          </div>
+                          Student Progress
+                        </h2>
+                        <p className="text-indigo-100 text-lg">
+                          Track and monitor individual student learning progress
+                        </p>
+                      </div>
+                      <div className="hidden md:flex items-center space-x-2">
+                        <Star className="text-yellow-300" size={20} />
+                        <Heart className="text-pink-300" size={20} />
+                        <Sparkles className="text-purple-300" size={20} />
+                      </div>
                     </div>
                   </div>
                 </div>
+                
+                {/* Enhanced Content area */}
+                <div className="p-8">
+                
+                  {/* Enhanced Search and Filter Controls */}
+                  <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <div className="relative w-full sm:w-96">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search by name or email..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-4 py-3 pl-12 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                        />
+                        <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setFilterByPerformance(filterByPerformance === 'high' ? 'all' : 'high')}
+                        className={`group px-6 py-3 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
+                          filterByPerformance === 'high' 
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent shadow-lg' 
+                            : 'border-gray-300 bg-white/70 backdrop-blur-sm hover:border-green-500 hover:shadow-md'
+                        }`}
+                      >
+                        <span className="font-semibold flex items-center gap-2">
+                          High Performance 
+                          {filterByPerformance === 'high' && (
+                            <span className="group-hover:rotate-180 transition-transform duration-300">✓</span>
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => setFilterByActivity(filterByActivity === 'recent' ? 'all' : 'recent')}
+                        className={`group px-6 py-3 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
+                          filterByActivity === 'recent' 
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent shadow-lg' 
+                            : 'border-gray-300 bg-white/70 backdrop-blur-sm hover:border-blue-500 hover:shadow-md'
+                        }`}
+                      >
+                        <span className="font-semibold flex items-center gap-2">
+                          Recent Activity 
+                          {filterByActivity === 'recent' && (
+                            <span className="group-hover:rotate-180 transition-transform duration-300">✓</span>
+                          )}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
                 
                 {/* Table */}
                 <div className="overflow-x-auto">
@@ -810,7 +897,7 @@ const filteredStudents = progressData.map(student => {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {filteredStudents.map((student, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
+                          <tr key={index} className="hover:bg-gray-50 transition-colors duration-100 ease-out">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -877,6 +964,7 @@ const filteredStudents = progressData.map(student => {
                       </tbody>
                     </table>
                   )}
+                </div>
                 </div>
               </div>
             </>
