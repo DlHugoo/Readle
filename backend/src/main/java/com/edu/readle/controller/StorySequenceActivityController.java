@@ -2,6 +2,7 @@ package com.edu.readle.controller;
 
 import com.edu.readle.dto.StorySequenceDTO;
 import com.edu.readle.dto.StorySequenceDTO.ImageDTO;
+import com.edu.readle.dto.UpdateImagePositionsDTO;
 import com.edu.readle.entity.*;
 import com.edu.readle.repository.*;
 import com.edu.readle.dto.StorySequenceProgressDTO;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 @RestController
 @RequestMapping("/api/ssa")
@@ -53,12 +55,15 @@ public class StorySequenceActivityController {
         response.put("id", ssa.getSsaID());
         response.put("title", ssa.getTitle());
 
-        List<Map<String, Object>> images = ssa.getSequenceImages().stream().map(img -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", img.getImageID());
-            map.put("imageUrl", img.getImageURL());
-            return map;
-        }).collect(Collectors.toList());
+        List<Map<String, Object>> images = ssa.getSequenceImages().stream()
+            .sorted(Comparator.comparingInt(SequenceImageEntity::getCorrectPosition)) // Sort by correctPosition
+            .map(img -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", img.getImageID());
+                map.put("imageUrl", img.getImageURL());
+                map.put("correctPosition", img.getCorrectPosition()); // Include correctPosition
+                return map;
+            }).collect(Collectors.toList());
 
         response.put("images", images);
 
@@ -106,6 +111,40 @@ public class StorySequenceActivityController {
         ssaRepo.save(ssa); // saves SSA and cascade saves images
 
         return ResponseEntity.ok(Map.of("message", "SSA created successfully", "ssaId", ssa.getSsaID()));
+    }
+
+    /**
+     * 🔐 PUT /api/ssa/update-positions/{ssaId} — Only Admin & Teacher can update image positions
+     */
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER')")
+    @PutMapping("/update-positions/{ssaId}")
+    public ResponseEntity<?> updateImagePositions(@PathVariable Long ssaId, 
+                                                  @RequestBody UpdateImagePositionsDTO dto) {
+        Optional<StorySequenceActivityEntity> optionalSSA = ssaRepo.findById(ssaId);
+        if (optionalSSA.isEmpty()) {
+            return ResponseEntity.badRequest().body("SSA not found with ID: " + ssaId);
+        }
+
+        StorySequenceActivityEntity ssa = optionalSSA.get();
+        
+        // Update positions for each image
+        for (UpdateImagePositionsDTO.ImagePositionDTO imagePos : dto.getImages()) {
+            Optional<SequenceImageEntity> optionalImage = imageRepo.findById(imagePos.getId());
+            if (optionalImage.isPresent()) {
+                SequenceImageEntity image = optionalImage.get();
+                // Verify the image belongs to this SSA
+                if (image.getSsa().getSsaID().equals(ssaId)) {
+                    image.setCorrectPosition(imagePos.getCorrectPosition());
+                    imageRepo.save(image);
+                } else {
+                    return ResponseEntity.badRequest().body("Image ID " + imagePos.getId() + " does not belong to SSA " + ssaId);
+                }
+            } else {
+                return ResponseEntity.badRequest().body("Image not found with ID: " + imagePos.getId());
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Image positions updated successfully"));
     }
 
     /**
