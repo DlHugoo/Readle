@@ -10,12 +10,14 @@ import {
   XCircle,
   CheckCircle,
   ArrowLeft,
-  AlertCircle
+  AlertCircle,
+  Edit3,
+  Save,
+  X
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import axios from "axios";
 import TeacherNav from '../../../components/TeacherNav';
-
 const Modal = ({ open, onClose, type, message }) => {
   if (!open) return null;
   const Icon = type === "success" ? CheckCircle : type === "warning" ? AlertCircle : XCircle;
@@ -50,6 +52,8 @@ const TeacherCreateSSA = () => {
   const [loading, setLoading] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [existingSSA, setExistingSSA] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [originalImages, setOriginalImages] = useState([]);
   const [modal, setModal] = useState({
     open: false,
     message: "",
@@ -82,16 +86,16 @@ const TeacherCreateSSA = () => {
         if (res.data) {
           setExistingSSA(res.data);
           setTitle(res.data.title);
-          setImages(
-            res.data.images.map((img, idx) => ({
-              id: `${Date.now()}-${idx}`,
-              file: null,
-              preview: img.imageUrl.startsWith("/uploads")
-                ? `http://localhost:3000${img.imageUrl}`
-                : img.imageUrl,
-              originalId: img.id
-            }))
-          );
+          const imageData = res.data.images.map((img, idx) => ({
+            id: `${Date.now()}-${idx}`,
+            file: null,
+            preview: img.imageUrl.startsWith("/uploads")
+              ? `http://localhost:3000${img.imageUrl}`
+              : img.imageUrl,
+            originalId: img.id
+          }));
+          setImages(imageData);
+          setOriginalImages([...imageData]); // Store original order for cancel functionality
         }
       })
       .catch((err) => {
@@ -177,7 +181,7 @@ const TeacherCreateSSA = () => {
   };
 
   const onDragEnd = (result) => {
-    if (existingSSA || !result.destination) return;
+    if ((!isEditMode && existingSSA) || !result.destination) return;
     
     const reordered = Array.from(images);
     const [moved] = reordered.splice(result.source.index, 1);
@@ -192,6 +196,59 @@ const TeacherCreateSSA = () => {
       setSelectedBookId("");
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleEditMode = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setImages([...originalImages]); // Restore original order
+    setIsEditMode(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!existingSSA || images.length === 0) return;
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Prepare the updated image data with new positions
+      const updatedImages = images.map((img, index) => ({
+        id: img.originalId,
+        correctPosition: index + 1
+      }));
+
+      await axios.put(
+        `http://localhost:3000/api/ssa/update-positions/${existingSSA.id}`,
+        { images: updatedImages },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // Update the original images to reflect the new order
+      setOriginalImages([...images]);
+      setIsEditMode(false);
+      
+      setModal({
+        open: true,
+        message: "✅ Image positions updated successfully!",
+        type: "success"
+      });
+    } catch (err) {
+      console.error("Failed to update image positions:", err);
+      setModal({
+        open: true,
+        message: `❌ Failed to update image positions: ${err.response?.data?.message || err.message}`,
+        type: "error"
+      });
+      // Restore original order on error
+      setImages([...originalImages]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -263,16 +320,16 @@ const TeacherCreateSSA = () => {
           if (res.data && res.data.images && res.data.images.length > 0) {
             setExistingSSA(res.data);
             setTitle(res.data.title);
-            setImages(
-              res.data.images.map((img, idx) => ({
-                id: `${Date.now()}-${idx}`,
-                file: null,
-                preview: img.imageUrl.startsWith("/uploads")
-                  ? `http://localhost:3000${img.imageUrl}`
-                  : img.imageUrl,
-                originalId: img.id
-              }))
-            );
+            const imageData = res.data.images.map((img, idx) => ({
+              id: `${Date.now()}-${idx}`,
+              file: null,
+              preview: img.imageUrl.startsWith("/uploads")
+                ? `http://localhost:3000${img.imageUrl}`
+                : img.imageUrl,
+              originalId: img.id
+            }));
+            setImages(imageData);
+            setOriginalImages([...imageData]);
           }
         });
     } catch (err) {
@@ -315,6 +372,39 @@ const TeacherCreateSSA = () => {
               </h2>
             </div>
             <div className="flex items-center gap-2">
+              {existingSSA && !isEditMode && (
+                <button
+                  onClick={handleEditMode}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+                >
+                  <Edit3 size={16} className="mr-2" />
+                  Edit Positions
+                </button>
+              )}
+              {existingSSA && isEditMode && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={loading}
+                    className={`px-4 py-2 rounded-md flex items-center ${
+                      loading 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-green-600 hover:bg-green-700'
+                    } text-white`}
+                  >
+                    <Save size={16} className="mr-2" />
+                    {loading ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={loading}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+                  >
+                    <X size={16} className="mr-2" />
+                    Cancel
+                  </button>
+                </div>
+              )}
               <button
                 className="text-blue-600 hover:text-blue-800 flex items-center ml-4"
                 onClick={() => setShowHelp(!showHelp)}
@@ -338,9 +428,10 @@ const TeacherCreateSSA = () => {
               <li>Click Create when ready.</li>
             </ol>
             {existingSSA && (
-              <p className="mt-2 text-blue-800 font-medium">
-                Note: Each book can only have one Story Sequencing Activity.
-              </p>
+              <div className="mt-2 text-blue-800">
+                <p className="font-medium">Note: Each book can only have one Story Sequencing Activity.</p>
+                <p className="mt-1">To edit image positions: Click "Edit Positions", drag images to reorder, then click "Save".</p>
+              </div>
             )}
           </div>
         )}
@@ -451,8 +542,15 @@ const TeacherCreateSSA = () => {
               <div className="bg-white p-5 rounded-lg shadow-sm">
                 <label className="flex items-center text-lg font-medium text-gray-700 mb-3">
                   <GripVertical size={20} className="mr-2" /> 
-                  {existingSSA ? "View" : "Arrange"} Images in Story Sequence
+                  {existingSSA ? (isEditMode ? "Edit" : "View") : "Arrange"} Images in Story Sequence
                 </label>
+                {existingSSA && isEditMode && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-blue-800 text-sm">
+                      <strong>Edit Mode:</strong> Drag and drop images to change their positions in the story sequence.
+                    </p>
+                  </div>
+                )}
                 <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="imageList" direction="horizontal">
                     {(provided) => (
@@ -466,11 +564,11 @@ const TeacherCreateSSA = () => {
                             key={img.id}
                             draggableId={img.id}
                             index={index}
-                            isDragDisabled={existingSSA}
+                            isDragDisabled={existingSSA && !isEditMode}
                           >
                             {(provided) => (
                               <div
-                                className={`relative border rounded-lg overflow-hidden bg-white shadow-md group w-40 ${existingSSA ? 'cursor-default' : 'cursor-move'}`}
+                                className={`relative border rounded-lg overflow-hidden bg-white shadow-md group w-40 ${(existingSSA && !isEditMode) ? 'cursor-default' : 'cursor-move'}`}
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}

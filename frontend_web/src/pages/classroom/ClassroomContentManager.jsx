@@ -35,6 +35,12 @@ const ClassroomContentManager = () => {
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
   const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
+  // Normalize archived state (handles boolean, number, or string representations)
+  const isArchived = (book) => {
+    const v = book?.archived;
+    return v === true || v === 1 || v === '1';
+  };
+
   // Toggle sidebar function
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -83,7 +89,8 @@ const ClassroomContentManager = () => {
       const res = await axios.get(`/api/classrooms/${classroomId}/books`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setClassroomContent(res.data || []);
+      const books = Array.isArray(res.data) ? res.data : [];
+      setClassroomContent(books.filter((b) => !isArchived(b)));
     } catch (e) {
       console.error('Failed to load active books for classroom:', e);
     }
@@ -247,7 +254,9 @@ const ClassroomContentManager = () => {
       });
 
       showAlertModal("success", "Book added successfully!");
-      setClassroomContent((prevContent) => [...prevContent, response.data]);
+      setClassroomContent((prevContent) => (
+        isArchived(response.data) ? prevContent : [...prevContent, response.data]
+      ));
       closeAddBookModal();
     } catch (error) {
       console.error("Error adding book:", error);
@@ -385,11 +394,12 @@ const ClassroomContentManager = () => {
       });
 
       showAlertModal("success", "Book updated successfully!");
-      setClassroomContent((prevContent) =>
-        prevContent.map((book) =>
+      setClassroomContent((prevContent) => {
+        const updated = prevContent.map((book) =>
           book.bookID === response.data.bookID ? response.data : book
-        )
-      );
+        );
+        return updated.filter((b) => !isArchived(b));
+      });
       setShowEditModal(false);
     } catch (error) {
       console.error("Error updating book:", error);

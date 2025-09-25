@@ -208,12 +208,42 @@ const ClassroomVisualization = () => {
                 }
 
                 // Fetch prediction attempts
-                const predictionAttemptsRes = await axios.get(
-                  `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${bookId}/count`,
+               // Prediction activity: get checkpoint by book, then latest attempt correctness
+              try {
+                const predictionCheckpointRes = await axios.get(
+                  `${API_BASE_URL}/api/prediction-checkpoints/by-book/${bookId}`,
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
-                predictionAttemptsData[bookId] = predictionAttemptsRes.data;
+
+                if (predictionCheckpointRes.data && predictionCheckpointRes.data.id) {
+                  const checkpointId = predictionCheckpointRes.data.id;
+                  if (!isNaN(Number(userId)) && !isNaN(Number(checkpointId))) {
+                    const predictionLatestAttemptRes = await axios.get(
+                      `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/latest`,
+                      { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    if (predictionLatestAttemptRes.data && typeof predictionLatestAttemptRes.data.correct === 'boolean') {
+                      // Map correctness to numeric attempts-like representation:
+                      // 1 if correct (=> 100 pts), 2 if incorrect (=> 0 pts)
+                      predictionAttemptsData[bookId] = predictionLatestAttemptRes.data.correct ? 1 : 2;
+                    } else {
+                      predictionAttemptsData[bookId] = undefined; // no attempt data
+                    }
+                  } else {
+                    predictionAttemptsData[bookId] = undefined;
+                  }
+                } else {
+                  // No checkpoint configured for this book
+                  predictionAttemptsData[bookId] = undefined;
+                }
               } catch (err) {
+                if (err.response && err.response.status === 404) {
+                  predictionAttemptsData[bookId] = undefined;
+                } else {
+                  console.error(`Error fetching prediction attempts for book ${bookId}:`, err);
+                  predictionAttemptsData[bookId] = undefined;
+                }
+              }} catch (err) {
                 console.error(`Error fetching attempts for book ${bookId}:`, err);
                 snakeAttemptsData[bookId] = 0;
                 ssaAttemptsData[bookId] = 0;

@@ -1,15 +1,19 @@
 package com.edu.readle.service;
 
 import com.edu.readle.dto.PredictionCheckpointDTO;
+import com.edu.readle.dto.UpdatePredictionPositionsDTO;
 import com.edu.readle.entity.PredictionCheckpointEntity;
 import com.edu.readle.entity.PredictionImageEntity;
 import com.edu.readle.entity.SequenceImageEntity;
 import com.edu.readle.repository.PredictionCheckpointRepository;
 import com.edu.readle.repository.BookRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import jakarta.persistence.EntityNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PredictionCheckpointService {
@@ -76,6 +80,43 @@ public class PredictionCheckpointService {
         checkpoint.setSequenceImages(sequenceImages);
 
         return checkpointRepository.save(checkpoint);
+    }
+
+    @Transactional
+    public void updateImagePositions(Long checkpointId, UpdatePredictionPositionsDTO dto) {
+        PredictionCheckpointEntity checkpoint = checkpointRepository.findById(checkpointId)
+                .orElseThrow(() -> new EntityNotFoundException("Checkpoint not found"));
+
+        if (dto.getStoryImages() != null && !dto.getStoryImages().isEmpty()) {
+            Map<Long, Integer> positionMap = dto.getStoryImages().stream()
+                    .collect(Collectors.toMap(UpdatePredictionPositionsDTO.StoryImageUpdate::getId,
+                            UpdatePredictionPositionsDTO.StoryImageUpdate::getPosition));
+
+            for (SequenceImageEntity seq : checkpoint.getSequenceImages()) {
+                Integer newPos = positionMap.get(seq.getImageID());
+                if (newPos != null) {
+                    seq.setCorrectPosition(newPos);
+                }
+            }
+        }
+
+        if (dto.getOptionImages() != null && !dto.getOptionImages().isEmpty()) {
+            Map<Long, Boolean> correctMap = dto.getOptionImages().stream()
+                    .collect(Collectors.toMap(UpdatePredictionPositionsDTO.OptionImageUpdate::getId,
+                            oi -> Boolean.TRUE.equals(oi.getIsCorrect())));
+
+            for (PredictionImageEntity opt : checkpoint.getPredictionImages()) {
+                Boolean isCorrect = correctMap.get(opt.getImageId());
+                if (isCorrect != null) {
+                    opt.setCorrect(isCorrect);
+                }
+            }
+
+            // Optional: ensure only one correct. If multiple true, keep as provided.
+            // If none provided as true, do nothing here.
+        }
+
+        checkpointRepository.save(checkpoint);
     }
 
 }
