@@ -1,10 +1,9 @@
 package com.edu.readle.controller;
 
-import com.edu.readle.entity.PredictionCheckpointEntity;
-import com.edu.readle.entity.PredictionImageEntity;
-import com.edu.readle.entity.SequenceImageEntity;
-import com.edu.readle.service.PredictionCheckpointService;
 import com.edu.readle.dto.PredictionCheckpointDTO;
+import com.edu.readle.dto.UpdatePredictionPositionsDTO;
+import com.edu.readle.entity.PredictionCheckpointEntity;
+import com.edu.readle.service.PredictionCheckpointService;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.*;
 
 @RestController
@@ -35,6 +33,7 @@ public class PredictionCheckpointController {
 
             // Sequence images to display in order
             List<Map<String, Object>> sequenceImages = checkpoint.getSequenceImages().stream()
+                    .sorted(Comparator.comparingInt(img -> img.getCorrectPosition()))
                     .map(img -> {
                         Map<String, Object> map = new HashMap<>();
                         map.put("id", img.getImageID());
@@ -45,10 +44,12 @@ public class PredictionCheckpointController {
 
             // Prediction options
             List<Map<String, Object>> predictionOptions = checkpoint.getPredictionImages().stream()
+                    .sorted((a, b) -> Boolean.compare(b.isCorrect(), a.isCorrect()))
                     .map(img -> {
                         Map<String, Object> map = new HashMap<>();
                         map.put("id", img.getImageId());
                         map.put("imageUrl", img.getImageURL());
+                        map.put("isCorrect", img.isCorrect());
                         return map;
                     }).toList();
 
@@ -95,6 +96,21 @@ public class PredictionCheckpointController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Failed to create checkpoint");
+        }
+    }
+
+    @PutMapping("/update-positions/{checkpointId}")
+    public ResponseEntity<?> updatePositions(
+            @PathVariable("checkpointId") Long checkpointId,
+            @RequestBody UpdatePredictionPositionsDTO dto
+    ) {
+        try {
+            checkpointService.updateImagePositions(checkpointId, dto);
+            return ResponseEntity.ok(Map.of("message", "Positions updated"));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to update positions");
         }
     }
 }

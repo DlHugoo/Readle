@@ -9,11 +9,15 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
+  Edit3,
+  Save,
+  X,
 } from "lucide-react";
 import axios from "axios";
 import TeacherNav from "../../../components/TeacherNav";
 
 const Modal = ({ open, onClose, type, message }) => {
+
   if (!open) return null;
   const Icon =
     type === "success"
@@ -44,6 +48,7 @@ const Modal = ({ open, onClose, type, message }) => {
   );
 };
 
+
 const CreatePredictionCheckpoint = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,6 +75,15 @@ const CreatePredictionCheckpoint = () => {
   const [bookPageCount, setBookPageCount] = useState(0);
   const [existingCheckpoint, setExistingCheckpoint] = useState(null);
 
+
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [originalStoryImages, setOriginalStoryImages] = useState([]);
+  const [originalOptionImages, setOriginalOptionImages] = useState([]);
+
+  // Native drag-and-drop state
+  const [draggingStoryIndex, setDraggingStoryIndex] = useState(null);
+  const [draggingOptionIndex, setDraggingOptionIndex] = useState(null);
+  
   useEffect(() => {
     if (selectedBookId) {
       // Fetch existing prediction checkpoint
@@ -98,9 +112,12 @@ const CreatePredictionCheckpoint = () => {
                   position: img.position
                 }))
             );
-            // Set option images
+            // Set option images - sort by isCorrect so correct option appears first
+            const sortedOptions = [...res.data.options].sort((a, b) => 
+              a.isCorrect === b.isCorrect ? 0 : (a.isCorrect ? -1 : 1)
+            );
             setOptionImages(
-              res.data.options.map((opt, idx) => ({
+              sortedOptions.map((opt, idx) => ({
                 id: `${Date.now()}-option-${idx}`,
                 file: null,
                 preview: opt.imageUrl.startsWith("/uploads")
@@ -320,6 +337,80 @@ const CreatePredictionCheckpoint = () => {
     navigate(-1);
   };
 
+  const handleEditMode = () => {
+    setOriginalStoryImages([...storyImages]);
+    setOriginalOptionImages([...optionImages]);
+    setIsEditMode(true);
+  };
+  
+  const handleCancelEdit = () => {
+    setStoryImages([...originalStoryImages]);
+    setOptionImages([...originalOptionImages]);
+    setIsEditMode(false);
+  };
+  
+  const handleSaveEdit = async () => {
+    if (!existingCheckpoint) return;
+    if (storyImages.length === 0 || optionImages.length === 0) return;
+  
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const storyPayload = storyImages.map((img, idx) => ({
+        id: img.originalId,
+        position: idx + 1,
+      }));
+      const optionPayload = optionImages.map((img, idx) => ({
+        id: img.originalId,
+        isCorrect: idx === 0,
+      }));
+  
+      await axios.put(
+        `http://localhost:3000/api/prediction-checkpoints/update-positions/${existingCheckpoint.id}`,
+        { storyImages: storyPayload, optionImages: optionPayload },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      setOriginalStoryImages([...storyImages]);
+      setOriginalOptionImages([...optionImages]);
+      setIsEditMode(false);
+      setModal({ open: true, message: "✅ Positions updated successfully!", type: "success" });
+    } catch (err) {
+      console.error("Failed to update positions:", err);
+      setModal({
+        open: true,
+        message: `❌ Failed to update positions: ${err.response?.data?.message || err.message}`,
+        type: "error",
+      });
+      setStoryImages([...originalStoryImages]);
+      setOptionImages([...originalOptionImages]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onStoryDragStart = (index) => setDraggingStoryIndex(index);
+  const onStoryDragOver = (e) => e.preventDefault();
+  const onStoryDrop = (index) => {
+    if (draggingStoryIndex === null || (!isEditMode && existingCheckpoint)) return;
+    const reordered = [...storyImages];
+    const [moved] = reordered.splice(draggingStoryIndex, 1);
+    reordered.splice(index, 0, moved);
+    setStoryImages(reordered);
+    setDraggingStoryIndex(null);
+  };
+
+  const onOptionDragStart = (index) => setDraggingOptionIndex(index);
+  const onOptionDragOver = (e) => e.preventDefault();
+  const onOptionDrop = (index) => {
+    if (draggingOptionIndex === null || (!isEditMode && existingCheckpoint)) return;
+    const reordered = [...optionImages];
+    const [moved] = reordered.splice(draggingOptionIndex, 1);
+    reordered.splice(index, 0, moved);
+    setOptionImages(reordered);
+    setDraggingOptionIndex(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <TeacherNav />
@@ -339,16 +430,49 @@ const CreatePredictionCheckpoint = () => {
               )}
               <h2 className="text-2xl font-semibold text-gray-800">
                 <span className="mr-2">🎯</span> 
-                {existingCheckpoint ? "View" : "Create"} Prediction Checkpoint
+                {existingCheckpoint ? (isEditMode ? "Edit" : "View") : "Create"} Prediction Checkpoint
               </h2>
             </div>
-            <button
-              className="text-blue-600 hover:text-blue-800 flex items-center"
-              onClick={() => setShowHelp(!showHelp)}
-            >
-              <Info size={18} className="mr-1" />
-              Help
-            </button>
+            <div className="flex items-center gap-2">
+              {existingCheckpoint && !isEditMode && (
+                <button
+                  onClick={handleEditMode}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+                >
+                  <Edit3 size={16} className="mr-2" />
+                  Edit Positions
+                </button>
+              )}
+              {existingCheckpoint && isEditMode && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={loading}
+                    className={`px-4 py-2 rounded-md flex items-center ${
+                      loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                    } text-white`}
+                  >
+                    <Save size={16} className="mr-2" />
+                    {loading ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={loading}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+                  >
+                    <X size={16} className="mr-2" />
+                    Cancel
+                  </button>
+                </div>
+              )}
+              <button
+                className="text-blue-600 hover:text-blue-800 flex items-center ml-2"
+                onClick={() => setShowHelp(!showHelp)}
+              >
+                <Info size={18} className="mr-1" />
+                Help
+              </button>
+            </div>
           </div>
         </div>
 
@@ -431,12 +555,25 @@ const CreatePredictionCheckpoint = () => {
             </label>
             <div className="flex flex-wrap gap-4 mb-4">
               {storyImages.map((img, index) => (
-                <div key={img.id} className="relative">
+                <div
+                  key={img.id}
+                  className={`relative border rounded-lg overflow-hidden bg-white shadow-md group w-40 ${
+                    existingCheckpoint && !isEditMode ? "cursor-default" : "cursor-move"
+                  }`}
+                  draggable={!(existingCheckpoint && !isEditMode)}
+                  onDragStart={() => onStoryDragStart(index)}
+                  onDragOver={onStoryDragOver}
+                  onDrop={() => onStoryDrop(index)}
+                  title={existingCheckpoint && !isEditMode ? "" : "Drag to reorder"}
+                >
                   <img
                     src={img.preview}
                     alt={`Story ${index + 1}`}
-                    className="w-32 h-32 object-cover rounded-lg"
+                    className="w-full h-32 object-cover"
                   />
+                  <div className="text-center py-1 text-sm font-semibold text-gray-700">
+                    Position {index + 1}
+                  </div>
                   {!existingCheckpoint && (
                     <button
                       onClick={() => removeImage(img.id)}
@@ -470,12 +607,26 @@ const CreatePredictionCheckpoint = () => {
             </label>
             <div className="flex flex-wrap gap-4 mb-4">
               {optionImages.map((img, index) => (
-                <div key={img.id} className="relative">
-                  <img
-                    src={img.preview}
-                    alt="Option"
-                    className="w-32 h-32 object-cover rounded-lg"
-                  />
+                <div
+                  key={img.id}
+                  className={`relative border rounded-lg overflow-hidden bg-white shadow-md group w-40 ${
+                    existingCheckpoint && !isEditMode ? "cursor-default" : "cursor-move"
+                  }`}
+                  draggable={!(existingCheckpoint && !isEditMode)}
+                  onDragStart={() => onOptionDragStart(index)}
+                  onDragOver={onOptionDragOver}
+                  onDrop={() => onOptionDrop(index)}
+                  title={existingCheckpoint && !isEditMode ? "" : "Drag to reorder"}
+                >
+                  <img src={img.preview} alt="Option" className="w-full h-32 object-cover" />
+                  <div className="text-center py-1 text-sm font-semibold text-gray-700">
+                    {img.isCorrect ? "Correct Answer" : `Option ${index + 1}`}
+                  </div>
+                  {img.isCorrect && (
+                    <div className="absolute -top-2 -left-2 bg-green-500 text-white rounded-full p-1">
+                      <CheckCircle size={20} />
+                    </div>
+                  )}
                   {!existingCheckpoint && (
                     <button
                       onClick={() => removeImage(img.id, true)}
@@ -483,11 +634,6 @@ const CreatePredictionCheckpoint = () => {
                     >
                       <XCircle size={20} />
                     </button>
-                  )}
-                  {index === 0 && (
-                    <div className="absolute -top-2 -left-2 bg-green-500 text-white rounded-full p-1">
-                      <CheckCircle size={20} />
-                    </div>
                   )}
                 </div>
               ))}
