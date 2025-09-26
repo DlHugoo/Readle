@@ -12,6 +12,20 @@ import {
   Edit3,
   Save,
   X,
+  Sparkles,
+  Star,
+  Heart,
+  Zap,
+  Target,
+  Play,
+  Image as ImageIcon,
+  FileText,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Wand2,
+  GripVertical,
+  Trash2
 } from "lucide-react";
 import axios from "axios";
 import TeacherNav from "../../../components/TeacherNav";
@@ -412,153 +426,399 @@ const CreatePredictionCheckpoint = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Navigation Bar - Full Width */}
+      <div className="w-full">
       <TeacherNav />
+      </div>
       <Modal {...modal} onClose={() => setModal({ ...modal, open: false })} />
-      <div className="max-w-4xl mx-auto p-6 bg-gray-50 rounded-lg shadow pt-24">
-        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+
+      {/* Main Content - Centered and Wider with top padding to prevent navbar overlap */}
+      <div className="p-6 max-w-7xl mx-auto pt-32">
+        {/* Floating decorative elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200/20 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-purple-200/20 rounded-full blur-lg"></div>
+          <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-indigo-200/20 rounded-full blur-2xl"></div>
+        </div>
+
+        {/* Enhanced Header Section */}
+        <div className="mb-8 relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            {/* Back Button */}
               {passedBookId && (
                 <button 
                   onClick={goBack} 
-                  className="mr-4 text-blue-600 hover:text-blue-800 flex items-center"
+                className="group flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-300 hover:scale-105"
                 >
-                  <ArrowLeft size={20} className="mr-1" />
-                  Back to Book
+                <ChevronLeft size={20} className="text-blue-600 group-hover:text-blue-700" />
+                <span className="font-semibold text-blue-600 group-hover:text-blue-700">Back to Book</span>
                 </button>
               )}
-              <h2 className="text-2xl font-semibold text-gray-800">
-                <span className="mr-2">🎯</span> 
-                {existingCheckpoint ? (isEditMode ? "Edit" : "View") : "Create"} Prediction Checkpoint
-              </h2>
+            
+            {/* Decorative elements */}
+            <div className="hidden md:flex items-center space-x-2">
+              <Sparkles className="text-yellow-500 animate-pulse" size={20} />
+              <Star className="text-purple-500" size={16} />
+              <Heart className="text-red-400" size={16} />
             </div>
-            <div className="flex items-center gap-2">
+          </div>
+          
+          {/* Professional Header */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Target size={32} className="text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-1">
+                      {existingCheckpoint ? "Prediction Checkpoint" : "Create Prediction Checkpoint"}
+                    </h1>
+                    <p className="text-sm text-gray-600 flex items-center">
+                      <span className="mr-2">Activity Type:</span>
+                      <span className="font-semibold text-blue-800">Interactive Prediction Challenge</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Enhanced Action Buttons */}
+                <div className="flex items-center space-x-3">
               {existingCheckpoint && !isEditMode && (
                 <button
                   onClick={handleEditMode}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+                      className="group px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
                 >
-                  <Edit3 size={16} className="mr-2" />
-                  Edit Positions
+                      <Edit3 size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                      <span className="font-semibold">Edit Positions</span>
                 </button>
               )}
               {existingCheckpoint && isEditMode && (
-                <div className="flex gap-2">
+                    <div className="flex gap-3">
                   <button
                     onClick={handleSaveEdit}
                     disabled={loading}
-                    className={`px-4 py-2 rounded-md flex items-center ${
-                      loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+                        className={`group px-6 py-3 rounded-xl flex items-center transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl ${
+                          loading 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
                     } text-white`}
                   >
-                    <Save size={16} className="mr-2" />
-                    {loading ? "Saving..." : "Save"}
+                        <Save size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                        <span className="font-semibold">{loading ? "Saving..." : "Save"}</span>
                   </button>
                   <button
                     onClick={handleCancelEdit}
                     disabled={loading}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+                        className="group px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
                   >
-                    <X size={16} className="mr-2" />
-                    Cancel
+                        <X size={18} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                        <span className="font-semibold">Cancel</span>
                   </button>
                 </div>
               )}
-              <button
-                className="text-blue-600 hover:text-blue-800 flex items-center ml-2"
-                onClick={() => setShowHelp(!showHelp)}
-              >
-                <Info size={18} className="mr-1" />
-                Help
-              </button>
+               <button
+                 className="group px-4 py-2 bg-white/20 backdrop-blur-sm text-blue-600 rounded-xl hover:bg-white/30 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
+                 onClick={() => setShowHelp(!showHelp)}
+               >
+                 <Info size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                 <span className="font-semibold">Help</span>
+               </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {showHelp && (
-          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200 text-sm">
-            <h3 className="font-semibold text-blue-800 mb-2">
-              How to create a Prediction Checkpoint:
-            </h3>
-            <ol className="list-decimal pl-5 space-y-1 text-blue-800">
-              <li>Select a book</li>
-              <li>Enter a title for the checkpoint</li>
-              <li>Enter the page number where this checkpoint occurs</li>
-              <li>Upload story sequence images</li>
-              <li>Upload prediction options</li>
-              <li>Click Create when ready</li>
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200/50 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full transform translate-x-8 -translate-y-8"></div>
+            <div className="relative z-10">
+              <div className="flex items-center mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                  <Info size={16} className="text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-blue-800">
+                  How to create a Prediction Checkpoint
+             </h3>
+              </div>
+              <ol className="list-decimal pl-6 space-y-2 text-blue-800">
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">{passedBookId ? "✓" : "1."}</span>
+                  <span>{passedBookId ? "Book already selected." : "Select a book from the dropdown."}</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">2.</span>
+                  <span>Enter the page number where this checkpoint occurs (not the last page).</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">3.</span>
+                  <span>Upload story sequence images that lead up to the prediction point.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">4.</span>
+                  <span>Upload prediction options (first image will be the correct answer).</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">5.</span>
+                  <span>Click "Create Prediction Checkpoint" when ready.</span>
+                </li>
             </ol>
+              {existingCheckpoint && (
+                <div className="mt-4 p-4 bg-white/50 rounded-xl border border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <Star size={16} className="text-yellow-500 mr-2" />
+                    <p className="font-semibold text-blue-800">Editing Mode</p>
+                  </div>
+                  <p className="text-blue-700 text-sm mb-1">Each book can only have one Prediction Checkpoint.</p>
+                  <p className="text-blue-700 text-sm">To edit image positions: Click "Edit Positions", drag images to reorder, then click "Save".</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="space-y-6">
-          <div className="bg-white p-5 rounded-lg shadow-sm">
-            <div className="grid grid-cols-1 gap-4">
-              {!passedBookId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Select Book
-                  </label>
-                  <select
-                    value={selectedBookId}
-                    onChange={(e) => setSelectedBookId(e.target.value)}
-                    className="w-full p-2 border rounded-md"
-                  >
-                    <option value="">Choose a book...</option>
-                    {books.map((book) => (
-                      <option key={book.bookID} value={book.bookID}>
-                        {book.title}
-                      </option>
-                    ))}
-                  </select>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/50">
+              <div className="flex flex-col items-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mb-4"></div>
+                <p className="text-lg font-semibold text-gray-700">Loading your activity...</p>
+                <p className="text-sm text-gray-500 mt-1">Please wait while we prepare everything</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-8">
+              {/* Book Selection Section */}
+               {!passedBookId && (
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <Book size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-blue-800">Select Book</h3>
+                        <p className="text-sm text-blue-600">Choose the book for your prediction checkpoint</p>
+                      </div>
+                    </div>
+                    <select
+                      value={selectedBookId}
+                      onChange={(e) => setSelectedBookId(e.target.value)}
+                      disabled={loading}
+                      className={`w-full border-2 border-gray-200 p-4 rounded-xl bg-white/70 backdrop-blur-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-gray-700 font-medium ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-300'}`}
+                    >
+                      <option value="">-- Choose a Book --</option>
+                      {books.map((book) => (
+                        <option key={book.bookID} value={book.bookID}>
+                          {book.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              )}
+               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Activity Title (auto-filled)
-                </label>
+              {/* Show selected book info if a book ID was passed */}
+               {passedBookId && (
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-blue-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <Book size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">Selected Book</h3>
+                        <p className="text-sm text-gray-600">Book chosen for prediction checkpoint</p>
+                      </div>
+                    </div>
+                    <div className="p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                        <span className="font-semibold text-gray-800">{passedBookTitle || "Book #" + passedBookId}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+               )}
+
+            {/* Activity Title Section */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                    <FileText size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-blue-800">Activity Title</h3>
+                    <p className="text-sm text-blue-600">Auto-generated title for your prediction checkpoint</p>
+                  </div>
+                </div>
                 <input
                   type="text"
                   value={title}
                   disabled
-                  className="w-full p-2 border rounded-md bg-gray-100"
+                  className="w-full border-2 border-blue-200 p-4 rounded-xl bg-blue-50/70 backdrop-blur-sm text-blue-800 font-medium cursor-not-allowed"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trigger Page Number (Do not Select The last page of the book)
-                </label>
+            {/* Page Number Selection Section */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                    <Target size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-blue-800">Trigger Page Number</h3>
+                    <p className="text-sm text-blue-600">Select the page where this prediction checkpoint occurs (not the last page)</p>
+                  </div>
+                </div>
                 <select
                   value={pageNumber}
                   onChange={(e) => setPageNumber(e.target.value)}
                   disabled={existingCheckpoint}
-                  className={`w-full p-2 border rounded-md ${existingCheckpoint ? 'bg-gray-100' : ''}`}
+                  className={`w-full border-2 border-gray-200 p-4 rounded-xl bg-white/70 backdrop-blur-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-gray-700 font-medium ${existingCheckpoint ? 'bg-blue-50/70 cursor-not-allowed' : 'hover:border-blue-300'}`}
                 >
-                  <option value="">Select page...</option>
+                  <option value="">-- Select Page --</option>
                   {[...Array(bookPageCount)].map((_, i) => (
                     <option key={i} value={i + 1}>
                       Page {i + 1}
                     </option>
                   ))}
                 </select>
-              </div>
-            </div>
-          </div>
+                {bookPageCount > 0 && (
+                  <div className="mt-3 p-3 bg-blue-50/70 rounded-xl border border-blue-200">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                      <span className="text-sm font-medium text-blue-800">
+                        {bookPageCount} total pages available. Last page (Page {bookPageCount}) cannot be selected.
+                      </span>
+               </div>
+                    </div>
+                  )}
+             </div>
+           </div>
 
           {/* Story Images Section */}
-          <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-2">
-              Story Sequence Images
+            {!existingCheckpoint && (
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <Camera size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">Upload Story Sequence Images</h3>
+                        <p className="text-sm text-gray-600">Add images that lead up to the prediction point</p>
+                      </div>
+                    </div>
+                    <Sparkles size={24} className="text-yellow-500" />
+                  </div>
+                  
+                  <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 text-center bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-all duration-300">
+                    <div className="flex flex-col items-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                        <Upload size={32} className="text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-800 mb-2">Drop Your Story Images Here</h4>
+                      <p className="mb-2 text-sm text-gray-600 max-w-md">
+                        Upload images that show the story sequence leading up to the prediction point.
+                      </p>
+                      <p className="mb-6 text-xs text-gray-500">
+                        Maximum file size: 5MB • Supported formats: JPEG, PNG, GIF, WebP
+                      </p>
+                      
+                      <input
+                        type="file"
+                        id="story-image-upload"
+                        ref={fileInputRef}
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(e, false)}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="story-image-upload"
+                        className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                      >
+                        <Upload size={18} className="mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                        <span>Select Story Images</span>
             </label>
-            <div className="flex flex-wrap gap-4 mb-4">
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-4 bg-white/50 rounded-xl border border-blue-200">
+                    <div className="flex items-center justify-center">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
+                      <span className="text-sm font-semibold text-gray-700">
+                        {storyImages.length > 0
+                          ? `${storyImages.length} story image${storyImages.length === 1 ? '' : 's'} selected`
+                          : "No story images selected"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Story Images Display Section */}
+            {storyImages.length > 0 && (
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <GripVertical size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">
+                          {existingCheckpoint ? (isEditMode ? "Edit" : "View") : "Arrange"} Story Sequence Images
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {existingCheckpoint ? (isEditMode ? "Drag images to reorder the story sequence" : "Current story sequence order") : "Drag and drop to arrange your story images"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Star className="text-yellow-400" size={20} />
+                      <Heart className="text-red-400" size={20} />
+                    </div>
+                  </div>
+                  
+                  {existingCheckpoint && isEditMode && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                          <Edit3 size={16} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-blue-800">Edit Mode Active</p>
+                          <p className="text-blue-700 text-sm">Drag and drop images to change their positions in the story sequence.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-6 overflow-x-auto pb-6 min-h-[200px]">
               {storyImages.map((img, index) => (
                 <div
                   key={img.id}
-                  className={`relative border rounded-lg overflow-hidden bg-white shadow-md group w-40 ${
-                    existingCheckpoint && !isEditMode ? "cursor-default" : "cursor-move"
+                        className={`relative border-2 rounded-2xl overflow-hidden bg-white shadow-lg group w-48 transition-all duration-300 hover:shadow-xl flex-shrink-0 ${
+                          (existingCheckpoint && !isEditMode) 
+                            ? 'cursor-default border-gray-200' 
+                            : 'cursor-move border-purple-200 hover:border-purple-400'
                   }`}
                   draggable={!(existingCheckpoint && !isEditMode)}
                   onDragStart={() => onStoryDragStart(index)}
@@ -566,51 +826,166 @@ const CreatePredictionCheckpoint = () => {
                   onDrop={() => onStoryDrop(index)}
                   title={existingCheckpoint && !isEditMode ? "" : "Drag to reorder"}
                 >
+                        {/* Remove button (top-right) - only show when creating new */}
+                        {!existingCheckpoint && (
+                          <button
+                            className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer z-10 transition-all duration-300 hover:scale-110 shadow-lg"
+                            onClick={() => removeImage(img.id)}
+                            title="Remove image"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+
+                        {/* Image */}
+                        <div className="relative">
                   <img
                     src={img.preview}
                     alt={`Story ${index + 1}`}
-                    className="w-full h-32 object-cover"
-                  />
-                  <div className="text-center py-1 text-sm font-semibold text-gray-700">
+                            className="w-full h-40 object-cover"
+                          />
+                          {/* Position overlay */}
+                          <div className="absolute top-3 left-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                            #{index + 1}
+                          </div>
+                        </div>
+
+                        {/* Position info */}
+                        <div className="p-3 bg-gradient-to-r from-gray-50 to-gray-100">
+                          <div className="text-center">
+                            <p className="text-sm font-semibold text-gray-700">
                     Position {index + 1}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {existingCheckpoint ? (isEditMode ? "Drag to reorder" : "Story sequence") : "Story sequence"}
+                            </p>
                   </div>
-                  {!existingCheckpoint && (
-                    <button
-                      onClick={() => removeImage(img.id)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                    >
-                      <XCircle size={20} />
-                    </button>
+                        </div>
+                        
+                        {/* Drag indicator */}
+                        {!(existingCheckpoint && !isEditMode) && (
+                          <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors duration-200">
+                            <GripVertical size={14} className="text-purple-600" />
+                          </div>
                   )}
                 </div>
               ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Option Images Section */}
               {!existingCheckpoint && (
-                <label className="w-32 h-32 flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-blue-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <Target size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">Upload Prediction Options</h3>
+                        <p className="text-sm text-gray-600">Add possible outcomes for students to predict</p>
+                      </div>
+                    </div>
+                    <Wand2 size={24} className="text-green-500" />
+                  </div>
+                  
+                  <div className="border-2 border-dashed border-green-300 rounded-2xl p-8 text-center bg-gradient-to-br from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100 transition-all duration-300">
+                    <div className="flex flex-col items-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                        <Upload size={32} className="text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-800 mb-2">Drop Your Prediction Options Here</h4>
+                      <p className="mb-2 text-sm text-gray-600 max-w-md">
+                        Upload images showing possible outcomes. The first image will be marked as the correct answer.
+                      </p>
+                      <p className="mb-6 text-xs text-gray-500">
+                        Maximum file size: 5MB • Supported formats: JPEG, PNG, GIF, WebP
+                      </p>
+                      
                   <input
                     type="file"
-                    ref={fileInputRef}
-                    onChange={(e) => handleImageChange(e, false)}
+                        id="option-image-upload"
+                        ref={optionFileInputRef}
+                        multiple
                     accept="image/*"
+                        onChange={(e) => handleImageChange(e, true)}
                     className="hidden"
-                    multiple
-                  />
-                  <Camera className="text-gray-400" size={32} />
+                      />
+                      <label
+                        htmlFor="option-image-upload"
+                        className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                      >
+                        <Upload size={18} className="mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                        <span>Select Prediction Options</span>
                 </label>
-              )}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-4 bg-white/50 rounded-xl border border-green-200">
+                    <div className="flex items-center justify-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                      <span className="text-sm font-semibold text-gray-700">
+                        {optionImages.length > 0
+                          ? `${optionImages.length} prediction option${optionImages.length === 1 ? '' : 's'} selected`
+                          : "No prediction options selected"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Option Images Display Section */}
+            {optionImages.length > 0 && (
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-blue-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <GripVertical size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">
+                          {existingCheckpoint ? (isEditMode ? "Edit" : "View") : "Arrange"} Prediction Options
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {existingCheckpoint ? (isEditMode ? "Drag images to reorder options" : "Current prediction options order") : "Drag and drop to arrange your prediction options (first = correct answer)"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="text-green-500" size={20} />
+                      <Star className="text-yellow-400" size={20} />
             </div>
           </div>
 
-          {/* Option Images Section */}
-          <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-2">
-              Prediction Options (First image will be the correct answer)
-            </label>
-            <div className="flex flex-wrap gap-4 mb-4">
+                  {existingCheckpoint && isEditMode && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                          <Edit3 size={16} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-green-800">Edit Mode Active</p>
+                          <p className="text-green-700 text-sm">Drag and drop images to change their positions. The first option will be the correct answer.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-6 overflow-x-auto pb-6 min-h-[200px]">
               {optionImages.map((img, index) => (
                 <div
                   key={img.id}
-                  className={`relative border rounded-lg overflow-hidden bg-white shadow-md group w-40 ${
-                    existingCheckpoint && !isEditMode ? "cursor-default" : "cursor-move"
+                        className={`relative border-2 rounded-2xl overflow-hidden bg-white shadow-lg group w-48 transition-all duration-300 hover:shadow-xl flex-shrink-0 ${
+                          (existingCheckpoint && !isEditMode) 
+                            ? 'cursor-default border-gray-200' 
+                            : 'cursor-move border-green-200 hover:border-green-400'
                   }`}
                   draggable={!(existingCheckpoint && !isEditMode)}
                   onDragStart={() => onOptionDragStart(index)}
@@ -618,55 +993,89 @@ const CreatePredictionCheckpoint = () => {
                   onDrop={() => onOptionDrop(index)}
                   title={existingCheckpoint && !isEditMode ? "" : "Drag to reorder"}
                 >
-                  <img src={img.preview} alt="Option" className="w-full h-32 object-cover" />
-                  <div className="text-center py-1 text-sm font-semibold text-gray-700">
-                    {img.isCorrect ? "Correct Answer" : `Option ${index + 1}`}
-                  </div>
+                        {/* Correct answer indicator */}
                   {img.isCorrect && (
-                    <div className="absolute -top-2 -left-2 bg-green-500 text-white rounded-full p-1">
-                      <CheckCircle size={20} />
+                          <div className="absolute top-3 left-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                            ✓ Correct
                     </div>
                   )}
+
+                        {/* Remove button (top-right) - only show when creating new */}
                   {!existingCheckpoint && (
                     <button
+                            className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer z-10 transition-all duration-300 hover:scale-110 shadow-lg"
                       onClick={() => removeImage(img.id, true)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                            title="Remove image"
                     >
-                      <XCircle size={20} />
+                            <Trash2 size={16} />
                     </button>
                   )}
-                </div>
-              ))}
-              {!existingCheckpoint && (
-                <label className="w-32 h-32 flex items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="file"
-                    ref={optionFileInputRef}
-                    onChange={(e) => handleImageChange(e, true)}
-                    accept="image/*"
-                    className="hidden"
-                    multiple
-                  />
-                  <Camera className="text-gray-400" size={32} />
-                </label>
+
+                        {/* Image */}
+                        <div className="relative">
+                          <img
+                            src={img.preview}
+                            alt={`Option ${index + 1}`}
+                            className="w-full h-40 object-cover"
+                          />
+                          {/* Position overlay */}
+                          <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-gray-800 px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                            #{index + 1}
+                          </div>
+                        </div>
+
+                        {/* Option info */}
+                        <div className="p-3 bg-gradient-to-r from-gray-50 to-gray-100">
+                          <div className="text-center">
+                            <p className="text-sm font-semibold text-gray-700">
+                              {img.isCorrect ? "Correct Answer" : `Option ${index + 1}`}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {existingCheckpoint ? (isEditMode ? "Drag to reorder" : "Prediction option") : "Prediction option"}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Drag indicator */}
+                        {!(existingCheckpoint && !isEditMode) && (
+                          <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors duration-200">
+                            <GripVertical size={14} className="text-green-600" />
+                          </div>
               )}
             </div>
+                    ))}
           </div>
+                </div>
+              </div>
+            )}
 
           {!existingCheckpoint && (
+              <div className="flex justify-center">
             <button
               onClick={handleSubmit}
-              disabled={loading}
-              className={`w-full py-3 rounded-lg font-semibold ${
-                loading
+                  disabled={loading || !selectedBookId || storyImages.length === 0 || optionImages.length === 0}
+                  className={`group px-12 py-4 text-white font-bold rounded-2xl flex items-center transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl ${
+                    loading || !selectedBookId || storyImages.length === 0 || optionImages.length === 0
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
-            >
-              {loading ? "Creating..." : "Create Prediction Checkpoint"}
+                      : "bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                      <span>Creating Checkpoint...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Target size={20} className="mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                      <span>Create Prediction Checkpoint</span>
+                    </>
+                  )}
             </button>
+              </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

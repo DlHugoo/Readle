@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, UserPlus, X, Search, BookOpen, Clock, CheckCircle, UserMinus, Mail, Copy, Check, Users } from "lucide-react";
+import { Menu, UserPlus, X, Search, BookOpen, Clock, CheckCircle, UserMinus, Mail, Copy, Check, Users, Sparkles, Star, Heart, Zap } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import StudentProgressModal from './StudentProgressModal';
 import axios from "axios";
@@ -10,7 +10,7 @@ const API_BASE_URL = 'http://localhost:3000';
 
 const ClassroomStudents = () => {
   const { classroomId } = useParams();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Always open by default
   const [classroomName, setClassroomName] = useState("");
   const [classroomCode, setClassroomCode] = useState(""); // Add state for classroom code
   const [students, setStudents] = useState([]);
@@ -342,6 +342,8 @@ const ClassroomStudents = () => {
 
   // Function to add a student to the classroom
   const handleAddStudent = async () => {
+    console.log("Starting to add student:", newStudentEmail);
+    
     if (!newStudentEmail || !newStudentEmail.includes('@')) {
       setAddStudentError("Please enter a valid email address");
       return;
@@ -359,6 +361,7 @@ const ClassroomStudents = () => {
     }
     
     try {
+      console.log("Fetching user by email:", newStudentEmail);
       // First, get the user ID from the email
       const userResponse = await axios.get(`/api/users/by-email/${newStudentEmail}`, {
         headers: {
@@ -366,22 +369,29 @@ const ClassroomStudents = () => {
         },
       });
       
+      console.log("User response:", userResponse.data);
       const studentId = userResponse.data.userId || userResponse.data.id;
       
       if (!studentId) {
+        console.log("No student ID found in response");
         setAddStudentError("Student not found with this email address");
         setAddingStudent(false);
         return;
       }
       
+      console.log("Found student ID:", studentId, "Adding to classroom:", classroomId);
+      
       // Add the student to the classroom
-      await axios.post(`/api/classrooms/${classroomId}/students/${studentId}`, {}, {
+      console.log("Making POST request to add student to classroom");
+      const addResponse = await axios.post(`/api/classrooms/${classroomId}/students/${studentId}`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      console.log("Add student response:", addResponse.data);
       
       // Refresh the student list
+      console.log("Refreshing classroom data");
       const classroomResponse = await axios.get(`/api/classrooms/${classroomId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -389,9 +399,11 @@ const ClassroomStudents = () => {
       });
       
       const classroomData = classroomResponse.data;
+      console.log("Updated classroom data:", classroomData);
       
       // Update the student list with the new student
       if (classroomData.studentEmails && Array.isArray(classroomData.studentEmails)) {
+        console.log("Updating student list with", classroomData.studentEmails.length, "students");
         const studentPromises = classroomData.studentEmails.map(async (email) => {
           try {
             const userResponse = await axios.get(`/api/users/by-email/${email}`, {
@@ -401,6 +413,7 @@ const ClassroomStudents = () => {
             });
             return userResponse.data;
           } catch (error) {
+            console.log("Error fetching user details for", email, error);
             return {
               email: email,
               firstName: email.split('@')[0],
@@ -412,9 +425,11 @@ const ClassroomStudents = () => {
         });
         
         const studentDetails = await Promise.all(studentPromises);
+        console.log("Updated student details:", studentDetails);
         setStudents(studentDetails);
       }
       
+      console.log("Student added successfully!");
       setAddStudentSuccess("Student added successfully");
       setNewStudentEmail("");
       
@@ -426,10 +441,16 @@ const ClassroomStudents = () => {
       
     } catch (error) {
       console.error("Error adding student:", error);
+      console.error("Error response:", error.response);
+      console.error("Error request:", error.request);
+      
       if (error.response) {
+        console.error("Error status:", error.response.status);
+        console.error("Error data:", error.response.data);
+        
         switch (error.response.status) {
           case 400:
-            setAddStudentError(error.response.data.error || "Student could not be added");
+            setAddStudentError(error.response.data.error || error.response.data.message || "Student could not be added");
             break;
           case 401:
             setAddStudentError("Your session has expired. Please log in again.");
@@ -440,12 +461,17 @@ const ClassroomStudents = () => {
           case 404:
             setAddStudentError("Student not found with this email address");
             break;
+          case 409:
+            setAddStudentError("Student is already enrolled in this classroom");
+            break;
           default:
-            setAddStudentError("Failed to add student. Please try again later.");
+            setAddStudentError(`Failed to add student: ${error.response.data?.message || error.response.statusText || "Please try again later."}`);
         }
       } else if (error.request) {
+        console.error("Network error:", error.request);
         setAddStudentError("Unable to connect to the server. Please check your internet connection.");
       } else {
+        console.error("Other error:", error.message);
         setAddStudentError("An unexpected error occurred. Please try again later.");
       }
     } finally {
@@ -532,13 +558,21 @@ const handleSort = (key) => {
     if (!addStudentModalOpen) return null;
     
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-          {/* Modal Header */}
-          <div className="flex justify-between items-center border-b p-4">
-            <h2 className="text-xl font-bold text-gray-800">
-              Add Student to Classroom
-            </h2>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl w-full max-w-md border border-white/50 relative overflow-hidden transform animate-in zoom-in-95 duration-300">
+          {/* Decorative gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5"></div>
+          
+          {/* Enhanced Modal Header */}
+          <div className="relative z-10 flex justify-between items-center border-b border-gray-200/50 p-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <UserPlus size={20} className="text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Add Student
+              </h2>
+            </div>
             <button 
               onClick={() => {
                 setAddStudentModalOpen(false);
@@ -546,73 +580,97 @@ const handleSort = (key) => {
                 setAddStudentError(null);
                 setAddStudentSuccess(null);
               }}
-              className="text-gray-500 hover:text-gray-700"
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
             >
-              <X size={24} />
+              <X size={16} className="text-gray-600" />
             </button>
           </div>
           
-          {/* Modal Content */}
-          <div className="p-6">
+          {/* Enhanced Modal Content */}
+          <div className="relative z-10 p-6">
             {addStudentError && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong className="font-bold">Error: </strong>
-                <span className="block sm:inline">{addStudentError}</span>
+              <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl relative mb-4" role="alert">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                    <X size={14} className="text-red-600" />
+                  </div>
+                  <div>
+                    <strong className="font-bold">Error: </strong>
+                    <span className="block sm:inline">{addStudentError}</span>
+                  </div>
+                </div>
               </div>
             )}
             
             {addStudentSuccess && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong className="font-bold">Success: </strong>
-                <span className="block sm:inline">{addStudentSuccess}</span>
+              <div className="bg-green-50 border-2 border-green-200 text-green-700 px-4 py-3 rounded-xl relative mb-4" role="alert">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <CheckCircle size={14} className="text-green-600" />
+                  </div>
+                  <div>
+                    <strong className="font-bold">Success: </strong>
+                    <span className="block sm:inline">{addStudentSuccess}</span>
+                  </div>
+                </div>
               </div>
             )}
             
-            <div className="mb-4">
-              <label htmlFor="studentEmail" className="block text-gray-700 text-sm font-bold mb-2">
+            <div className="mb-6">
+              <label htmlFor="studentEmail" className="block text-gray-700 text-sm font-semibold mb-3">
                 Student Email Address
               </label>
-              <div className="flex">
-                <div className="relative flex-grow">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail size={18} className="text-gray-400" />
-                  </div>
-                  <input
-                    type="email"
-                    id="studentEmail"
-                    placeholder="student@example.com"
-                    value={newStudentEmail}
-                    onChange={(e) => setNewStudentEmail(e.target.value)}
-                    className="shadow appearance-none border rounded w-full py-2 pl-10 pr-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    disabled={addingStudent}
-                    autoFocus
-                    autoComplete="off"
-                  />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail size={18} className="text-black" />
                 </div>
+                <input
+                  type="email"
+                  id="studentEmail"
+                  placeholder="student@example.com"
+                  value={newStudentEmail}
+                  onChange={(e) => setNewStudentEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                  disabled={addingStudent}
+                  autoFocus
+                  autoComplete="off"
+                />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-2 flex items-center">
+                <Sparkles size={12} className="mr-1 text-yellow-500" />
                 The student must already have a Readle account with this email address.
               </p>
             </div>
             
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setAddStudentModalOpen(false);
+                  setNewStudentEmail("");
+                  setAddStudentError(null);
+                  setAddStudentSuccess(null);
+                }}
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleAddStudent}
                 disabled={addingStudent || !newStudentEmail}
-                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                className={`group px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl ${
                   (addingStudent || !newStudentEmail) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 {addingStudent ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Adding...
                   </span>
                 ) : (
-                  'Add Student'
+                  <span className="flex items-center gap-2">
+                    <UserPlus size={16} className="group-hover:rotate-12 transition-transform duration-300" />
+                    Add Student
+                  </span>
                 )}
               </button>
             </div>
@@ -691,119 +749,232 @@ const handleSort = (key) => {
   };
 
  return (
-    <div className="min-h-screen bg-gray-50">
-      <TeahcerNav />
-      
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex">
       {/* Sidebar */}
       <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
       
       {/* Main Content */}
-      <div className={`pt-[72px] transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
-        <div className="p-6 sm:p-10 max-w-7xl mx-auto">
-          {/* Header with toggle sidebar button */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <button
+      <div className={`flex-1 flex flex-col pt-20 transition-all duration-150 ease-out ${sidebarOpen ? 'pl-72' : 'pl-0'}`}>
+        {/* Navigation Bar - Full Width */}
+        <div className="w-full fixed top-0 left-0 right-0 z-40">
+          <TeahcerNav />
+        </div>
+        
+        {/* Simplified decorative elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200/10 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-purple-200/10 rounded-full blur-lg"></div>
+        </div>
+        
+        <div className="px-4 sm:px-8 lg:px-12 py-4 max-w-8xl mx-auto w-full relative z-10">
+          {/* Enhanced Header Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              {/* Sidebar Toggle Button */}
+              <button 
                 onClick={toggleSidebar}
-                className="mr-4 p-2 rounded-md hover:bg-gray-200"
+                className="group p-3 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-150 ease-out"
               >
-                <Menu size={24} />
+                <Menu size={20} className="text-blue-600 group-hover:text-blue-700" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Students</h1>
+              
+              {/* Simplified decorative elements */}
+              <div className="hidden md:flex items-center space-x-2">
+                <Sparkles className="text-yellow-500" size={20} />
+                <Star className="text-purple-500" size={16} />
+              </div>
+            </div>
+            
+            {/* Professional Header */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Student Management</h1>
+                    <p className="text-gray-600 text-lg">Monitor and manage your classroom students</p>
+                  </div>
+                  <div className="hidden lg:flex items-center space-x-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{students.length}</div>
+                      <div className="text-sm text-gray-500">Enrolled Students</div>
+                    </div>
+                    <div className="w-px h-12 bg-gray-300"></div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">{classroomName}</div>
+                      <div className="text-sm text-gray-500">Classroom</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           {/* Enhanced Classroom Information Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md mb-8 border border-blue-100">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-              <div>
-                <h2 className="text-3xl font-extrabold text-[#3B82F6] mb-2">
-                  {classroomName}
-                </h2>
-                <p className="text-sm text-gray-500 mb-2">
-                  Classroom ID: <span className="font-mono">{classroomId}</span>
-                </p>
+          <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-xl mb-8 border border-white/50 relative overflow-hidden">
+            {/* Decorative gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+            
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Users size={32} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
+                    {classroomName}
+                  </h2>
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <span className="mr-2">Classroom ID:</span>
+                    <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{classroomId}</span>
+                  </p>
+                </div>
               </div>
               
-              {/* Classroom Code Display */}
-              <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm border border-blue-200">
-                <p className="text-sm font-medium text-gray-600 mb-2">Classroom Code:</p>
-                <div className="flex items-center">
-                  <span className="font-mono text-xl font-bold text-indigo-600 mr-3">{classroomCode}</span>
+              {/* Enhanced Classroom Code Display */}
+              <div className="bg-gradient-to-br from-white to-blue-50 p-4 rounded-xl shadow-lg border border-blue-200/50 min-w-[280px]">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-gray-700 flex items-center">
+                    <Sparkles size={16} className="mr-2 text-yellow-500" />
+                    Classroom Code
+                  </p>
+                  <Heart size={16} className="text-red-400" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    {classroomCode}
+                  </span>
                   <button 
                     onClick={copyClassroomCode}
-                    className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                    className="group p-2 rounded-lg hover:bg-blue-100 transition-all duration-150 ease-out"
                     title="Copy classroom code"
                   >
-                    {codeCopied ? <Check size={18} className="text-green-500" /> : <Copy size={18} className="text-gray-500" />}
+                    {codeCopied ? 
+                      <Check size={20} className="text-green-500" /> : 
+                      <Copy size={20} className="text-gray-500 group-hover:text-blue-600" />
+                    }
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Share this code with students to join the classroom</p>
+                <p className="text-xs text-gray-500 mt-2 flex items-center">
+                  <Zap size={12} className="mr-1 text-yellow-500" />
+                  Share this code with students to join
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Enhanced Action Buttons */}
           <div className="mb-8">
             <button
               onClick={() => setAddStudentModalOpen(true)}
-              className="bg-white border border-[#3B82F6] hover:bg-[#3B82F6] hover:text-white text-[#3B82F6] font-semibold py-3 px-6 rounded-xl shadow-md transition-all duration-300 flex items-center gap-2"
+              className="group relative flex items-center gap-3 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 ease-out overflow-hidden"
             >
-              <UserPlus size={20} />
-              <span>Add Student</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+              <UserPlus size={22} className="relative z-10" />
+              <span className="font-bold text-lg relative z-10">Add Student</span>
+              <Zap size={18} className="relative z-10 group-hover:rotate-12 transition-transform duration-200 ease-out" />
             </button>
           </div>
 
-          {/* Search and Sort Controls */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+          {/* Enhanced Search and Sort Controls */}
+          <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="relative w-full sm:w-96">
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              />
-              <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-3 pl-12 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/70 backdrop-blur-sm"
+                />
+                <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
+              </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={() => handleSort('name')}
-                className={`px-4 py-2 rounded-lg border ${sortConfig.key === 'name' ? 'bg-blue-50 border-blue-500' : 'border-gray-300'}`}
+                className={`group px-6 py-3 rounded-xl border-2 transition-all duration-150 ease-out ${
+                  sortConfig.key === 'name' 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-transparent shadow-lg' 
+                    : 'border-gray-300 bg-white/70 backdrop-blur-sm hover:border-blue-500 hover:shadow-md'
+                }`}
               >
-                Sort by Name {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                <span className="font-semibold flex items-center gap-2">
+                  Sort by Name 
+                  {sortConfig.key === 'name' && (
+                    <span className="group-hover:rotate-180 transition-transform duration-200 ease-out">
+                      {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </span>
               </button>
               <button
                 onClick={() => handleSort('email')}
-                className={`px-4 py-2 rounded-lg border ${sortConfig.key === 'email' ? 'bg-blue-50 border-blue-500' : 'border-gray-300'}`}
+                className={`group px-6 py-3 rounded-xl border-2 transition-all duration-150 ease-out ${
+                  sortConfig.key === 'email' 
+                    ? 'bg-gradient-to-r from-emerald-500 to-blue-600 text-white border-transparent shadow-lg' 
+                    : 'border-gray-300 bg-white/70 backdrop-blur-sm hover:border-emerald-500 hover:shadow-md'
+                }`}
               >
-                Sort by Email {sortConfig.key === 'email' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                <span className="font-semibold flex items-center gap-2">
+                  Sort by Email 
+                  {sortConfig.key === 'email' && (
+                    <span className="group-hover:rotate-180 transition-transform duration-200 ease-out">
+                      {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </span>
               </button>
             </div>
           </div>
 
-          {/* Students List */}
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-            {/* Header for the students list component */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-5 text-white">
-              <h2 className="text-2xl font-semibold flex items-center">
-                <Users className="mr-3" size={24} />
-                Students in this Classroom
-              </h2>
-              <p className="text-blue-100 mt-1">
-                {students.length} {students.length === 1 ? 'student' : 'students'} enrolled
-              </p>
+          {/* Enhanced Students List Container */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-2xl overflow-hidden border border-white/50">
+            {/* Redesigned Header */}
+            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 text-white relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full transform translate-x-32 -translate-y-32"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold flex items-center mb-2">
+                      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                        <Users size={24} />
+                      </div>
+                      Student Roster
+                    </h2>
+                    <p className="text-indigo-100 text-lg">
+                      {students.length} {students.length === 1 ? 'student' : 'students'} enrolled in this classroom
+                    </p>
+                  </div>
+                  <div className="hidden md:flex items-center space-x-2">
+                    <Star className="text-yellow-300" size={20} />
+                    <Heart className="text-pink-300" size={20} />
+                    <Sparkles className="text-purple-300" size={20} />
+                  </div>
+                </div>
+              </div>
             </div>
             
-            {/* Content area with padding */}
-            <div className="p-6">
+            {/* Enhanced Content area */}
+            <div className="p-8">
               {loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex justify-center items-center py-16">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin" style={{animationDelay: '0.1s', animationDirection: 'reverse'}}></div>
+                  </div>
                 </div>
               ) : error ? (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                  <strong className="font-bold">Error: </strong>
-                  <span className="block sm:inline">{error}</span>
+                <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl relative" role="alert">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                      <X size={16} className="text-red-600" />
+                    </div>
+                    <div>
+                      <strong className="font-bold">Error: </strong>
+                      <span className="block sm:inline">{error}</span>
+                    </div>
+                  </div>
                 </div>
               ) : students.length === 0 ? (
                 <div className="text-center py-10">
@@ -818,24 +989,24 @@ const handleSort = (key) => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Student
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Email
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                    {sortStudents(filterStudents(students)).map((student, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
+                      {sortStudents(filterStudents(students)).map((student, index) => (
+                        <tr key={index} className="hover:bg-gray-50 transition-colors duration-100 ease-out">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-blue-600 font-semibold">
+                              <div className="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                <span className="text-white font-semibold text-sm">
                                   {student.firstName ? student.firstName.charAt(0).toUpperCase() : '?'}
                                   {student.lastName ? student.lastName.charAt(0).toUpperCase() : ''}
                                 </span>
@@ -854,21 +1025,29 @@ const handleSort = (key) => {
                             <div className="text-sm text-gray-900">{student.email}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => fetchStudentProgress(student)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                            >
-                              View Progress
-                            </button>
-                            <button
-                              onClick={() => {
-                                setStudentToRemove(student);
-                                setRemoveModalOpen(true);
-                              }}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Remove
-                            </button>
+                            <div className="flex space-x-3">
+                              <button
+                                onClick={() => fetchStudentProgress(student)}
+                                className="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-out shadow-md hover:shadow-lg"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <BookOpen size={14} className="group-hover:rotate-12 transition-transform duration-200 ease-out" />
+                                  View Progress
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setStudentToRemove(student);
+                                  setRemoveModalOpen(true);
+                                }}
+                                className="group bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200 ease-out shadow-md hover:shadow-lg"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <UserMinus size={14} className="group-hover:rotate-12 transition-transform duration-200 ease-out" />
+                                  Remove
+                                </span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

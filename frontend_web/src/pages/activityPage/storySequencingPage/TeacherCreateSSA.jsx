@@ -13,7 +13,19 @@ import {
   AlertCircle,
   Edit3,
   Save,
-  X
+  X,
+  Sparkles,
+  Star,
+  Heart,
+  Zap,
+  Target,
+  Play,
+  Image as ImageIcon,
+  FileText,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Wand2
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import axios from "axios";
@@ -350,104 +362,183 @@ const TeacherCreateSSA = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Navigation Bar - Full Width */}
+      <div className="w-full">
       <TeacherNav />
-      <div className="max-w-4xl mx-auto pt-24 pb-12 px-6">
+      </div>
+
+      {/* Main Content - Centered and Wider with top padding to prevent navbar overlap */}
+      <div className="p-6 max-w-7xl mx-auto pt-32">
         <Modal {...modal} onClose={() => setModal({ ...modal, open: false })} />
-        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
+        
+        {/* Floating decorative elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200/20 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-purple-200/20 rounded-full blur-lg"></div>
+          <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-indigo-200/20 rounded-full blur-2xl"></div>
+        </div>
+
+        {/* Enhanced Header Section */}
+        <div className="mb-8 relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            {/* Back Button */}
               {passedBookId && (
                 <button 
                   onClick={goBack} 
-                  className="mr-4 text-blue-600 hover:text-blue-800 flex items-center"
+                className="group flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-300 hover:scale-105"
                 >
-                  <ArrowLeft size={20} className="mr-1" />
-                  Back to Book
+                <ChevronLeft size={20} className="text-blue-600 group-hover:text-blue-700" />
+                <span className="font-semibold text-blue-600 group-hover:text-blue-700">Back to Book</span>
                 </button>
               )}
-              <h2 className="text-2xl font-semibold text-gray-800">
-                <span className="mr-2">🧩</span> 
-                {existingSSA ? "View" : "Create"} Story Sequencing Activity
-              </h2>
+            
+            {/* Decorative elements */}
+            <div className="hidden md:flex items-center space-x-2">
+              <Sparkles className="text-yellow-500 animate-pulse" size={20} />
+              <Star className="text-purple-500" size={16} />
+              <Heart className="text-red-400" size={16} />
             </div>
-            <div className="flex items-center gap-2">
+          </div>
+          
+          {/* Professional Header */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Target size={32} className="text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
+                      {existingSSA ? "Story Sequencing Activity" : "Create Story Sequencing Activity"}
+                    </h1>
+                    <p className="text-sm text-gray-600 flex items-center">
+                      <span className="mr-2">Activity Type:</span>
+                      <span className="font-semibold text-gray-800">Interactive Story Sequencing</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Enhanced Action Buttons */}
+                <div className="flex items-center space-x-3">
               {existingSSA && !isEditMode && (
                 <button
                   onClick={handleEditMode}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+                      className="group px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
                 >
-                  <Edit3 size={16} className="mr-2" />
-                  Edit Positions
+                      <Edit3 size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                      <span className="font-semibold">Edit Positions</span>
                 </button>
               )}
               {existingSSA && isEditMode && (
-                <div className="flex gap-2">
+                    <div className="flex gap-3">
                   <button
                     onClick={handleSaveEdit}
                     disabled={loading}
-                    className={`px-4 py-2 rounded-md flex items-center ${
+                        className={`group px-6 py-3 rounded-xl flex items-center transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl ${
                       loading 
                         ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-green-600 hover:bg-green-700'
+                            : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700'
                     } text-white`}
                   >
-                    <Save size={16} className="mr-2" />
-                    {loading ? "Saving..." : "Save"}
+                        <Save size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                        <span className="font-semibold">{loading ? "Saving..." : "Save"}</span>
                   </button>
                   <button
                     onClick={handleCancelEdit}
                     disabled={loading}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md flex items-center"
+                        className="group px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
                   >
-                    <X size={16} className="mr-2" />
-                    Cancel
+                        <X size={18} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                        <span className="font-semibold">Cancel</span>
                   </button>
                 </div>
               )}
               <button
-                className="text-blue-600 hover:text-blue-800 flex items-center ml-4"
+                    className="group px-4 py-2 bg-white/20 backdrop-blur-sm text-purple-600 rounded-xl hover:bg-white/30 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
                 onClick={() => setShowHelp(!showHelp)}
               >
-                <Info size={18} className="mr-1" />
-                Help
+                    <Info size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                    <span className="font-semibold">Help</span>
               </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {showHelp && (
-          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200 text-sm">
-            <h3 className="font-semibold text-blue-800 mb-2">
-              How to create a Story Sequencing Activity:
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl border border-blue-200/50 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full transform translate-x-8 -translate-y-8"></div>
+            <div className="relative z-10">
+              <div className="flex items-center mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                  <Info size={16} className="text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-blue-800">
+                  How to create a Story Sequencing Activity
             </h3>
-            <ol className="list-decimal pl-5 space-y-1 text-blue-800">
-              <li>{passedBookId ? "Book already selected." : "Select a book."}</li>
-              <li>Upload images in order of the story.</li>
-              <li>Drag images to reorder.</li>
-              <li>Click Create when ready.</li>
+              </div>
+              <ol className="list-decimal pl-6 space-y-2 text-blue-800">
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">{passedBookId ? "✓" : "1."}</span>
+                  <span>{passedBookId ? "Book already selected." : "Select a book from the dropdown."}</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">2.</span>
+                  <span>Upload story images in chronological order.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">3.</span>
+                  <span>Drag and drop images to reorder them as needed.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">4.</span>
+                  <span>Click "Create Activity" when ready.</span>
+                </li>
             </ol>
             {existingSSA && (
-              <div className="mt-2 text-blue-800">
-                <p className="font-medium">Note: Each book can only have one Story Sequencing Activity.</p>
-                <p className="mt-1">To edit image positions: Click "Edit Positions", drag images to reorder, then click "Save".</p>
+                <div className="mt-4 p-4 bg-white/50 rounded-xl border border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <Star size={16} className="text-yellow-500 mr-2" />
+                    <p className="font-semibold text-blue-800">Editing Mode</p>
+                  </div>
+                  <p className="text-blue-700 text-sm mb-1">Each book can only have one Story Sequencing Activity.</p>
+                  <p className="text-blue-700 text-sm">To edit image positions: Click "Edit Positions", drag images to reorder, then click "Save".</p>
               </div>
             )}
+            </div>
           </div>
         )}
 
         {loading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/50">
+              <div className="flex flex-col items-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mb-4"></div>
+                <p className="text-lg font-semibold text-gray-700">Loading your activity...</p>
+                <p className="text-sm text-gray-500 mt-1">Please wait while we prepare everything</p>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Only show book selection if no book ID was passed */}
             {!passedBookId && !existingSSA && (
-              <div className="bg-white p-5 rounded-lg shadow-sm">
-                <label className="flex items-center text-lg font-medium text-gray-700 mb-2">
-                  <Book size={20} className="mr-2" /> Select Book
-                </label>
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                      <Book size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800">Select Book</h3>
+                      <p className="text-sm text-gray-600">Choose the book for your sequencing activity</p>
+                    </div>
+                  </div>
                 <select
                   value={selectedBookId}
                   onChange={(e) => {
@@ -457,7 +548,7 @@ const TeacherCreateSSA = () => {
                     if (book) setTitle(book.title);
                   }}
                   disabled={loading}
-                  className={`w-full border border-gray-300 p-3 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`w-full border-2 border-gray-200 p-4 rounded-xl bg-white/70 backdrop-blur-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 text-gray-700 font-medium ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:border-purple-300'}`}
                 >
                   <option value="">-- Choose a Book --</option>
                   {books.map((book) => (
@@ -466,48 +557,87 @@ const TeacherCreateSSA = () => {
                     </option>
                   ))}
                 </select>
+                </div>
               </div>
             )}
 
             {/* Show selected book info if a book ID was passed */}
             {passedBookId && (
-              <div className="bg-white p-5 rounded-lg shadow-sm">
-                <div className="flex items-center text-lg font-medium text-gray-700 mb-2">
-                  <Book size={20} className="mr-2" /> Selected Book
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-blue-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                      <Book size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800">Selected Book</h3>
+                      <p className="text-sm text-gray-600">Book chosen for sequencing activity</p>
+                    </div>
+                  </div>
+                  <div className="p-4 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                      <span className="font-semibold text-gray-800">{passedBookTitle || "Book #" + passedBookId}</span>
+                    </div>
                 </div>
-                <div className="p-3 border border-gray-200 rounded-md bg-gray-50">
-                  {passedBookTitle || "Book #" + passedBookId}
                 </div>
               </div>
             )}
 
-            <div className="bg-white p-5 rounded-lg shadow-sm">
-              <label className="flex items-center text-lg font-medium text-gray-700 mb-2">
-                Activity Title
-              </label>
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                    <FileText size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800">Activity Title</h3>
+                    <p className="text-sm text-gray-600">Give your sequencing activity a descriptive name</p>
+                  </div>
+                </div>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={existingSSA}
-                className={`w-full border border-gray-300 p-3 rounded-md ${existingSSA ? 'bg-gray-100' : ''}`}
-                placeholder="Enter activity title"
+                  className={`w-full border-2 border-gray-200 p-4 rounded-xl bg-white/70 backdrop-blur-sm focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 text-gray-700 font-medium ${existingSSA ? 'bg-gray-100 cursor-not-allowed' : 'hover:border-purple-300'}`}
+                  placeholder="Enter activity title (e.g., 'Three Little Pigs - Sequencing Activity')"
               />
+              </div>
             </div>
 
             {!existingSSA && (
-              <div className="bg-white p-5 rounded-lg shadow-sm">
-                <label className="flex items-center text-lg font-medium text-gray-700 mb-2">
-                  <Camera size={20} className="mr-2" /> Upload Story Images
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Upload size={40} className="mx-auto text-gray-400 mb-2" />
-                  <p className="mb-2 text-sm text-gray-500">
-                    Upload images for each step in the story sequence
-                  </p>
-                  <p className="mb-4 text-xs text-gray-400">
-                    Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
-                  </p>
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <Camera size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">Upload Story Images</h3>
+                        <p className="text-sm text-gray-600">Add images for each step in your story sequence</p>
+                      </div>
+                    </div>
+                    <Sparkles size={24} className="text-yellow-500" />
+                  </div>
+                  
+                  <div className="border-2 border-dashed border-blue-300 rounded-2xl p-8 text-center bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 transition-all duration-300">
+                    <div className="flex flex-col items-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                        <Upload size={32} className="text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-800 mb-2">Drop Your Images Here</h4>
+                      <p className="mb-2 text-sm text-gray-600 max-w-md">
+                        Upload images for each step in the story sequence. Students will arrange them in chronological order.
+                      </p>
+                      <p className="mb-6 text-xs text-gray-500">
+                        Maximum file size: 5MB • Supported formats: JPEG, PNG, GIF, WebP
+                      </p>
+                      
                   <input
                     type="file"
                     id="image-upload"
@@ -520,42 +650,71 @@ const TeacherCreateSSA = () => {
                   />
                   <label
                     htmlFor="image-upload"
-                    className={`inline-flex items-center px-4 py-2 ${
-                      existingSSA 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                    } text-white font-medium rounded-md`}
-                  >
-                    <Upload size={16} className="mr-2" />
-                    Select Images
+                        className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                      >
+                        <Upload size={18} className="mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                        <span>Select Images</span>
                   </label>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-4 bg-white/50 rounded-xl border border-blue-200">
+                    <div className="flex items-center justify-center">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
+                      <span className="text-sm font-semibold text-gray-700">
+                        {images.length > 0
+                          ? `${images.length} image${images.length === 1 ? '' : 's'} selected`
+                          : "No images selected"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  {images.length > 0
-                    ? `${images.length} image(s) selected`
-                    : "No images selected"}
-                </p>
               </div>
             )}
 
             {images.length > 0 && (
-              <div className="bg-white p-5 rounded-lg shadow-sm">
-                <label className="flex items-center text-lg font-medium text-gray-700 mb-3">
-                  <GripVertical size={20} className="mr-2" /> 
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                        <GripVertical size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">
                   {existingSSA ? (isEditMode ? "Edit" : "View") : "Arrange"} Images in Story Sequence
-                </label>
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {existingSSA ? (isEditMode ? "Drag images to reorder the story sequence" : "Current story sequence order") : "Drag and drop to arrange your story images"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Star className="text-yellow-400" size={20} />
+                      <Heart className="text-red-400" size={20} />
+                    </div>
+                  </div>
+                  
                 {existingSSA && isEditMode && (
-                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-blue-800 text-sm">
-                      <strong>Edit Mode:</strong> Drag and drop images to change their positions in the story sequence.
-                    </p>
+                    <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                          <Edit3 size={16} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-blue-800">Edit Mode Active</p>
+                          <p className="text-blue-700 text-sm">Drag and drop images to change their positions in the story sequence.</p>
+                        </div>
+                      </div>
                   </div>
                 )}
+                  
                 <DragDropContext onDragEnd={onDragEnd}>
                   <Droppable droppableId="imageList" direction="horizontal">
                     {(provided) => (
                       <div
-                        className="flex gap-4 overflow-x-auto pb-4"
+                          className="flex gap-6 overflow-x-auto pb-6 min-h-[200px]"
                         {...provided.droppableProps}
                         ref={provided.innerRef}
                       >
@@ -566,58 +725,111 @@ const TeacherCreateSSA = () => {
                             index={index}
                             isDragDisabled={existingSSA && !isEditMode}
                           >
-                            {(provided) => (
-                              <div
-                                className={`relative border rounded-lg overflow-hidden bg-white shadow-md group w-40 ${(existingSSA && !isEditMode) ? 'cursor-default' : 'cursor-move'}`}
+                              {(provided, snapshot) => (
+                                <div
+                                  className={`relative border-2 rounded-2xl overflow-hidden bg-white shadow-lg group w-48 transition-all duration-300 hover:shadow-xl ${
+                                    (existingSSA && !isEditMode) 
+                                      ? 'cursor-default border-gray-200' 
+                                      : 'cursor-move border-purple-200 hover:border-purple-400'
+                                  } ${
+                                    snapshot.isDragging 
+                                      ? 'opacity-100 transform rotate-2 scale-110 shadow-2xl border-purple-500 bg-white z-50' 
+                                      : ''
+                                  }`}
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                              >
-                                {/* ❌ Remove button (top-right) - only show when creating new */}
+                                  style={{
+                                    ...provided.draggableProps.style,
+                                    ...(snapshot.isDragging && {
+                                      transform: provided.draggableProps.style?.transform,
+                                    }),
+                                  }}
+                                >
+                                  {/* Remove button (top-right) - only show when creating new */}
                                 {!existingSSA && (
-                                  <div
-                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer z-10"
+                                    <button
+                                      className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer z-10 transition-all duration-300 hover:scale-110 shadow-lg"
                                     onClick={() => removeImage(img.id)}
-                                    title="Remove"
+                                      title="Remove image"
                                   >
-                                    <Trash2 size={14} />
-                                  </div>
+                                      <Trash2 size={16} />
+                                    </button>
                                 )}
 
+                                  {/* Image */}
+                                  <div className="relative">
                                 <img
                                   src={img.preview}
                                   alt={`Step ${index + 1}`}
-                                  className="w-full h-32 object-cover"
-                                />
+                                      className="w-full h-40 object-cover"
+                                    />
+                                    {/* Position overlay */}
+                                    <div className="absolute top-3 left-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                                      #{index + 1}
+                                    </div>
+                                  </div>
 
-                                {/* 📍 Position Number */}
-                                <div className="text-center py-1 text-sm font-semibold text-gray-700">
+                                  {/* Position info */}
+                                  <div className="p-3 bg-gradient-to-r from-gray-50 to-gray-100">
+                                    <div className="text-center">
+                                      <p className="text-sm font-semibold text-gray-700">
                                   Position {index + 1}
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {existingSSA ? (isEditMode ? "Drag to reorder" : "Story sequence") : "Story sequence"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Drag indicator */}
+                                  {!(existingSSA && !isEditMode) && (
+                                    <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-colors duration-200">
+                                      <GripVertical size={14} className="text-purple-600" />
                                 </div>
+                                  )}
                               </div>
                             )}
                           </Draggable>
                         ))}
                         {provided.placeholder}
+                          {/* Enhanced placeholder styling */}
+                          <div className="flex-shrink-0 w-48 h-48 border-2 border-dashed border-purple-300 rounded-2xl bg-purple-50/50 flex items-center justify-center opacity-0 pointer-events-none">
+                            <div className="text-center">
+                              <GripVertical size={32} className="text-purple-400 mx-auto mb-2" />
+                              <p className="text-sm text-purple-500 font-medium">Drop here</p>
+                            </div>
+                          </div>
                       </div>
                     )}
                   </Droppable>
                 </DragDropContext>
+                </div>
               </div>
             )}
 
             {!existingSSA && (
-              <div className="flex justify-end">
+              <div className="flex justify-center">
                 <button
                   onClick={handleSubmit}
                   disabled={loading || !selectedBookId || images.length === 0}
-                  className={`px-6 py-3 text-white font-semibold rounded-md flex items-center ${
+                  className={`group px-12 py-4 text-white font-bold rounded-2xl flex items-center transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl ${
                     loading || !selectedBookId || images.length === 0
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                      : "bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
                   }`}
                 >
-                  {loading ? "Processing..." : "Create Activity"}
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                      <span>Creating Activity...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Target size={20} className="mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                      <span>Create Story Sequencing Activity</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}

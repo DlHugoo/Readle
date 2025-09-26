@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
 import ClassroomSidebar from "../../components/ClassroomSidebar";
-import { Menu, ArrowLeft, RotateCcw } from "lucide-react";
+import { Menu, ArrowLeft, RotateCcw, Archive, Sparkles, Star, Heart, Zap } from "lucide-react";
 import axios from "axios";
 
 const ArchivedBooks = () => {
@@ -63,57 +63,181 @@ const ArchivedBooks = () => {
   const fullImg = (path) => path ? `http://localhost:3000${path}` : '';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <TeahcerNav />
       <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-      <div className={`pt-[72px] transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <button onClick={toggleSidebar} className="mr-4 p-2 rounded-md hover:bg-gray-200">
-                <Menu size={24} />
+      
+      {/* Main Content */}
+      <div className={`flex-1 flex flex-col pt-20 transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
+        {/* Floating decorative elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200/20 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-purple-200/20 rounded-full blur-lg"></div>
+          <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-indigo-200/20 rounded-full blur-2xl"></div>
+        </div>
+        
+        <div className="px-4 sm:px-8 lg:px-12 py-4 max-w-8xl mx-auto w-full relative z-10">
+          {/* Enhanced Header Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              {/* Sidebar Toggle Button */}
+              <button 
+                onClick={toggleSidebar}
+                className="group p-3 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-300 hover:scale-105"
+              >
+                <Menu size={20} className="text-blue-600 group-hover:text-blue-700" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Archived Books</h1>
+              
+              {/* Decorative elements */}
+              <div className="hidden md:flex items-center space-x-2">
+                <Sparkles className="text-yellow-500 animate-pulse" size={20} />
+                <Star className="text-purple-500" size={16} />
+                <Heart className="text-red-400" size={16} />
+              </div>
             </div>
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors"
-            >
-              <ArrowLeft size={18} />
-              Back
-            </button>
+            
+            {/* Professional Header */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Archive size={32} className="text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
+                        Archived Books
+                      </h1>
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <span className="mr-2">Classroom:</span>
+                        <span className="font-semibold text-gray-800">{classroomName}</span>
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Enhanced Back Button */}
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                  >
+                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-300" />
+                    <span className="font-semibold">Back to Classroom</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">{error}</div>
+            <div className="bg-white/70 backdrop-blur-sm border-2 border-red-200 rounded-xl shadow-lg mb-6 p-4 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-pink-500/5"></div>
+              <div className="relative z-10 flex items-center">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mr-3">
+                  <Zap size={16} className="text-white" />
+                </div>
+                <p className="text-red-700 font-medium">{error}</p>
+              </div>
+            </div>
           )}
 
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex justify-center items-center py-20">
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/50">
+                <div className="flex flex-col items-center">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mb-4"></div>
+                  <p className="text-lg font-semibold text-gray-700">Loading archived books...</p>
+                  <p className="text-sm text-gray-500 mt-1">Please wait while we prepare everything</p>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {books.map(book => (
-                <div key={book.bookID} className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="h-48 bg-gray-200">
-                    {book.imageURL ? (
-                      <img src={fullImg(book.imageURL)} alt={book.title} className="h-full w-full object-cover" />
-                    ) : null}
-                  </div>
-                  <div className="p-3">
-                    <div className="font-semibold">{book.title}</div>
-                    <div className="text-sm text-gray-500">{book.author}</div>
-                  </div>
-                  <div className="p-3 border-t flex justify-end">
-                    <button onClick={() => unarchive(book.bookID)} className="flex items-center gap-2 px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
-                      <RotateCcw size={16} /> Unarchive
-                    </button>
+            <div>
+              {/* Enhanced Content Section */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                  <h2 className="text-3xl font-bold text-gray-800">Archived Collection</h2>
+                  <Sparkles size={24} className="text-yellow-500" />
+                </div>
+                <div className="hidden md:flex items-center space-x-2 text-gray-500">
+                  <Heart size={16} className="text-red-400" />
+                  <span className="text-sm">{books.length} archived books</span>
+                </div>
+              </div>
+              
+              {books.length === 0 ? (
+                <div className="bg-white/70 backdrop-blur-sm border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50"></div>
+                  <div className="relative z-10">
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                      <Archive size={48} className="text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-3">No Archived Books</h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      No books have been archived yet. Archived books will appear here for easy restoration.
+                    </p>
                   </div>
                 </div>
-              ))}
-              {books.length === 0 && (
-                <div className="col-span-full text-center text-gray-500">No archived books.</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+                  {books.map(book => (
+                    <div key={book.bookID} className="group bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden transform hover:scale-105 transition-all duration-500 relative border border-white/50 hover:shadow-2xl">
+                      {/* Floating decorative elements */}
+                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                      <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse delay-150"></div>
+
+                      {/* Book Cover Image */}
+                      <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden">
+                        {book.imageURL ? (
+                          <img
+                            src={fullImg(book.imageURL)}
+                            alt={book.title}
+                            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-gray-400">
+                            <Archive size={48} className="mb-2" />
+                            <span className="text-sm">No Image</span>
+                          </div>
+                        )}
+                        {/* Gradient overlay on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        
+                        {/* Archive badge */}
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                          Archived
+                        </div>
+                      </div>
+
+                      {/* Enhanced Book Details */}
+                      <div className="p-4 relative">
+                        <h3 className="text-lg font-bold bg-gradient-to-r from-gray-600 to-gray-700 bg-clip-text text-transparent truncate mb-2 group-hover:from-gray-700 group-hover:to-gray-800 transition-all duration-300">
+                          {book.title}
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-gray-500 font-medium">
+                            {book.author}
+                          </div>
+                          <div className="text-xs text-gray-400 font-medium">
+                            {book.genre}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Enhanced Unarchive Button */}
+                      <div className="p-4 border-t border-gray-200/50">
+                        <button 
+                          onClick={() => unarchive(book.bookID)} 
+                          className="group/btn w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                        >
+                          <RotateCcw size={16} className="group-hover/btn:rotate-180 transition-transform duration-300" />
+                          <span className="font-semibold">Unarchive</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

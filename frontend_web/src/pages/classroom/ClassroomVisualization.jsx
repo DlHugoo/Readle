@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import TeahcerNav from '../../components/TeacherNav';
 import ClassroomSidebar from '../../components/ClassroomSidebar';
-import { Menu, ArrowLeft, BarChart2, Clock, BookOpen, PieChart, Activity } from 'lucide-react';
+import { Menu, ArrowLeft, BarChart2, Clock, BookOpen, PieChart, Activity, Sparkles, Star, Heart, Zap } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, ScatterChart, Scatter, PieChart as RePieChart, Pie, Cell,
@@ -19,7 +19,7 @@ const ClassroomVisualization = () => {
   const navigate = useNavigate();
   
   // State variables
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Always open by default
   const [classroomName, setClassroomName] = useState('');
   const [progressData, setProgressData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -520,75 +520,135 @@ const ClassroomVisualization = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <TeahcerNav />
       
       {/* Sidebar */}
       <ClassroomSidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
       
       {/* Main Content */}
-      <div className={`pt-[72px] transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'}`}>
-        <div className="p-6">
-          {/* Header with toggle sidebar button and back button */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <button
+      <div className={`flex-1 flex flex-col pt-20 transition-all duration-150 ease-out ${sidebarOpen ? 'pl-72' : 'pl-0'}`}>
+        {/* Simplified decorative elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200/10 rounded-full blur-xl"></div>
+          <div className="absolute top-40 right-20 w-24 h-24 bg-purple-200/10 rounded-full blur-lg"></div>
+        </div>
+        
+        <div className="px-4 sm:px-8 lg:px-12 py-4 max-w-8xl mx-auto w-full relative z-10">
+          {/* Enhanced Header Section */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              {/* Sidebar Toggle Button */}
+              <button 
                 onClick={toggleSidebar}
-                className="mr-4 p-2 rounded-md hover:bg-gray-200"
+                className="group p-3 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-200 ease-out"
               >
-                <Menu size={24} />
+                <Menu size={20} className="text-blue-600 group-hover:text-blue-700" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">{classroomName} - Data Visualization</h1>
+              
+              {/* Simplified decorative elements */}
+              <div className="hidden md:flex items-center space-x-2">
+                <Sparkles className="text-yellow-500" size={20} />
+                <Star className="text-purple-500" size={16} />
+                <Heart className="text-red-400" size={16} />
+              </div>
             </div>
-            <button
-              onClick={goBackToProgress}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors"
-            >
-              <ArrowLeft size={18} />
-              Back to Progress Dashboard
-            </button>
+            
+            {/* Professional Header */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <BarChart2 size={32} className="text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
+                        Data Visualization
+                      </h1>
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <span className="mr-2">Classroom:</span>
+                        <span className="font-semibold text-gray-800">{classroomName}</span>
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Enhanced Back Button */}
+                  <button
+                    onClick={goBackToProgress}
+                    className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 ease-out shadow-lg hover:shadow-xl"
+                  >
+                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-200 ease-out" />
+                    <span className="font-semibold">Back to Progress Dashboard</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           
-          {/* Error message */}
+          {/* Enhanced Error message */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-              <strong className="font-bold">Error: </strong>
-              <span>{error}</span>
+            <div className="bg-white/70 backdrop-blur-sm border-2 border-red-200 rounded-xl shadow-lg mb-6 p-4 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-pink-500/5"></div>
+              <div className="relative z-10 flex items-center">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mr-3">
+                  <Zap size={16} className="text-white" />
+                </div>
+                <div>
+                  <strong className="font-bold text-red-700">Error: </strong>
+                  <span className="text-red-700">{error}</span>
+                </div>
+              </div>
             </div>
           )}
           
-          {/* Loading indicator */}
+          {/* Simplified Loading indicator */}
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex justify-center items-center py-20">
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/50">
+                <div className="flex flex-col items-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-3 border-purple-200 border-t-purple-600 mb-4"></div>
+                  <p className="text-lg font-semibold text-gray-700">Loading visualization data...</p>
+                  <p className="text-sm text-gray-500 mt-1">Please wait while we prepare your analytics</p>
+                </div>
+              </div>
             </div>
           ) : (
             <>
-              {/* Book Filter Toggle */}
-              <div className="mb-6 bg-white p-4 rounded-lg shadow">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium">Show books:</span>
-                  <div className="flex bg-gray-100 rounded-lg p-1">
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        !showOnlyClassroomBooks 
-                          ? 'bg-blue-500 text-white' 
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }`}
-                      onClick={() => setShowOnlyClassroomBooks(false)}
-                    >
-                      All Books (Classroom + OOB)
-                    </button>
-                    <button
-                      className={`px-3 py-1 rounded-md text-sm ${
-                        showOnlyClassroomBooks 
-                          ? 'bg-blue-500 text-white' 
-                          : 'text-gray-700 hover:bg-gray-200'
-                      }`}
-                      onClick={() => setShowOnlyClassroomBooks(true)}
-                    >
-                      Classroom Books Only
-                    </button>
+              {/* Enhanced Book Filter Toggle */}
+              <div className="mb-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <Activity size={16} className="text-white" />
+                      </div>
+                      <span className="font-semibold text-gray-800">Data Filter:</span>
+                    </div>
+                    <div className="flex bg-white/50 backdrop-blur-sm rounded-xl p-1 border border-white/50">
+                      <button
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ease-out ${
+                          !showOnlyClassroomBooks 
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg' 
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                        onClick={() => setShowOnlyClassroomBooks(false)}
+                      >
+                        All Books (Classroom + OOB)
+                      </button>
+                      <button
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ease-out ${
+                          showOnlyClassroomBooks 
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg' 
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                        onClick={() => setShowOnlyClassroomBooks(true)}
+                      >
+                        Classroom Books Only
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
