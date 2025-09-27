@@ -120,7 +120,7 @@ const CreatePredictionCheckpoint = () => {
                   id: `${Date.now()}-${idx}`,
                   file: null,
                   preview: img.imageUrl.startsWith("/uploads")
-                    ? `http://localhost:3000${img.imageUrl}`
+                    ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${img.imageUrl}`
                     : img.imageUrl,
                   originalId: img.id,
                   position: img.position
@@ -135,7 +135,7 @@ const CreatePredictionCheckpoint = () => {
                 id: `${Date.now()}-option-${idx}`,
                 file: null,
                 preview: opt.imageUrl.startsWith("/uploads")
-                  ? `http://localhost:3000${opt.imageUrl}`
+                  ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${opt.imageUrl}`
                   : opt.imageUrl,
                 originalId: opt.id,
                 isCorrect: opt.isCorrect

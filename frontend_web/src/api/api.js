@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // Set in frontend_web/.env.local:
-// VITE_BACKEND_BASE=http://localhost:3000  (or leave empty if using Vite proxy)
+// VITE_BACKEND_BASE=http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000  (or leave empty if using Vite proxy)
 const BASE = "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
 
 // ---- token helpers ----

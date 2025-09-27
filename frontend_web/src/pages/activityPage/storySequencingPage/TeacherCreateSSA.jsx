@@ -102,7 +102,7 @@ const TeacherCreateSSA = () => {
             id: `${Date.now()}-${idx}`,
             file: null,
             preview: img.imageUrl.startsWith("/uploads")
-              ? `http://localhost:3000${img.imageUrl}`
+              ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${img.imageUrl}`
               : img.imageUrl,
             originalId: img.id
           }));
@@ -336,7 +336,7 @@ const TeacherCreateSSA = () => {
               id: `${Date.now()}-${idx}`,
               file: null,
               preview: img.imageUrl.startsWith("/uploads")
-                ? `http://localhost:3000${img.imageUrl}`
+                ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${img.imageUrl}`
                 : img.imageUrl,
               originalId: img.id
             }));

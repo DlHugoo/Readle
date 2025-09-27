@@ -65,7 +65,7 @@ const PredictionCheckpointPage = () => {
           .map((img) => ({
             id: img.id,
             url: img.imageUrl.startsWith("/uploads")
-              ? `http://localhost:3000${img.imageUrl}`
+              ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${img.imageUrl}`
               : img.imageUrl,
             locked: true,
           }));
@@ -78,7 +78,7 @@ const PredictionCheckpointPage = () => {
         const formattedOptions = predictionOptions.map((opt) => ({
           id: opt.id,
           url: opt.imageUrl.startsWith("/uploads")
-            ? `http://localhost:3000${opt.imageUrl}`
+            ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${opt.imageUrl}`
             : opt.imageUrl,
         }));
 
