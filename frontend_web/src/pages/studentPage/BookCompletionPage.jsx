@@ -6,7 +6,7 @@ import axios from "axios";
 
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
-    return `http://localhost:3000${url}`;
+    return `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${url}`;
   }
   return url;
 };
@@ -36,7 +36,7 @@ const BookCompletionPage = () => {
         const headers = { Authorization: `Bearer ${token}` };
         
         // Check for SSA
-        const ssaRes = await axios.get(`http://localhost:3000/api/ssa/by-book/${bookId}`, { headers });
+        const ssaRes = await axios.get(`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/ssa/by-book/${bookId}`, { headers });
         setHasSSA(!!ssaRes.data);
       } catch (err) {
         setHasSSA(false);
@@ -47,7 +47,7 @@ const BookCompletionPage = () => {
         const headers = { Authorization: `Bearer ${token}` };
         
         // Check for Snake Game
-        const snakeRes = await axios.get(`http://localhost:3000/api/snake-questions/book/${bookId}`, { headers });
+        const snakeRes = await axios.get(`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/snake-questions/book/${bookId}`, { headers });
         setHasSnakeGame(!!snakeRes.data && snakeRes.data.length > 0);
       } catch (err) {
         setHasSnakeGame(false);

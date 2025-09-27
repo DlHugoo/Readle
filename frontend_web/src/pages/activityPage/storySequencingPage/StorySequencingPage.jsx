@@ -25,7 +25,7 @@ const StorySequencingPage = () => {
     const token = localStorage.getItem("token");
     if (userId && bookId && token) {
       axios
-        .get(`http://localhost:3000/api/progress/book/${userId}/${bookId}`, {
+        .get(`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/book/${userId}/${bookId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setTrackerId(res.data.id))
@@ -61,7 +61,7 @@ const StorySequencingPage = () => {
         }
 
         const res = await axios.get(
-          `http://localhost:3000/api/ssa/by-book/${bookId}`,
+          `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/ssa/by-book/${bookId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -157,7 +157,7 @@ const StorySequencingPage = () => {
       }
 
       const res = await axios.post(
-        `http://localhost:3000/api/ssa/${storyData.ssaId}/check`,
+        `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/ssa/${storyData.ssaId}/check`,
         { attemptedSequence: sequenceIds },
         {
           headers: {
@@ -177,7 +177,7 @@ const StorySequencingPage = () => {
       if (res.data.correct && trackerId) {
         axios
           .put(
-            `http://localhost:3000/api/progress/complete/${trackerId}`,
+            `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/complete/${trackerId}`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )

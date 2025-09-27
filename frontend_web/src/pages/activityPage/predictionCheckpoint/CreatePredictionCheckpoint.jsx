@@ -104,7 +104,7 @@ const CreatePredictionCheckpoint = () => {
       const token = localStorage.getItem("token");
       setLoading(true);
       axios
-        .get(`http://localhost:3000/api/prediction-checkpoints/by-book/${selectedBookId}`, {
+        .get(`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoints/by-book/${selectedBookId}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         .then((res) => {
@@ -170,7 +170,7 @@ const CreatePredictionCheckpoint = () => {
       
       // Always fetch pages when selectedBookId is available, regardless of books array
       axios
-        .get(`http://localhost:3000/api/pages/${selectedBookId}`)
+        .get(`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/pages/${selectedBookId}`)
         .then((response) => {
           setBookPageCount(response.data.length || 0);
         })
@@ -276,7 +276,7 @@ const CreatePredictionCheckpoint = () => {
         formData.append("uploadType", "prediction");
 
         const response = await axios.post(
-          "http://localhost:3000/api/books/upload-image",
+          "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/upload-image",
           formData,
           {
             headers: {
@@ -300,7 +300,7 @@ const CreatePredictionCheckpoint = () => {
 
       // Create the prediction checkpoint
       await axios.post(
-        "http://localhost:3000/api/prediction-checkpoints",
+        "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoints",
         {
           title,
           bookId: selectedBookId,
@@ -380,7 +380,7 @@ const CreatePredictionCheckpoint = () => {
       }));
   
       await axios.put(
-        `http://localhost:3000/api/prediction-checkpoints/update-positions/${existingCheckpoint.id}`,
+        `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoints/update-positions/${existingCheckpoint.id}`,
         { storyImages: storyPayload, optionImages: optionPayload },
         { headers: { Authorization: `Bearer ${token}` } }
       );

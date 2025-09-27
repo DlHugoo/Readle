@@ -59,7 +59,7 @@ const ClassroomContentPage = () => {
   }, [classroomId]);
 
   const getImageUrl = (path) =>
-    path?.startsWith("/uploads") ? `http://localhost:3000${path}` : path;
+    path?.startsWith("/uploads") ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${path}` : path;
 
   const estimateReadTime = (pageCount) => {
     const pages = parseInt(pageCount);
