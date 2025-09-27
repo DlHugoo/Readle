@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Wand2, Loader2, X, Download, Check } from "lucide-react";
+import { Wand2, Loader2, X } from "lucide-react";
 import axios from "axios";
+import ImagePreview from "./ImagePreview";
 
 const AIImageGenerator = ({
   onImageSelect,
@@ -11,7 +12,6 @@ const AIImageGenerator = ({
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(null);
   const [error, setError] = useState(null);
 
   const generateImages = async () => {
@@ -94,31 +94,9 @@ const AIImageGenerator = ({
     }
   };
 
-  const selectImage = (imageData, index) => {
-    setSelectedImage(index);
-  };
-
-  const useSelectedImage = () => {
-    if (selectedImage !== null && generatedImages[selectedImage]) {
-      // Convert base64 to blob and create a file-like object
-      const base64Data = generatedImages[selectedImage];
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "image/png" });
-
-      // Create a file object
-      const file = new File([blob], `ai-generated-${Date.now()}.png`, {
-        type: "image/png",
-      });
-
-      // Call the parent callback with the file
-      onImageSelect(file);
-      onClose();
-    }
+  const handleImageSelect = (file) => {
+    onImageSelect(file);
+    onClose();
   };
 
   return (
@@ -196,46 +174,13 @@ const AIImageGenerator = ({
 
           {/* Generated images */}
           {generatedImages.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-800">Generated Images</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {generatedImages.map((imageData, index) => (
-                  <div
-                    key={index}
-                    className={`relative border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${
-                      selectedImage === index
-                        ? "border-purple-500 ring-2 ring-purple-200"
-                        : "border-gray-200 hover:border-purple-300"
-                    }`}
-                    onClick={() => selectImage(imageData, index)}
-                  >
-                    <img
-                      src={`data:image/png;base64,${imageData}`}
-                      alt={`Generated image ${index + 1}`}
-                      className="w-full h-32 object-cover"
-                    />
-                    {selectedImage === index && (
-                      <div className="absolute top-2 right-2 bg-purple-500 text-white rounded-full p-1">
-                        <Check size={16} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Use selected image button */}
-              {selectedImage !== null && (
-                <div className="flex justify-end">
-                  <button
-                    onClick={useSelectedImage}
-                    className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center"
-                  >
-                    <Download className="mr-2" size={16} />
-                    Use Selected Image
-                  </button>
-                </div>
-              )}
-            </div>
+            <ImagePreview
+              images={generatedImages}
+              onImageSelect={handleImageSelect}
+              onClose={onClose}
+              title="Generated Images"
+              showSelection={true}
+            />
           )}
         </div>
       </div>
