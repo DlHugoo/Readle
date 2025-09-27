@@ -5,6 +5,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import noContentImage from "../../assets/no-content.png";
 import StoryProgressIndicator from "../../components/StoryProgressIndicator";
+import VocabularyHighlighter from "../../components/VocabularyHighlighter";
 import { jwtDecode } from "jwt-decode";
 import {
   Maximize2,
@@ -47,6 +48,7 @@ const BookPage = () => {
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [showProgress, setShowProgress] = useState(true);
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+  const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
@@ -530,15 +532,34 @@ const BookPage = () => {
               </div>
             </div>
 
-            {/* Audio Toggle */}
+            {/* Vocabulary Toggle */}
             <div className="mb-4">
               <label
                 className={`block text-sm font-medium mb-2 ${
                   readingTheme === "dark" ? "text-gray-200" : "text-gray-700"
                 }`}
               >
-                Audio
+                Vocabulary Helper
               </label>
+              <button
+                onClick={() => setIsVocabularyEnabled(!isVocabularyEnabled)}
+                className={`p-2 rounded-lg border transition-all duration-200 flex items-center gap-2 ${
+                  isVocabularyEnabled
+                    ? readingTheme === "dark"
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-blue-100 border-blue-300 text-blue-700"
+                    : readingTheme === "dark"
+                    ? "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
+                    : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                <BookOpen size={16} />
+                {isVocabularyEnabled ? "Vocabulary On" : "Vocabulary Off"}
+              </button>
+            </div>
+
+            {/* Audio Toggle */}
+            <div className="mb-4">
               <button
                 onClick={() => setIsAudioEnabled(!isAudioEnabled)}
                 className={`p-2 rounded-lg border transition-all duration-200 flex items-center gap-2 ${
@@ -684,7 +705,10 @@ const BookPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
                   >
-                    <div
+                    <VocabularyHighlighter
+                      text={currentPage?.content}
+                      theme={readingTheme}
+                      isVocabularyEnabled={isVocabularyEnabled}
                       className={`${getFontSizeClasses()} ${
                         readingTheme === "dark"
                           ? "text-gray-100"
@@ -692,9 +716,7 @@ const BookPage = () => {
                           ? "text-amber-900"
                           : "text-gray-800"
                       }`}
-                    >
-                      {currentPage?.content}
-                    </div>
+                    />
                   </motion.div>
                 </>
               ) : (
