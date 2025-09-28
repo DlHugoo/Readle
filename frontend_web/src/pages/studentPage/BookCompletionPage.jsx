@@ -19,6 +19,8 @@ const BookCompletionPage = () => {
   const [showConfetti, setShowConfetti] = useState(true);
   const [hasSSA, setHasSSA] = useState(false);
   const [hasSnakeGame, setHasSnakeGame] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completionError, setCompletionError] = useState(null);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -54,8 +56,52 @@ const BookCompletionPage = () => {
       }
     };
 
+    const completeBook = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        if (!userId) {
+          setCompletionError("User not found. Please log in again.");
+          return;
+        }
+
+        setIsCompleting(true);
+        setCompletionError(null);
+
+        // First get the tracker ID for this user and book
+        const progressRes = await axios.get(
+          `http://localhost:3000/api/progress/book/${userId}/${bookId}`,
+          { headers }
+        );
+
+        if (progressRes.data?.id) {
+          // Now complete the book using the tracker ID
+          await axios.put(
+            `http://localhost:3000/api/progress/complete/${progressRes.data.id}`,
+            {},
+            { headers }
+          );
+          console.log("Book completed successfully!");
+        } else {
+          setCompletionError("Could not find progress tracker for this book.");
+        }
+      } catch (err) {
+        console.error("Error completing book:", err);
+        if (err.response?.status === 404) {
+          setCompletionError("No progress found for this book. Please start reading first.");
+        } else {
+          setCompletionError("Failed to complete book. Please try again.");
+        }
+      } finally {
+        setIsCompleting(false);
+      }
+    };
+
     fetchBook();
     checkActivities();
+    completeBook(); // Automatically complete the book when page loads
   }, [bookId]);
 
   useEffect(() => {
@@ -78,6 +124,37 @@ const BookCompletionPage = () => {
         <StudentNavbar />
         <div className="flex justify-center items-center h-[60vh] text-gray-500 text-lg">
           Loading book details...
+        </div>
+      </div>
+    );
+  }
+
+  if (isCompleting) {
+    return (
+      <div className="min-h-screen bg-white">
+        <StudentNavbar />
+        <div className="flex justify-center items-center h-[60vh] text-gray-500 text-lg">
+          Completing book...
+        </div>
+      </div>
+    );
+  }
+
+  if (completionError) {
+    return (
+      <div className="min-h-screen bg-white">
+        <StudentNavbar />
+        <div className="max-w-2xl mx-auto px-6 py-16 flex flex-col items-center text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <strong className="font-bold">Error: </strong>
+            {completionError}
+          </div>
+          <button
+            onClick={() => navigate("/library")}
+            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Back to Library
+          </button>
         </div>
       </div>
     );
