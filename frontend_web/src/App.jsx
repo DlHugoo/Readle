@@ -30,6 +30,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import UnauthorizedPage from "./pages/unauthorized/UnauthorizedPage";
 import AuthCallback from "./pages/authCallback/AuthCallback";
 import VerifyEmailPage from "./pages/verifyPage";
+import AdminBookEditor from "./pages/admin/AdminBookEditor";
+
 
 // Helper to forward /auth/callback -> /authCallback keeping querystring
 function LegacyAuthRedirect() {
@@ -56,6 +58,7 @@ export default function App() {
       {/* Admin-only */}
       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin-book-editor/:bookId" element={<AdminBookEditor />} />
       </Route>
 
       {/* Student-only */}
@@ -84,7 +87,7 @@ export default function App() {
 
       {/* Teacher + Admin */}
       <Route element={<ProtectedRoute allowedRoles={["TEACHER", "ADMIN"]} />}>
-        <Route path="/book-editor/:bookId" element={<BookPageEditor />} />
+        <Route path="/book-editor/:bookId" element={<BookPageEditor role="teacher" />} />
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
         <Route path="/create-prediction" element={<CreatePredictionCheckpoint />} />
