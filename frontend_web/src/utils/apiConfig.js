@@ -20,17 +20,23 @@ export const getDirectBackendUrl = () => {
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
 
-  // If it's base64 data, return it directly (like your old app)
+  // If it's base64 data, return it directly
   if (imagePath.startsWith('data:image/') || imagePath.startsWith('/9j/') || imagePath.startsWith('iVBOR')) {
     return imagePath;
   }
-
-  const apiBase = getApiBaseUrl();
 
   // If imagePath already starts with http, return as is
   if (imagePath.startsWith('http')) {
     return imagePath;
   }
+
+  // If it's a file path (starts with /uploads/), use direct backend URL
+  if (imagePath.startsWith('/uploads/')) {
+    const directBackend = getDirectBackendUrl();
+    return `${directBackend}${imagePath}`;
+  }
+
+  const apiBase = getApiBaseUrl();
 
   // If we have an API base URL, prepend it
   if (apiBase) {

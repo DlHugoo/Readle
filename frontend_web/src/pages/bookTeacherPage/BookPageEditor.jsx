@@ -352,10 +352,8 @@ const BookPageEditor = ({ role = "teacher" }) => {
             },
           });
 
-          // The backend now returns base64 data directly (like your old app)
-          // Convert it to a data URL for display
-          const base64Response = imageResponse.data;
-          imageUrl = `data:${pageImage.type};base64,${base64Response}`;
+          // The backend now returns file URL (like your old SkillMatch app)
+          imageUrl = imageResponse.data;
         } catch (error) {
           // Handle image upload errors
           console.error("Error uploading image:", error);

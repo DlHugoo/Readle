@@ -183,34 +183,73 @@ public class BookController {
         }
     }
 
-    // 🔹 Upload book cover image (base64) - Store directly as base64 like your old app
+    // 🔹 Upload book cover image (base64) - Convert to file and store like your old SkillMatch app
     @PostMapping(value = "/upload-image", consumes = "application/json")
     public ResponseEntity<String> uploadImageBase64(@RequestBody Map<String, Object> request) {
         try {
+            System.out.println("=== UPLOAD DEBUG START ===");
+            System.out.println("Request received: " + request);
+            System.out.println("Request keys: " + request.keySet());
+            
             String base64Data = (String) request.get("file");
             String filename = (String) request.get("filename");
             String contentType = (String) request.get("contentType");
             String uploadType = (String) request.getOrDefault("uploadType", "bookcovers");
 
+            System.out.println("Base64 data length: " + (base64Data != null ? base64Data.length() : "NULL"));
+            System.out.println("Filename: " + filename);
+            System.out.println("Content type: " + contentType);
+            System.out.println("Upload type: " + uploadType);
+
             if (base64Data == null || base64Data.isEmpty()) {
+                System.out.println("ERROR: Base64 data is empty");
                 return ResponseEntity.badRequest().body("Base64 data is empty");
             }
 
             if (contentType == null || !contentType.startsWith("image/")) {
+                System.out.println("ERROR: Invalid content type: " + contentType);
                 return ResponseEntity.badRequest().body("Only image files are allowed");
             }
 
             // Check base64 size (approximate)
             if (base64Data.length() > MAX_FILE_SIZE * 4 / 3) { // Base64 is ~33% larger than binary
+                System.out.println("ERROR: File too large: " + base64Data.length() + " > " + (MAX_FILE_SIZE * 4 / 3));
                 return ResponseEntity.badRequest().body("File size exceeds the limit of 5MB");
             }
 
-            // Return the base64 data directly (like your old app)
-            // The frontend will handle displaying it
-            return ResponseEntity.ok(base64Data);
+            // Convert base64 to file and save to filesystem (like your old SkillMatch app)
+            String uploadDir = "uploads/" + uploadType + "/";
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
 
+            // Generate unique filename like your old app
+            String uniqueFileName = System.currentTimeMillis() + "_" + filename;
+            Path filePath = Paths.get(uploadDir + uniqueFileName);
+            
+            // Decode base64 and write to file
+            byte[] fileBytes = Base64.getDecoder().decode(base64Data);
+            Files.write(filePath, fileBytes);
+
+            // Return web-accessible path like your old app
+            String fileUrl = "/uploads/" + uploadType + "/" + uniqueFileName;
+            
+            System.out.println("SUCCESS: File saved to: " + filePath);
+            System.out.println("SUCCESS: Web URL: " + fileUrl);
+            System.out.println("=== UPLOAD DEBUG END ===");
+            
+            return ResponseEntity.ok(fileUrl);
+
+        } catch (IllegalArgumentException e) {
+            System.out.println("ERROR: Invalid base64 data: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid base64 data: " + e.getMessage());
         } catch (Exception e) {
+            System.out.println("=== UPLOAD ERROR ===");
+            System.out.println("Exception type: " + e.getClass().getName());
+            System.out.println("Exception message: " + e.getMessage());
             e.printStackTrace();
+            System.out.println("=== UPLOAD ERROR END ===");
             return ResponseEntity.status(500).body("Failed to upload image: " + e.getMessage());
         }
     }
