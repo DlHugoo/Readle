@@ -30,10 +30,10 @@ export const getImageUrl = (imagePath) => {
     return imagePath;
   }
 
-  // If it's a file path (starts with /uploads/), use direct backend URL
+  // If it's a file path (starts with /uploads/), use Vercel proxy to avoid mixed content
   if (imagePath.startsWith('/uploads/')) {
-    const directBackend = getDirectBackendUrl();
-    return `${directBackend}${imagePath}`;
+    // Use relative URL to go through Vercel proxy
+    return imagePath;
   }
 
   const apiBase = getApiBaseUrl();
