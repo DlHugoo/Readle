@@ -2,9 +2,16 @@
   "functions": {
     "api/proxy.js": {
       "maxDuration": 30
+    },
+    "api/test.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
+    {
+      "source": "/api/test",
+      "destination": "/api/test"
+    },
     {
       "source": "/api/:path*",
       "destination": "/api/proxy"
@@ -20,6 +27,30 @@
     {
       "source": "/uploads/:path*",
       "destination": "/api/proxy"
+    },
+    {
+      "source": "/test-ec2.html",
+      "destination": "/test-ec2.html"
+    },
+    {
+      "source": "/debug-test.html",
+      "destination": "/debug-test.html"
+    },
+    {
+      "source": "/compare-test.html",
+      "destination": "/compare-test.html"
+    },
+    {
+      "source": "/test-upload.html",
+      "destination": "/test-upload.html"
+    },
+    {
+      "source": "/test-ssa-upload.html",
+      "destination": "/test-ssa-upload.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

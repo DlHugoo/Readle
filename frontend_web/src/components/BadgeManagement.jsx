@@ -140,18 +140,38 @@ const BadgeManagement = () => {
     if (!file) return null;
 
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("file", file);
+    
+    // Convert file to base64 (like other upload functions)
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const requestData = {
+      file: base64Data,
+      filename: file.name,
+      contentType: file.type,
+      uploadType: "badge"
+    };
 
     try {
-      const response = await axios.post("/api/books/upload-image", formData, {
+      const response = await fetch("/api/books/upload-image-base64", {
+        method: "POST",
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify(requestData)
       });
 
-      return response.data;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
+
+      return await response.text();
     } catch (error) {
       console.error("Image upload failed:", error);
       throw error;

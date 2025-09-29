@@ -28,6 +28,7 @@ import {
   Trash2
 } from "lucide-react";
 import axios from "axios";
+import { getApiUrl } from "../../../utils/apiConfig";
 import TeacherNav from "../../../components/TeacherNav";
 
 const Modal = ({ open, onClose, type, message }) => {
@@ -103,18 +104,18 @@ const CreatePredictionCheckpoint = () => {
       // Fetch existing prediction checkpoint
       const token = localStorage.getItem("token");
       setLoading(true);
-      axios
-        .get(`/api/prediction-checkpoints/by-book/${selectedBookId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        .then((res) => {
-          if (res.data) {
-            setExistingCheckpoint(res.data);
-            setTitle(res.data.title);
-            setPageNumber(res.data.pageNumber.toString());
+      fetch(`/api/prediction-checkpoints/by-book/${selectedBookId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then((data) => {
+          if (data) {
+            setExistingCheckpoint(data);
+            setTitle(data.title);
+            setPageNumber(data.pageNumber.toString());
             // Set story images
             setStoryImages(
-              res.data.sequenceImages
+              data.sequenceImages
                 .sort((a, b) => a.position - b.position)
                 .map((img, idx) => ({
                   id: `${Date.now()}-${idx}`,
@@ -127,7 +128,7 @@ const CreatePredictionCheckpoint = () => {
                 }))
             );
             // Set option images - sort by isCorrect so correct option appears first
-            const sortedOptions = [...res.data.options].sort((a, b) => 
+            const sortedOptions = [...data.options].sort((a, b) => 
               a.isCorrect === b.isCorrect ? 0 : (a.isCorrect ? -1 : 1)
             );
             setOptionImages(
@@ -144,8 +145,8 @@ const CreatePredictionCheckpoint = () => {
           }
         })
         .catch((err) => {
-          console.log("No existing prediction checkpoint or error occurred:", err.response?.data);
-          if (err.response?.status === 403) {
+          console.log("No existing prediction checkpoint or error occurred:", err);
+          if (err.status === 403) {
             setModal({
               open: true,
               message: "You don't have permission to view this content.",
@@ -271,21 +272,39 @@ const CreatePredictionCheckpoint = () => {
 
       // Upload all images first
       const uploadImage = async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("uploadType", "prediction");
+        // Convert file to base64 (like other upload functions)
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
 
-        const response = await axios.post(
-          "API_BASE_URL/api/books/upload-image",
-          formData,
+        const requestData = {
+          file: base64Data,
+          filename: file.name,
+          contentType: file.type,
+          uploadType: "prediction"
+        };
+
+        const response = await fetch(
+          "/api/books/upload-image-base64",
           {
+            method: "POST",
             headers: {
+              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
             },
+            body: JSON.stringify(requestData)
           }
         );
-        return response.data;
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+        }
+
+        return await response.text();
       };
 
       // Upload story images
@@ -300,7 +319,7 @@ const CreatePredictionCheckpoint = () => {
 
       // Create the prediction checkpoint
       await axios.post(
-        "API_BASE_URL/api/prediction-checkpoints",
+        getApiUrl("api/prediction-checkpoints"),
         {
           title,
           bookId: selectedBookId,

@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"})
 @RequestMapping("/api/simple-test")
 public class SimpleTestController {
 

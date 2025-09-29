@@ -29,6 +29,23 @@ const calculatePredictionScore = (attempts) => {
     return attempts === 1 ? 100 : 0; // 100 points for 1 attempt, 0 for more attempts
 };
 
+// Helper to read seconds from different duration shapes
+const extractTotalSeconds = (minutesValue, fallbackDuration) => {
+    if (typeof fallbackDuration === 'object' && fallbackDuration !== null && 'seconds' in fallbackDuration) {
+        return Math.max(0, Number(fallbackDuration.seconds) || 0);
+    }
+    if (typeof fallbackDuration === 'number' && !isNaN(fallbackDuration)) {
+        const n = Math.max(0, fallbackDuration);
+        if (n > 1e12) return Math.floor(n / 1e9); // ns
+        if (n > 1e6) return Math.floor(n / 1e3); // ms
+        return Math.floor(n); // seconds
+    }
+    if (typeof minutesValue === 'number' && !isNaN(minutesValue)) {
+        return Math.max(0, Math.floor(minutesValue * 60));
+    }
+    return 0;
+};
+
 const StudentProgressDashboard = () => {
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
@@ -50,6 +67,17 @@ const StudentProgressDashboard = () => {
     });
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+
+    // Function to scroll to a specific section
+    const scrollToSection = (sectionId) => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    };
 
     // 🔒 Redirect admins trying to access this dashboard
     useEffect(() => {
@@ -100,6 +128,34 @@ const StudentProgressDashboard = () => {
                 });
                 setCompletedBooks(completedBooksRes.data);
                 setInProgressBooks(inProgressBooksRes.data);
+                
+                // Sync reading-time badge progress from aggregated progress totals
+                try {
+                    const tokenLocal = localStorage.getItem('token');
+                    const headersLocal = { Authorization: `Bearer ${tokenLocal}` };
+                    const storedUserId = localStorage.getItem('userId');
+                    if (storedUserId) {
+                        const all = [...completedBooksRes.data, ...inProgressBooksRes.data];
+                        const totalSeconds = all.reduce((sum, p) => {
+                            return sum + extractTotalSeconds(p.totalReadingTimeMinutes, p.totalReadingTime);
+                        }, 0);
+                        const totalMinutes = Math.floor(totalSeconds / 60);
+                        const syncedKey = `readingTimeSyncedTotal:${storedUserId}`;
+                        const alreadySynced = parseInt(localStorage.getItem(syncedKey) || '0', 10);
+                        if (totalMinutes > alreadySynced) {
+                            const delta = totalMinutes - alreadySynced;
+                            await axios.post(
+                                `${API_BASE_URL}/api/badges/user/${storedUserId}/reading-time?minutes=${delta}`,
+                                {},
+                                { headers: headersLocal }
+                            );
+                            localStorage.setItem(syncedKey, String(totalMinutes));
+                        }
+                    }
+                } catch (syncErr) {
+                    // Non-blocking
+                    console.warn('Reading time badge sync failed:', syncErr?.response?.data || syncErr?.message || syncErr);
+                }
                 
                 // Fetch snake game attempts for all books
                 const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
@@ -250,27 +306,52 @@ const StudentProgressDashboard = () => {
     }, [userId, token]);
 
     const formatDuration = (minutes, fallbackDuration) => {
-        // If minutes is undefined, try to use fallbackDuration (old field)
-        let mins = minutes;
-        if (typeof mins !== 'number' || isNaN(mins)) {
-            if (typeof fallbackDuration === 'object' && fallbackDuration !== null && 'seconds' in fallbackDuration) {
-                mins = Math.floor(fallbackDuration.seconds / 60);
-            } else if (typeof fallbackDuration === 'number') {
-                mins = Math.floor(fallbackDuration / 60);
+        // Accepts multiple shapes:
+        // 1) minutes: number
+        // 2) fallbackDuration: number (seconds/ms/ns), or object {seconds, nano}, or ISO-8601 string like "PT15M10S"
+        let totalSeconds = 0;
+        if (typeof fallbackDuration === 'string') {
+            // ISO-8601: PT#H#M#S
+            const iso = fallbackDuration.trim();
+            if (iso.startsWith('PT')) {
+                const h = /([0-9]+)H/.exec(iso);
+                const m = /([0-9]+)M/.exec(iso);
+                const s = /([0-9]+)S/.exec(iso);
+                totalSeconds = (h ? parseInt(h[1], 10) * 3600 : 0) + (m ? parseInt(m[1], 10) * 60 : 0) + (s ? parseInt(s[1], 10) : 0);
+            }
+        } else if (typeof fallbackDuration === 'object' && fallbackDuration !== null) {
+            // Spring Duration as object
+            if ('seconds' in fallbackDuration) {
+                totalSeconds = Number(fallbackDuration.seconds) || 0;
+            } else if ('nanos' in fallbackDuration) {
+                totalSeconds = Math.floor((Number(fallbackDuration.nanos) || 0) / 1e9);
+            }
+        } else if (typeof fallbackDuration === 'number' && !isNaN(fallbackDuration)) {
+            const n = Math.max(0, fallbackDuration);
+            // Heuristics: if extremely large, it's ns; if moderately large, ms; else seconds
+            if (n > 1e12) {
+                totalSeconds = Math.floor(n / 1e9); // ns -> s
+            } else if (n > 1e6) {
+                totalSeconds = Math.floor(n / 1e3); // ms -> s
             } else {
-                mins = 0;
+                totalSeconds = Math.floor(n); // seconds
             }
         }
-        const hours = Math.floor(mins / 60);
-        const remainingMinutes = mins % 60;
-        return `${hours}h ${remainingMinutes}m`;
+        if (!totalSeconds && typeof minutes === 'number' && !isNaN(minutes)) {
+            totalSeconds = Math.max(0, Math.floor(minutes * 60));
+        }
+        const hours = Math.floor(totalSeconds / 3600);
+        const remainingAfterHours = totalSeconds % 3600;
+        const mins = Math.floor(remainingAfterHours / 60);
+        const secs = remainingAfterHours % 60;
+        return `${hours}h ${mins}m ${secs}s`;
     };
 
     if (loading) {
         return (
             <>
                 <StudentNavbar />
-                <div className="flex justify-center items-center min-h-[80vh]">
+                <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
                     <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             </>
@@ -281,18 +362,20 @@ const StudentProgressDashboard = () => {
         return (
             <>
                 <StudentNavbar />
-                <div className="max-w-5xl mx-auto mt-8 mb-8 px-4">
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                        <strong className="font-bold">Error: </strong>
-                        <span className="block sm:inline">{error}</span>
-                        {error.includes('log in') && (
-                            <button
-                                onClick={() => window.location.href = '/login'}
-                                className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-                            >
-                                Go to Login
-                            </button>
-                        )}
+                <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+                    <div className="max-w-6xl mx-auto px-4 py-8">
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg" role="alert">
+                            <strong className="font-bold">Error: </strong>
+                            <span className="block sm:inline">{error}</span>
+                            {error.includes('log in') && (
+                                <button
+                                    onClick={() => window.location.href = '/login'}
+                                    className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                                >
+                                    Go to Login
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </>
@@ -320,7 +403,10 @@ const StudentProgressDashboard = () => {
 
                     {/* Statistics Cards with Enhanced Design */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                        <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-blue-500">
+                        <div 
+                            onClick={() => scrollToSection('completed-books')}
+                            className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-blue-500 cursor-pointer hover:shadow-2xl"
+                        >
                             <div className="bg-blue-100 rounded-full p-4 mb-4">
                                 <span className="text-3xl">✅</span>
                             </div>
@@ -328,7 +414,10 @@ const StudentProgressDashboard = () => {
                             <span className="text-5xl font-bold text-blue-600">{stats.completedCount}</span>
                             <div className="mt-2 text-sm text-gray-500">Great job!</div>
                         </div>
-                        <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-yellow-500">
+                        <div 
+                            onClick={() => scrollToSection('books-in-progress')}
+                            className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-yellow-500 cursor-pointer hover:shadow-2xl"
+                        >
                             <div className="bg-yellow-100 rounded-full p-4 mb-4">
                                 <span className="text-3xl">📖</span>
                             </div>
@@ -393,7 +482,7 @@ const StudentProgressDashboard = () => {
                     </div>
                 
                     {/* Books in Progress with Enhanced Design */}
-                    <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
+                    <div id="books-in-progress" className="bg-white rounded-2xl shadow-xl p-8 mb-12">
                         <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
                             📖 Books in Progress
                         </h2>
@@ -483,7 +572,7 @@ const StudentProgressDashboard = () => {
                     </div>
 
                     {/* Completed Books with Enhanced Design */}
-                    <div className="bg-white rounded-2xl shadow-xl p-8">
+                    <div id="completed-books" className="bg-white rounded-2xl shadow-xl p-8">
                         <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
                             ✅ Completed Books
                         </h2>

@@ -6,22 +6,43 @@ export const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || "";
 };
 
+// Get the direct backend URL for file uploads (bypasses proxy)
+export const getDirectBackendUrl = () => {
+  // Try using a different approach - use the same domain with different port
+  if (typeof window !== 'undefined' && window.location.hostname === 'readle-pi.vercel.app') {
+    // For production, we'll use a workaround
+    return "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+  }
+  return "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+};
+
 // Get the full image URL for uploaded images
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
-  
-  const apiBase = getApiBaseUrl();
-  
+
+  // If it's base64 data, return it directly
+  if (imagePath.startsWith('data:image/') || imagePath.startsWith('/9j/') || imagePath.startsWith('iVBOR')) {
+    return imagePath;
+  }
+
   // If imagePath already starts with http, return as is
   if (imagePath.startsWith('http')) {
     return imagePath;
   }
-  
+
+  // If it's a file path (starts with /uploads/), use Vercel proxy to avoid mixed content
+  if (imagePath.startsWith('/uploads/')) {
+    // Use relative URL to go through Vercel proxy
+    return imagePath;
+  }
+
+  const apiBase = getApiBaseUrl();
+
   // If we have an API base URL, prepend it
   if (apiBase) {
     return `${apiBase}${imagePath}`;
   }
-  
+
   // For Vercel proxy, use relative URL
   return imagePath;
 };
@@ -39,4 +60,11 @@ export const getApiUrl = (endpoint) => {
   
   // For Vercel proxy, use relative URL
   return `/${cleanEndpoint}`;
+};
+
+// Get the upload URL for file uploads (uses direct backend)
+export const getUploadUrl = (endpoint) => {
+  const directBackend = getDirectBackendUrl();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return `${directBackend}/${cleanEndpoint}`;
 };

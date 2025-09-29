@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/progress")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"}, allowCredentials = "true")
 public class StudentProgressTrackerController {
     private static final Logger logger = LoggerFactory.getLogger(StudentProgressTrackerController.class);
     private final StudentProgressTrackerService progressTrackerService;
@@ -38,8 +38,9 @@ public class StudentProgressTrackerController {
     public ResponseEntity<StudentProgressDTO> updateReadingProgress(
             @PathVariable Long trackerId,
             @RequestParam int pageNumber,
-            @RequestParam long readingTimeMinutes) {
-        Duration readingTime = Duration.ofMinutes(readingTimeMinutes);
+            @RequestParam(name = "readingTimeMinutes", defaultValue = "0") long readingTimeMinutes,
+            @RequestParam(name = "readingTimeSeconds", defaultValue = "0") long readingTimeSeconds) {
+        Duration readingTime = Duration.ofMinutes(readingTimeMinutes).plusSeconds(readingTimeSeconds);
         return ResponseEntity.ok(progressTrackerService.updateReadingProgress(trackerId, pageNumber, readingTime));
     }
 

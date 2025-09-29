@@ -3,6 +3,7 @@ import axios from "axios";
 import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BadgeManagement from "../../components/BadgeManagement";
+import { getApiUrl, getImageUrl } from "../../utils/apiConfig";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -119,18 +120,39 @@ const AdminDashboard = () => {
     if (!file) return null;
 
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
-      const response = await axios.post("/api/books/upload-image", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+      // Convert file to base64
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
 
-      return response.data;
+      // Send as JSON instead of FormData
+      const response = await fetch("/api/books/upload-image-base64", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          file: base64Data,
+          filename: file.name,
+          contentType: file.type,
+          uploadType: "bookcovers"
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
+      
+      // The backend now returns file URL (like your old SkillMatch app)
+      const fileUrl = await response.text();
+      return fileUrl;
     } catch (error) {
       console.error("Image upload failed:", error);
       throw error;
@@ -242,16 +264,37 @@ const AdminDashboard = () => {
   const uploadEditImage = async () => {
     if (!editImageFile) return null;
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("file", editImageFile);
+    
+    // Convert file to base64 (like other upload functions)
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+      reader.onerror = reject;
+      reader.readAsDataURL(editImageFile);
+    });
 
-    const res = await axios.post("/api/books/upload-image", formData, {
+    const requestData = {
+      file: base64Data,
+      filename: editImageFile.name,
+      contentType: editImageFile.type,
+      uploadType: "bookcovers"
+    };
+
+    const res = await fetch(getApiUrl("api/books/upload-image"), {
+      method: "POST",
       headers: {
-        "Content-Type": "multipart/form-data",
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify(requestData)
     });
-    return res.data;
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Upload failed: ${res.status} - ${errorText}`);
+    }
+
+    return await res.text();
   };
 
   const submitEdit = async () => {
@@ -706,6 +749,52 @@ const AdminDashboard = () => {
                 </div>
               )}
             </>
+          )}
+
+          {activeTab === "archived" && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                <BookOpen size={20} className="mr-2 text-blue-500" />
+                <span>Archived Books</span>
+              </h2>
+
+              {archivedBooks.length === 0 ? (
+                <p className="text-gray-500">No archived books.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {archivedBooks.map((book) => (
+                    <div
+                      key={book.bookID}
+                      className="bg-white rounded-lg shadow-lg overflow-hidden"
+                    >
+                      <div className="h-48 bg-gray-200 flex items-center justify-center">
+                        {book.imageURL ? (
+                          <img
+                            src={getImageUrl(book.imageURL)}
+                            alt={book.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-gray-500">No Image</span>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="text-lg font-bold text-[#3B82F6] truncate">
+                          {book.title}
+                        </h3>
+                        <p className="text-sm text-gray-600">by {book.author}</p>
+                        <button
+                          onClick={() => handleArchiveClick(book)}
+                          className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          Unarchive
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {activeTab === "badges" && <BadgeManagement />}

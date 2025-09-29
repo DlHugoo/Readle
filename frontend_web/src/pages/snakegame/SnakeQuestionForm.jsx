@@ -174,7 +174,7 @@ const handleSubmit = async (e) => {
     }));
 
     const promises = questionsToSubmit.map(q => 
-      axios.post('API_BASE_URL/api/snake-questions', q, { headers })
+      axios.post(getApiBaseUrl() + '/api/snake-questions', q, { headers })
     );
 
     await Promise.all(promises);
