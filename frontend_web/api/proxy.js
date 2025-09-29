@@ -20,9 +20,7 @@ export default async function handler(req, res) {
     console.log(`Proxying ${req.method} ${path} to ${targetUrl}`);
 
     // Prepare headers
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    const headers = {};
 
     // Add authorization header if present
     if (req.headers.authorization) {
@@ -43,26 +41,33 @@ export default async function handler(req, res) {
     // Forward the request to the backend
     const response = await fetch(targetUrl, requestOptions);
     
-    // Get response data
-    const contentType = response.headers.get('content-type');
-    let data;
-    
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = await response.text();
-    }
-    
-    // Forward the response with proper status and headers
+    // Set response status
     res.status(response.status);
     
     // Copy important headers from backend response
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
+    
     const authHeader = response.headers.get('authorization');
     if (authHeader) {
       res.setHeader('Authorization', authHeader);
     }
     
-    res.json(data);
+    // Handle different content types
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      res.json(data);
+    } else if (contentType && contentType.startsWith('image/')) {
+      // Handle image responses
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } else {
+      // Handle text responses
+      const data = await response.text();
+      res.send(data);
+    }
     
   } catch (error) {
     console.error('Proxy error:', error);
