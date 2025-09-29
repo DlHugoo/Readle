@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EC2 Backend Test</title>
+</head>
+<body>
+    <h1>EC2 Backend Connection Test</h1>
+    
+    <div>
+        <h2>Test 1: Direct EC2 Connection</h2>
+        <button onclick="testDirectEC2()">Test Direct EC2</button>
+        <div id="direct-result"></div>
+    </div>
+    
+    <div>
+        <h2>Test 2: Through Vercel Proxy</h2>
+        <button onclick="testVercelProxy()">Test Vercel Proxy</button>
+        <div id="proxy-result"></div>
+    </div>
+    
+    <div>
+        <h2>Test 3: Upload Endpoint</h2>
+        <button onclick="testUploadEndpoint()">Test Upload Endpoint</button>
+        <div id="upload-result"></div>
+    </div>
+    
+    <script>
+        async function testDirectEC2() {
+            try {
+                console.log('Testing direct EC2 connection...');
+                const response = await fetch('http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/health', {
+                    mode: 'cors'
+                });
+                const data = await response.text();
+                console.log('Direct EC2 response:', data);
+                document.getElementById('direct-result').innerHTML = 
+                    '<p style="color: green;">✅ Direct EC2 working: ' + data + '</p>';
+            } catch (error) {
+                console.error('Direct EC2 error:', error);
+                document.getElementById('direct-result').innerHTML = 
+                    '<p style="color: red;">❌ Direct EC2 error: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testVercelProxy() {
+            try {
+                console.log('Testing Vercel proxy...');
+                const response = await fetch('/api/books/health');
+                const data = await response.text();
+                console.log('Vercel proxy response:', data);
+                document.getElementById('proxy-result').innerHTML = 
+                    '<p style="color: green;">✅ Vercel proxy working: ' + data + '</p>';
+            } catch (error) {
+                console.error('Vercel proxy error:', error);
+                document.getElementById('proxy-result').innerHTML = 
+                    '<p style="color: red;">❌ Vercel proxy error: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testUploadEndpoint() {
+            try {
+                console.log('Testing upload endpoint...');
+                const response = await fetch('/api/books/upload-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file: 'test',
+                        filename: 'test.jpg',
+                        contentType: 'image/jpeg',
+                        uploadType: 'bookcovers'
+                    })
+                });
+                
+                console.log('Upload endpoint status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    document.getElementById('upload-result').innerHTML = 
+                        '<p style="color: green;">✅ Upload endpoint working: ' + data + '</p>';
+                } else {
+                    const error = await response.text();
+                    document.getElementById('upload-result').innerHTML = 
+                        '<p style="color: red;">❌ Upload endpoint error: ' + response.status + ' - ' + error + '</p>';
+                }
+            } catch (error) {
+                console.error('Upload endpoint error:', error);
+                document.getElementById('upload-result').innerHTML = 
+                    '<p style="color: red;">❌ Upload endpoint error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

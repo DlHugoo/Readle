@@ -183,9 +183,20 @@ public class BookController {
         }
     }
 
+    // 🔹 Test endpoint to check if backend is reachable
+    @GetMapping("/health")
+    public ResponseEntity<String> test() {
+        System.out.println("=== TEST ENDPOINT CALLED ===");
+        return ResponseEntity.ok("Backend is working!");
+    }
+
     // 🔹 Upload book cover image (base64) - Convert to file and store like your old SkillMatch app
     @PostMapping(value = "/upload-image", consumes = "application/json")
     public ResponseEntity<String> uploadImageBase64(@RequestBody Map<String, Object> request) {
+        System.out.println("=== UPLOAD ENDPOINT CALLED ===");
+        System.out.println("Request body type: " + (request != null ? request.getClass().getName() : "NULL"));
+        System.out.println("Request body: " + request);
+        
         try {
             System.out.println("=== UPLOAD DEBUG START ===");
             System.out.println("Request received: " + request);

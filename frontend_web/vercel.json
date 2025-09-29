@@ -2,9 +2,16 @@
   "functions": {
     "api/proxy.js": {
       "maxDuration": 30
+    },
+    "api/test.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
+    {
+      "source": "/api/test",
+      "destination": "/api/test"
+    },
     {
       "source": "/api/:path*",
       "destination": "/api/proxy"
