@@ -41,7 +41,7 @@ const JoinClassroomModal = ({ onClose }) => {
 
     try {
       const response = await fetch(
-        `/api/classrooms/join?studentId=${studentId}&classroomCode=${classroomCode}`,
+        `${getApiBaseUrl()}/api/classrooms/join?studentId=${studentId}&classroomCode=${classroomCode}`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
