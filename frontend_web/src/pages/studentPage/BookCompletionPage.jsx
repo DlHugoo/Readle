@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import Confetti from "react-confetti";
 import axios from "axios";
-import { getImageUrl } from "../../utils/apiConfig";
+import { getImageUrl, getApiBaseUrl } from "../../utils/apiConfig";
 
+const API_BASE_URL = getApiBaseUrl();
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
     return getImageUrl(url);
@@ -26,7 +27,7 @@ const BookCompletionPage = () => {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const res = await fetch(`/api/books/${bookId}`);
+        const res = await fetch(`${API_BASE_URL}/api/books/${bookId}`);
         const data = await res.json();
         if (data) setBook(data);
       } catch (err) {
@@ -38,9 +39,7 @@ const BookCompletionPage = () => {
       try {
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
-        
-        // Check for SSA
-        const ssaRes = await fetch(`/api/ssa/by-book/${bookId}`, { headers });
+        const ssaRes = await fetch(`${API_BASE_URL}/api/ssa/by-book/${bookId}`, { headers });
         const ssaData = await ssaRes.json();
         setHasSSA(!!ssaData);
       } catch (err) {
@@ -50,9 +49,7 @@ const BookCompletionPage = () => {
       try {
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
-        
-        // Check for Snake Game
-        const snakeRes = await fetch(`/api/snake-questions/book/${bookId}`, { headers });
+        const snakeRes = await fetch(`${API_BASE_URL}/api/snake-questions/book/${bookId}`, { headers });
         const snakeData = await snakeRes.json();
         setHasSnakeGame(!!snakeData && snakeData.length > 0);
       } catch (err) {
@@ -74,17 +71,15 @@ const BookCompletionPage = () => {
         setIsCompleting(true);
         setCompletionError(null);
 
-        // First get the tracker ID for this user and book
         const progressRes = await fetch(
-          `/api/progress/book/${userId}/${bookId}`,
+          `${API_BASE_URL}/api/progress/book/${userId}/${bookId}`,
           { headers }
         );
         const progressData = await progressRes.json();
 
         if (progressData?.id) {
-          // Now complete the book using the tracker ID
           await fetch(
-            `/api/progress/complete/${progressData.id}`,
+            `${API_BASE_URL}/api/progress/complete/${progressData.id}`,
             {
               method: 'PUT',
               headers: { ...headers, 'Content-Type': 'application/json' },
@@ -109,7 +104,7 @@ const BookCompletionPage = () => {
 
     fetchBook();
     checkActivities();
-    completeBook(); // Automatically complete the book when page loads
+    completeBook();
   }, [bookId]);
 
   useEffect(() => {

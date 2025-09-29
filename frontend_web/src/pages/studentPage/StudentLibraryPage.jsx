@@ -119,7 +119,7 @@ const StudentLibraryPage = () => {
           return;
         }
 
-        const response = await axios.get("/api/books/for-you", {
+        const response = await axios.get(`${getApiBaseUrl()}/api/books/for-you`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -156,7 +156,7 @@ const StudentLibraryPage = () => {
 
         const headers = { Authorization: `Bearer ${token}` };
         const response = await axios.get(
-          `/api/progress/in-progress/${userId}`,
+          `${getApiBaseUrl()}/api/progress/in-progress/${userId}`,
           { headers }
         );
 
