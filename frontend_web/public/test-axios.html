@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Axios vs Fetch</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test Axios vs Fetch</h1>
+    
+    <div>
+        <h2>Test 1: Using Axios (like main app)</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="testAxiosUpload()">Test Axios Upload</button>
+        <div id="axios-result"></div>
+    </div>
+    
+    <div>
+        <h2>Test 2: Using Fetch (like debug test)</h2>
+        <button onclick="testFetchUpload()">Test Fetch Upload</button>
+        <div id="fetch-result"></div>
+    </div>
+    
+    <script>
+        async function testAxiosUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            try {
+                console.log('=== AXIOS UPLOAD TEST START ===');
+                
+                // Convert to base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                const requestData = {
+                    file: base64Data,
+                    filename: file.name,
+                    contentType: file.type,
+                    uploadType: "bookcontent"
+                };
+                
+                console.log('Sending axios request...');
+                const response = await axios.post('/api/books/upload-image', requestData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+                });
+                
+                console.log('Axios response:', response.data);
+                document.getElementById('axios-result').innerHTML = 
+                    '<p style="color: green;">✅ Axios upload successful: ' + response.data + '</p>';
+                    
+            } catch (error) {
+                console.error('Axios error:', error);
+                document.getElementById('axios-result').innerHTML = 
+                    '<p style="color: red;">❌ Axios upload failed: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testFetchUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            try {
+                console.log('=== FETCH UPLOAD TEST START ===');
+                
+                // Convert to base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                const response = await fetch('/api/books/upload-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({
+                        file: base64Data,
+                        filename: file.name,
+                        contentType: file.type,
+                        uploadType: 'bookcontent'
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    console.log('Fetch response:', result);
+                    document.getElementById('fetch-result').innerHTML = 
+                        '<p style="color: green;">✅ Fetch upload successful: ' + result + '</p>';
+                } else {
+                    const error = await response.text();
+                    document.getElementById('fetch-result').innerHTML = 
+                        '<p style="color: red;">❌ Fetch upload failed: ' + response.status + ' - ' + error + '</p>';
+                }
+                
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('fetch-result').innerHTML = 
+                    '<p style="color: red;">❌ Fetch upload error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
