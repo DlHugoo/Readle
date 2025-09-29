@@ -36,6 +36,8 @@ const BookPage = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState(null);
   const [trackerId, setTrackerId] = useState(null);
+  const fetchedProgressRef = useRef(false);
+  const creatingTrackerRef = useRef(false);
 
   // Immersive reading state
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -47,6 +49,10 @@ const BookPage = () => {
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
   const contentRef = useRef(null);
+  // Stopwatch-like reading timer (seconds)
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const timerRef = useRef(null);
+  const isTimerRunningRef = useRef(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -63,8 +69,8 @@ const BookPage = () => {
   useEffect(() => {
     const loadBookAndPages = async () => {
       try {
-        const bookRes = await fetch(`/api/books/${bookId}`);
-        const pagesRes = await fetch(`/api/pages/${bookId}`);
+        const bookRes = await fetch(getApiUrl(`api/books/${bookId}`));
+        const pagesRes = await fetch(getApiUrl(`api/pages/${bookId}`));
         const bookData = await bookRes.json();
         const pagesData = (await pagesRes.json()).sort(
           (a, b) => a.pageNumber - b.pageNumber
@@ -148,6 +154,10 @@ const BookPage = () => {
       `Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`
     );
 
+    // Guard against duplicate fetch/creation in React StrictMode
+    if (fetchedProgressRef.current) return;
+    fetchedProgressRef.current = true;
+
     // First try to get existing progress
     axios
       .get(
@@ -170,11 +180,13 @@ const BookPage = () => {
         }
       })
       .catch((err) => {
-        // If no progress exists (404), create a new one
+        // If no progress exists (404), create a new one (only once)
         if (
           err.response &&
           (err.response.status === 404 || err.response.status === 400)
         ) {
+          if (creatingTrackerRef.current || trackerId) return;
+          creatingTrackerRef.current = true;
           console.log("No existing progress found, creating new tracker");
           axios
             .post(
@@ -196,6 +208,9 @@ const BookPage = () => {
                 "Error creating progress tracker:",
                 createErr.response ? createErr.response.data : createErr.message
               );
+            })
+            .finally(() => {
+              creatingTrackerRef.current = false;
             });
         } else {
           console.error(
@@ -206,20 +221,113 @@ const BookPage = () => {
       });
   }, [book, pages]);
 
+  // Start/stop/pause reading stopwatch based on visibility and route
+  useEffect(() => {
+    const startTimer = () => {
+      if (isTimerRunningRef.current) return;
+      isTimerRunningRef.current = true;
+      timerRef.current = setInterval(() => {
+        setSessionSeconds((prev) => prev + 1);
+      }, 1000);
+    };
+
+    const stopTimer = () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      isTimerRunningRef.current = false;
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopTimer();
+      } else {
+        startTimer();
+      }
+    };
+
+    // Start on mount (entering book reading page)
+    startTimer();
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', stopTimer);
+    window.addEventListener('focus', startTimer);
+
+    return () => {
+      // On leaving the book page, stop timer & flush remaining seconds
+      const remaining = sessionSeconds % 60;
+      stopTimer();
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', stopTimer);
+      window.removeEventListener('focus', startTimer);
+      if (trackerId && remaining > 0) {
+        const token = localStorage.getItem('token');
+        const headers = { Authorization: `Bearer ${token}` };
+        axios.put(
+          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeSeconds=${remaining}`),
+          {},
+          { headers }
+        ).catch(() => {});
+        // Also credit badge progress for leftover seconds (round up to 1 minute)
+        const storedUserId = localStorage.getItem('userId');
+        const minutesFromRemainder = Math.ceil(remaining / 60);
+        if (storedUserId && minutesFromRemainder > 0) {
+          axios
+            .post(
+              getApiUrl(`api/badges/user/${storedUserId}/reading-time?minutes=${minutesFromRemainder}`),
+              {},
+              { headers }
+            )
+            .catch(() => {});
+        }
+      }
+    };
+  }, [trackerId, currentPageIndex, sessionSeconds]);
+
+  // Periodically sync accumulated reading time to backend (every 60s) and badges
+  useEffect(() => {
+    if (!trackerId) return;
+    if (sessionSeconds <= 0) return;
+
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // When sessionSeconds is a multiple of 60, push 1 minute to the backend
+    if (sessionSeconds % 60 === 0) {
+      const minutesToAdd = 1;
+      axios
+        .put(
+          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeMinutes=${minutesToAdd}`),
+          {},
+          { headers }
+        )
+        .catch((err) => console.error('Error syncing reading time minute:', err));
+
+      // Track reading time badge progress (accumulate)
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId) {
+        axios
+          .post(
+            getApiUrl(`api/badges/user/${storedUserId}/reading-time?minutes=${minutesToAdd}`),
+            {},
+            { headers }
+          )
+          .catch(() => {});
+      }
+    }
+  }, [sessionSeconds, trackerId, currentPageIndex]);
+
+  // Keep page bookmark updated without adding phantom time
   useEffect(() => {
     if (trackerId && pages.length > 0) {
       const token = localStorage.getItem("token");
       axios
         .put(
-          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${
-            currentPageIndex + 1
-          }&readingTimeMinutes=1`),
+          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}`),
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         )
-        .catch((err) =>
-          console.error("Error updating book progress on first load:", err)
-        );
+        .catch(() => {});
     }
   }, [trackerId, pages.length, currentPageIndex]);
 
@@ -273,20 +381,14 @@ const BookPage = () => {
       const nextIndex = currentPageIndex + 1;
       setCurrentPageIndex(nextIndex);
 
-      // Finally, update reading progress if we have a tracker
+      // Finally, update reading progress if we have a tracker (bookmark only)
       if (trackerId) {
         try {
-          await fetch(
+          await axios.put(
             getApiUrl(`api/progress/update/${trackerId}` +
-              `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`),
-            {
-              method: 'PUT',
-              headers: { 
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({})
-            }
+              `?pageNumber=${nextIndex + 1}`),
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
           );
         } catch (updateErr) {
           console.error("Error updating progress:", updateErr);
@@ -301,6 +403,39 @@ const BookPage = () => {
     }
   };
 
+  // On clicking Finish Reading (navigating to completion), stop timer immediately
+  const handleFinishReading = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      isTimerRunningRef.current = false;
+    }
+    // Flush remaining seconds
+    const remaining = sessionSeconds % 60;
+    if (trackerId && remaining > 0) {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      axios.put(
+        getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeSeconds=${remaining}`),
+        {},
+        { headers }
+      ).catch(() => {});
+      // Credit badge progress for leftover seconds (round up to 1 minute)
+      const storedUserId = localStorage.getItem('userId');
+      const minutesFromRemainder = Math.ceil(remaining / 60);
+      if (storedUserId && minutesFromRemainder > 0) {
+        axios
+          .post(
+            getApiUrl(`api/badges/user/${storedUserId}/reading-time?minutes=${minutesFromRemainder}`),
+            {},
+            { headers }
+          )
+          .catch(() => {});
+      }
+    }
+    navigate(`/book/${bookId}/complete`);
+  };
+
   const handlePreviousPage = () => {
     if (isPageTransitioning) return;
 
@@ -312,7 +447,7 @@ const BookPage = () => {
         const pageNumber = prevIndex + 1;
         axios
           .put(
-            getApiUrl(`api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`),
+            getApiUrl(`api/progress/update/${trackerId}?pageNumber=${pageNumber}`),
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )
@@ -764,7 +899,7 @@ const BookPage = () => {
         <div className="flex gap-4">
           {currentPageIndex === pages.length - 1 && (
             <motion.button
-              onClick={() => navigate(`/book/${bookId}/complete`)}
+              onClick={handleFinishReading}
               className="mt-4 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-full shadow-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
