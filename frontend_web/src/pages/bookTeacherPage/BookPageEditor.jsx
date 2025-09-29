@@ -352,7 +352,10 @@ const BookPageEditor = ({ role = "teacher" }) => {
             },
           });
 
-          imageUrl = imageResponse.data; // Get the image URL from response data
+          // The backend now returns base64 data directly (like your old app)
+          // Convert it to a data URL for display
+          const base64Response = imageResponse.data;
+          imageUrl = `data:${pageImage.type};base64,${base64Response}`;
         } catch (error) {
           // Handle image upload errors
           console.error("Error uploading image:", error);
