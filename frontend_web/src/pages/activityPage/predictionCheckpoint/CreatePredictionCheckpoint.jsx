@@ -107,7 +107,13 @@ const CreatePredictionCheckpoint = () => {
       fetch(`/api/prediction-checkpoints/by-book/${selectedBookId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-        .then(res => res.json())
+        .then(res => {
+          // Handle 400 response (no checkpoint found)
+          if (res.status === 400) {
+            return null; // No existing checkpoint
+          }
+          return res.json();
+        })
         .then((data) => {
           if (data) {
             setExistingCheckpoint(data);

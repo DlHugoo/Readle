@@ -239,6 +239,13 @@ const BookPage = () => {
           getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        
+        // Handle 400 response (no checkpoint found)
+        if (checkpointRes.status === 400) {
+          // No checkpoint exists for this book, continue normally
+          return;
+        }
+        
         const checkpoint = await checkpointRes.json();
 
         // 2) If this checkpoint lives on the *next* page…
