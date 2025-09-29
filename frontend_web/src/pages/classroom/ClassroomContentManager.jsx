@@ -183,7 +183,7 @@ const ClassroomContentManager = () => {
   const token = localStorage.getItem("token"); // Ensure token is retrieved
 
   try {
-    const response = await axios.post("/api/books/upload-image", formData, {
+    const response = await axios.post("http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/upload-image", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${token}`, // Include token in headers
