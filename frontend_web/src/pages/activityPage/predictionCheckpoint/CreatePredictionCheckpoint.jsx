@@ -288,7 +288,7 @@ const CreatePredictionCheckpoint = () => {
         };
 
         const response = await fetch(
-          getApiUrl("api/books/upload-image"),
+          "/api/books/upload-image-base64",
           {
             method: "POST",
             headers: {
