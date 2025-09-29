@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication Test</title>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    
+    <div>
+        <h2>Current Authentication Status</h2>
+        <div id="auth-status"></div>
+        <button onclick="checkAuth()">Check Authentication</button>
+    </div>
+    
+    <div>
+        <h2>Login Test</h2>
+        <input type="email" id="email" placeholder="Email" value="test@example.com">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="testLogin()">Test Login</button>
+        <div id="login-result"></div>
+    </div>
+    
+    <div>
+        <h2>Upload Test (with auth)</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="testUploadWithAuth()">Test Upload with Auth</button>
+        <div id="upload-result"></div>
+    </div>
+    
+    <script>
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            const role = localStorage.getItem('role');
+            
+            document.getElementById('auth-status').innerHTML = `
+                <p><strong>Token:</strong> ${token ? 'Present (' + token.substring(0, 20) + '...)' : 'Missing'}</p>
+                <p><strong>User ID:</strong> ${userId || 'Missing'}</p>
+                <p><strong>Role:</strong> ${role || 'Missing'}</p>
+            `;
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userId', data.userId);
+                    localStorage.setItem('role', data.role);
+                    
+                    document.getElementById('login-result').innerHTML = 
+                        '<p style="color: green;">✅ Login successful!</p>';
+                    checkAuth();
+                } else {
+                    const error = await response.text();
+                    document.getElementById('login-result').innerHTML = 
+                        '<p style="color: red;">❌ Login failed: ' + error + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('login-result').innerHTML = 
+                    '<p style="color: red;">❌ Login error: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testUploadWithAuth() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                document.getElementById('upload-result').innerHTML = 
+                    '<p style="color: red;">❌ Please login first!</p>';
+                return;
+            }
+            
+            try {
+                console.log('Testing upload with authentication...');
+                
+                // Convert to base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                const response = await fetch('/api/books/upload-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        file: base64Data,
+                        filename: file.name,
+                        contentType: file.type,
+                        uploadType: 'bookcovers'
+                    })
+                });
+                
+                console.log('Upload response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    document.getElementById('upload-result').innerHTML = 
+                        '<p style="color: green;">✅ Upload successful: ' + result + '</p>';
+                } else {
+                    const error = await response.text();
+                    document.getElementById('upload-result').innerHTML = 
+                        '<p style="color: red;">❌ Upload failed: ' + response.status + ' - ' + error + '</p>';
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                document.getElementById('upload-result').innerHTML = 
+                    '<p style="color: red;">❌ Upload error: ' + error.message + '</p>';
+            }
+        }
+        
+        // Check auth on page load
+        checkAuth();
+    </script>
+</body>
+</html>
