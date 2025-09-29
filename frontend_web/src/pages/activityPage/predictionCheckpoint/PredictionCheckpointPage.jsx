@@ -50,13 +50,14 @@ const PredictionCheckpointPage = () => {
           }
         );
         
-        // Handle 400 response (no checkpoint found)
-        if (res.status === 400) {
+        // Handle 404 response (no checkpoint found)
+        if (res.status === 404) {
           console.log("No prediction checkpoint found for this book");
           return;
         }
         
         const data = await res.json();
+        console.log("Prediction checkpoint data received:", data);
 
         const {
           title,

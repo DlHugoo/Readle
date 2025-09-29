@@ -239,24 +239,71 @@ const BookPage = () => {
           getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        
+        // Handle 404 response (no checkpoint found)
+        if (checkpointRes.status === 404) {
+          // No checkpoint for this book, continue with normal page navigation
+          const nextIndex = currentPageIndex + 1;
+          setCurrentPageIndex(nextIndex);
+          
+          // Update reading progress if we have a tracker
+          if (trackerId) {
+            try {
+              await fetch(
+                getApiUrl(`api/progress/update/${trackerId}` +
+                  `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`),
+                {
+                  method: 'PUT',
+                  headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({})
+                }
+              );
+            } catch (updateErr) {
+              console.error("Error updating progress:", updateErr);
+            }
+          }
+          
+          // Reset transition state after animation
+          setTimeout(() => setIsPageTransitioning(false), 500);
+          return;
+        }
+        
         const checkpoint = await checkpointRes.json();
+        console.log("Prediction checkpoint found:", checkpoint);
+        console.log("Current page index:", currentPageIndex);
+        console.log("Checkpoint page number:", checkpoint.pageNumber);
 
         // 2) If this checkpoint lives on the *next* page…
         if (checkpoint.pageNumber === currentPageIndex + 1) {
           const checkpointId = checkpoint.id;
 
           // 3) Ask how many times the user has tried this checkpoint
+          console.log("Checking attempt count for user:", userId, "checkpoint:", checkpointId);
           const attemptRes = await fetch(
             getApiUrl(`api/prediction-checkpoint-attempts/user/${userId}` +
               `/checkpoint/${checkpointId}/count`),
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          const attemptCount = await attemptRes.json();
+          console.log("Attempt count response status:", attemptRes.status);
+          
+          if (!attemptRes.ok) {
+            console.error("Error fetching attempt count:", attemptRes.status, attemptRes.statusText);
+            // Continue with normal navigation if we can't get attempt count
+          } else {
+            const attemptCount = await attemptRes.json();
+            console.log("Attempt count for checkpoint:", attemptCount);
 
-          // 4) Only redirect into the prediction if they've never attempted yet
-          if (attemptCount === 0) {
-            navigate(`/prediction/${bookId}`);
-            return;
+            // 4) Only redirect into the prediction if they've never attempted yet
+            if (attemptCount === 0) {
+              console.log("Redirecting to prediction page");
+              navigate(`/prediction/${bookId}`);
+              return;
+            } else {
+              console.log("User has already attempted this checkpoint, continuing with normal navigation");
+            }
           }
           // Otherwise fall through and advance normally
         }

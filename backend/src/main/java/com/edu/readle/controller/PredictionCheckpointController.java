@@ -58,7 +58,7 @@ public class PredictionCheckpointController {
 
             return ResponseEntity.ok(response);
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.badRequest().body("No checkpoint found for book " + bookId);
+            return ResponseEntity.notFound().build();
         }
     }
 
