@@ -191,7 +191,7 @@ public class BookController {
     }
 
     // 🔹 Upload book cover image (base64) - Convert to file and store like your old SkillMatch app
-    @PostMapping(value = "/upload-image", consumes = "application/json")
+    @PostMapping(value = "/upload-image-base64", consumes = "application/json")
     public ResponseEntity<String> uploadImageBase64(@RequestBody Map<String, Object> request) {
         System.out.println("=== UPLOAD ENDPOINT CALLED ===");
         System.out.println("Request body type: " + (request != null ? request.getClass().getName() : "NULL"));

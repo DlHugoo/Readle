@@ -157,7 +157,7 @@ const BadgeManagement = () => {
     };
 
     try {
-      const response = await fetch("/api/books/upload-image", {
+      const response = await fetch("/api/books/upload-image-base64", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

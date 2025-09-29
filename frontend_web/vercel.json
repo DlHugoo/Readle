@@ -45,6 +45,10 @@
       "destination": "/test-upload.html"
     },
     {
+      "source": "/test-ssa-upload.html",
+      "destination": "/test-ssa-upload.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
