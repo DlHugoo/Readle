@@ -330,24 +330,27 @@ const BookPageEditor = ({ role = "teacher" }) => {
       // First upload image if there is a new one
       let imageUrl = currentPage.imageUrl || currentPage.imageURL; // Handle both property names
       if (pageImage) {
-        const formData = new FormData();
-        formData.append("file", pageImage);
-
-        // Add a parameter to specify the upload directory should be bookcontent
-        formData.append("uploadType", "bookcontent");
-
         try {
-          // Use the correct image upload endpoint with actual bookId
-          const imageResponse = await axios.post(
-            `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/upload-image`,
-            formData,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
+          // Convert file to base64
+          const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+            reader.onerror = reject;
+            reader.readAsDataURL(pageImage);
+          });
+
+          // Send as JSON instead of FormData
+          const imageResponse = await axios.post("/api/books/upload-image", {
+            file: base64Data,
+            filename: pageImage.name,
+            contentType: pageImage.type,
+            uploadType: "bookcontent"
+          }, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
           imageUrl = imageResponse.data; // Get the image URL from response data
         } catch (error) {

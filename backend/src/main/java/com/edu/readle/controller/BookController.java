@@ -16,9 +16,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.Base64;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"})
 @RequestMapping("/api/books")
 public class BookController {
 
@@ -139,7 +141,7 @@ public class BookController {
         return ResponseEntity.ok().build();
     }
 
-    // 🔹 Upload book cover image
+    // 🔹 Upload book cover image (multipart)
     @PostMapping("/upload-image")
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file,
             @RequestParam(value = "uploadType", defaultValue = "bookcovers") String uploadType)
@@ -178,6 +180,56 @@ public class BookController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
+    // 🔹 Upload book cover image (base64)
+    @PostMapping(value = "/upload-image", consumes = "application/json")
+    public ResponseEntity<String> uploadImageBase64(@RequestBody Map<String, Object> request) {
+        try {
+            String base64Data = (String) request.get("file");
+            String filename = (String) request.get("filename");
+            String contentType = (String) request.get("contentType");
+            String uploadType = (String) request.getOrDefault("uploadType", "bookcovers");
+
+            if (base64Data == null || base64Data.isEmpty()) {
+                return ResponseEntity.badRequest().body("Base64 data is empty");
+            }
+
+            if (filename == null || filename.isEmpty()) {
+                return ResponseEntity.badRequest().body("Filename is required");
+            }
+
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest().body("Only image files are allowed");
+            }
+
+            // Decode base64 data
+            byte[] fileBytes = Base64.getDecoder().decode(base64Data);
+            
+            // Check file size
+            if (fileBytes.length > MAX_FILE_SIZE) {
+                return ResponseEntity.badRequest().body("File size exceeds the limit of 5MB");
+            }
+
+            String uploadDir = "uploads/" + uploadType + "/";
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String fileName = System.currentTimeMillis() + "_" + filename;
+            Path filePath = Paths.get(uploadDir + fileName);
+            Files.write(filePath, fileBytes);
+
+            String fileUrl = "/uploads/" + uploadType + "/" + fileName;
+            return ResponseEntity.ok(fileUrl);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid base64 data: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to upload image: " + e.getMessage());
         }
     }
 
