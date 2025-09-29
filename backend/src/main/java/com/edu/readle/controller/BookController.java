@@ -234,6 +234,7 @@ public class BookController {
             // Convert base64 to file and save to filesystem (like your old SkillMatch app)
             String uploadDir = "uploads/" + uploadType + "/";
             System.out.println("Upload directory: " + uploadDir);
+            System.out.println("Upload type from request: " + uploadType);
             
             File directory = new File(uploadDir);
             if (!directory.exists()) {
@@ -249,12 +250,20 @@ public class BookController {
             
             // Decode base64 and write to file
             System.out.println("Decoding base64 data...");
-            byte[] fileBytes = Base64.getDecoder().decode(base64Data);
-            System.out.println("Decoded bytes length: " + fileBytes.length);
-            
-            System.out.println("Writing file...");
-            Files.write(filePath, fileBytes);
-            System.out.println("File written successfully");
+            try {
+                byte[] fileBytes = Base64.getDecoder().decode(base64Data);
+                System.out.println("Decoded bytes length: " + fileBytes.length);
+                
+                System.out.println("Writing file...");
+                Files.write(filePath, fileBytes);
+                System.out.println("File written successfully");
+            } catch (IllegalArgumentException e) {
+                System.out.println("ERROR: Invalid base64 data: " + e.getMessage());
+                throw new IllegalArgumentException("Invalid base64 data: " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("ERROR: File write failed: " + e.getMessage());
+                throw new RuntimeException("File write failed: " + e.getMessage());
+            }
 
             // Return web-accessible path like your old app
             String fileUrl = "/uploads/" + uploadType + "/" + uniqueFileName;

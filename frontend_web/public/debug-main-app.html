@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Main App Upload</title>
+</head>
+<body>
+    <h1>Debug Main App Upload</h1>
+    
+    <div>
+        <h2>Test 1: Exact Main App Request</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="testMainAppUpload()">Test Main App Upload</button>
+        <div id="main-app-result"></div>
+    </div>
+    
+    <div>
+        <h2>Test 2: Compare with Working Test</h2>
+        <button onclick="testWorkingUpload()">Test Working Upload</button>
+        <div id="working-result"></div>
+    </div>
+    
+    <div>
+        <h2>Test 3: Check Backend Logs</h2>
+        <button onclick="testBackendLogs()">Test Backend Logs</button>
+        <div id="logs-result"></div>
+    </div>
+    
+    <script>
+        async function testMainAppUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            try {
+                console.log('=== MAIN APP UPLOAD DEBUG START ===');
+                console.log('File details:', {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                });
+
+                // Convert to base64 (exactly like main app)
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const result = reader.result.split(',')[1]; // Remove data: prefix
+                        console.log('Base64 data length:', result.length);
+                        resolve(result);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                const requestData = {
+                    file: base64Data,
+                    filename: file.name,
+                    contentType: file.type,
+                    uploadType: "bookcontent" // Same as main app
+                };
+
+                console.log('Request data:', {
+                    filename: requestData.filename,
+                    contentType: requestData.contentType,
+                    uploadType: requestData.uploadType,
+                    base64Length: requestData.file.length
+                });
+
+                // Send request (exactly like main app)
+                console.log('Sending request to /api/books/upload-image');
+                const response = await fetch('/api/books/upload-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('Response received:', {
+                    status: response.status,
+                    ok: response.ok,
+                    statusText: response.statusText
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    console.log('Upload success:', result);
+                    document.getElementById('main-app-result').innerHTML = 
+                        '<p style="color: green;">✅ Main app upload successful: ' + result + '</p>';
+                } else {
+                    const error = await response.text();
+                    console.error('Main app upload failed:', error);
+                    document.getElementById('main-app-result').innerHTML = 
+                        '<p style="color: red;">❌ Main app upload failed: ' + response.status + ' - ' + error + '</p>';
+                }
+                
+            } catch (error) {
+                console.error('=== MAIN APP UPLOAD ERROR ===');
+                console.error('Error details:', {
+                    message: error.message,
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data
+                });
+                console.error('Full error:', error);
+                console.error('=== MAIN APP UPLOAD ERROR END ===');
+                
+                document.getElementById('main-app-result').innerHTML = 
+                    '<p style="color: red;">❌ Main app upload error: ' + error.message + '</p>';
+            }
+            
+            console.log('=== MAIN APP UPLOAD DEBUG END ===');
+        }
+        
+        async function testWorkingUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            try {
+                // Convert to base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                const response = await fetch('/api/books/upload-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({
+                        file: base64Data,
+                        filename: file.name,
+                        contentType: file.type,
+                        uploadType: 'bookcovers' // Different from main app
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    document.getElementById('working-result').innerHTML = 
+                        '<p style="color: green;">✅ Working upload successful: ' + result + '</p>';
+                } else {
+                    const error = await response.text();
+                    document.getElementById('working-result').innerHTML = 
+                        '<p style="color: red;">❌ Working upload failed: ' + response.status + ' - ' + error + '</p>';
+                }
+                
+            } catch (error) {
+                document.getElementById('working-result').innerHTML = 
+                    '<p style="color: red;">❌ Working upload error: ' + error.message + '</p>';
+            }
+        }
+        
+        async function testBackendLogs() {
+            try {
+                // Test the health endpoint to see if backend is receiving requests
+                const response = await fetch('/api/books/health');
+                const data = await response.text();
+                document.getElementById('logs-result').innerHTML = 
+                    '<p style="color: green;">✅ Backend reachable: ' + data + '</p>';
+            } catch (error) {
+                document.getElementById('logs-result').innerHTML = 
+                    '<p style="color: red;">❌ Backend not reachable: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
