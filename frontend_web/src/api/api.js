@@ -2,9 +2,9 @@
 import axios from "axios";
 
 // Use environment variable for API base URL
-// For production: set VITE_API_BASE_URL=http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000
+// For production: empty string uses Vercel proxy (HTTPS to HTTPS)
 // For local dev: set VITE_API_BASE_URL=http://localhost:3000
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+const BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // ---- token helpers ----
 export const getToken = () => localStorage.getItem("token");

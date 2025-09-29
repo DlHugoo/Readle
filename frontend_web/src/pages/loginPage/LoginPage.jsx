@@ -5,7 +5,9 @@ import { login as apiLogin } from "../../api/api";
 import mascot from "../../assets/mascot.png";
 
 // Use environment variable for API base URL
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+// For production: empty string uses Vercel proxy (HTTPS to HTTPS)
+// For local dev: set VITE_API_BASE_URL=http://localhost:3000
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -82,7 +84,8 @@ const LoginPage = () => {
 
   // Microsoft login
   const handleMicrosoftLogin = () => {
-    window.location.href = `${API_BASE}/auth/microsoft/start`;
+    const authUrl = API_BASE ? `${API_BASE}/auth/microsoft/start` : "/auth/microsoft/start";
+    window.location.href = authUrl;
   };
 
   return (
