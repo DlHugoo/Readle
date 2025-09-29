@@ -201,7 +201,10 @@ const ClassroomContentManager = () => {
       },
     });
     
-    return response.data;
+    // The backend now returns base64 data directly (like your old app)
+    // Convert it to a data URL for display
+    const base64Response = response.data;
+    return `data:${file.type};base64,${base64Response}`;
   } catch (error) {
     console.error("Error uploading image:", error);
     throw error;

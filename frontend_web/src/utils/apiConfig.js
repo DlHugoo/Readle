@@ -19,19 +19,24 @@ export const getDirectBackendUrl = () => {
 // Get the full image URL for uploaded images
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
-  
+
+  // If it's base64 data, return it directly (like your old app)
+  if (imagePath.startsWith('data:image/') || imagePath.startsWith('/9j/') || imagePath.startsWith('iVBOR')) {
+    return imagePath;
+  }
+
   const apiBase = getApiBaseUrl();
-  
+
   // If imagePath already starts with http, return as is
   if (imagePath.startsWith('http')) {
     return imagePath;
   }
-  
+
   // If we have an API base URL, prepend it
   if (apiBase) {
     return `${apiBase}${imagePath}`;
   }
-  
+
   // For Vercel proxy, use relative URL
   return imagePath;
 };

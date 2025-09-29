@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Base64 Upload</title>
+</head>
+<body>
+    <h1>Test Base64 Upload (Like Your Old App)</h1>
+    
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="testUpload()">Test Upload</button>
+    
+    <div id="result"></div>
+    <img id="preview" style="max-width: 300px; margin-top: 20px;">
+    
+    <script>
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            try {
+                // Convert to base64 (like your old app)
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                // Send to backend (like your old app)
+                const response = await fetch('/api/books/upload-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({
+                        file: base64Data,
+                        filename: file.name,
+                        contentType: file.type,
+                        uploadType: 'bookcovers'
+                    })
+                });
+                
+                if (response.ok) {
+                    const base64Response = await response.text();
+                    
+                    // Display the result (like your old app)
+                    document.getElementById('result').innerHTML = 
+                        '<p style="color: green;">✅ Upload successful!</p>' +
+                        '<p>Base64 length: ' + base64Response.length + '</p>';
+                    
+                    // Show preview (like your old app)
+                    document.getElementById('preview').src = `data:${file.type};base64,${base64Response}`;
+                } else {
+                    const error = await response.text();
+                    document.getElementById('result').innerHTML = 
+                        '<p style="color: red;">❌ Upload failed: ' + error + '</p>';
+                }
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

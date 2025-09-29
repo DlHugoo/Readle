@@ -183,7 +183,7 @@ public class BookController {
         }
     }
 
-    // 🔹 Upload book cover image (base64)
+    // 🔹 Upload book cover image (base64) - Store directly as base64 like your old app
     @PostMapping(value = "/upload-image", consumes = "application/json")
     public ResponseEntity<String> uploadImageBase64(@RequestBody Map<String, Object> request) {
         try {
@@ -196,37 +196,19 @@ public class BookController {
                 return ResponseEntity.badRequest().body("Base64 data is empty");
             }
 
-            if (filename == null || filename.isEmpty()) {
-                return ResponseEntity.badRequest().body("Filename is required");
-            }
-
             if (contentType == null || !contentType.startsWith("image/")) {
                 return ResponseEntity.badRequest().body("Only image files are allowed");
             }
 
-            // Decode base64 data
-            byte[] fileBytes = Base64.getDecoder().decode(base64Data);
-            
-            // Check file size
-            if (fileBytes.length > MAX_FILE_SIZE) {
+            // Check base64 size (approximate)
+            if (base64Data.length() > MAX_FILE_SIZE * 4 / 3) { // Base64 is ~33% larger than binary
                 return ResponseEntity.badRequest().body("File size exceeds the limit of 5MB");
             }
 
-            String uploadDir = "uploads/" + uploadType + "/";
-            File directory = new File(uploadDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
+            // Return the base64 data directly (like your old app)
+            // The frontend will handle displaying it
+            return ResponseEntity.ok(base64Data);
 
-            String fileName = System.currentTimeMillis() + "_" + filename;
-            Path filePath = Paths.get(uploadDir + fileName);
-            Files.write(filePath, fileBytes);
-
-            String fileUrl = "/uploads/" + uploadType + "/" + fileName;
-            return ResponseEntity.ok(fileUrl);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Invalid base64 data: " + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Failed to upload image: " + e.getMessage());
