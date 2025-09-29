@@ -29,6 +29,7 @@ import {
 import { Link } from "react-router-dom";
 import axios from "axios"; // Import axios
 import AIImageGenerator from "../../components/AIImageGenerator";
+import { getImageUrl } from "../../utils/apiConfig";
 
 const BookPageEditor = ({ role = "teacher" }) => {
   const { bookId } = useParams();
