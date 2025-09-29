@@ -3,9 +3,7 @@ import axios from 'axios';
 import StudentNavbar from '../../components/StudentNavbar';
 import { jwtDecode } from 'jwt-decode';
 
-import { getApiBaseUrl } from '../../utils/apiConfig';
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'http://localhost:3000';
 
 const StudentBadgeDashboard = () => {
   const [userId, setUserId] = useState(null);

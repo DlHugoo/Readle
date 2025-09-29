@@ -19,7 +19,7 @@ import java.util.Comparator;
 
 @RestController
 @RequestMapping("/api/ssa")
-@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"}, allowCredentials = "true")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class StorySequenceActivityController {
 
     @Autowired

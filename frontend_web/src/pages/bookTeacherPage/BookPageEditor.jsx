@@ -28,7 +28,6 @@ import {
 import { Link } from "react-router-dom";
 import axios from "axios"; // Import axios
 import AIImageGenerator from "../../components/AIImageGenerator";
-import { getImageUrl } from "../../utils/apiConfig";
 
 const BookPageEditor = () => {
   const { bookId } = useParams();
@@ -61,7 +60,7 @@ const BookPageEditor = () => {
   const getFullImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("/uploads")) {
-      return getImageUrl(url);
+      return `http://localhost:3000${url}`;
     }
     return url;
   };
@@ -329,37 +328,26 @@ const BookPageEditor = () => {
       // First upload image if there is a new one
       let imageUrl = currentPage.imageUrl || currentPage.imageURL; // Handle both property names
       if (pageImage) {
+        const formData = new FormData();
+        formData.append("file", pageImage);
+
+        // Add a parameter to specify the upload directory should be bookcontent
+        formData.append("uploadType", "bookcontent");
+
         try {
-          // Convert file to base64
-          const base64Data = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
-            reader.onerror = reject;
-            reader.readAsDataURL(pageImage);
-          });
+          // Use the correct image upload endpoint with actual bookId
+          const imageResponse = await axios.post(
+            `/api/books/upload-image`,
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+              },
+            }
+          );
 
-          // Send as JSON instead of FormData
-          const imageResponse = await fetch("/api/books/upload-image-base64", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              file: base64Data,
-              filename: pageImage.name,
-              contentType: pageImage.type,
-              uploadType: "bookcontent"
-            })
-          });
-
-          if (!imageResponse.ok) {
-            const errorText = await imageResponse.text();
-            throw new Error(`Upload failed: ${imageResponse.status} - ${errorText}`);
-          }
-
-          // The backend now returns file URL (like your old SkillMatch app)
-          imageUrl = await imageResponse.text();
+          imageUrl = imageResponse.data; // Get the image URL from response data
         } catch (error) {
           // Handle image upload errors
           console.error("Error uploading image:", error);

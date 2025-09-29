@@ -60,7 +60,7 @@ const ArchivedBooks = () => {
     }
   };
 
-  const fullImg = (path) => path ? getImageUrl(path) : '';
+  const fullImg = (path) => path ? `http://localhost:3000${path}` : '';
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">

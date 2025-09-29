@@ -12,9 +12,7 @@ import {
 } from 'recharts';
 
 // Add API base URL constant
-import { getApiBaseUrl } from '../../utils/apiConfig';
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = 'http://localhost:3000';
 
 const ClassroomVisualization = () => {
   const { classroomId } = useParams();

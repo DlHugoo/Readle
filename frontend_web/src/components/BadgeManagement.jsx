@@ -140,38 +140,18 @@ const BadgeManagement = () => {
     if (!file) return null;
 
     const token = localStorage.getItem("token");
-    
-    // Convert file to base64 (like other upload functions)
-    const base64Data = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-    const requestData = {
-      file: base64Data,
-      filename: file.name,
-      contentType: file.type,
-      uploadType: "badge"
-    };
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      const response = await fetch("/api/books/upload-image-base64", {
-        method: "POST",
+      const response = await axios.post("/api/books/upload-image", formData, {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(requestData)
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-      }
-
-      return await response.text();
+      return response.data;
     } catch (error) {
       console.error("Image upload failed:", error);
       throw error;
@@ -242,7 +222,7 @@ const BadgeManagement = () => {
       achievementCriteria: badge.achievementCriteria,
       thresholdValue: badge.thresholdValue
     });
-    setEditImagePreview(badge.imageUrl ? getImageUrl(badge.imageUrl) : null);
+    setEditImagePreview(badge.imageUrl ? `http://localhost:3000${badge.imageUrl}` : null);
     setEditImageFile(null);
     setShowEditModal(true);
   };
@@ -393,7 +373,7 @@ const BadgeManagement = () => {
               <div className="h-48 bg-gray-200 flex items-center justify-center relative">
                 {badge.imageUrl ? (
                   <img
-                    src={getImageUrl(badge.imageUrl)}
+                    src={`http://localhost:3000${badge.imageUrl}`}
                     alt={badge.name}
                     className="h-full w-full object-cover"
                   />

@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/badges")
-@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"}, allowCredentials = "true")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class BadgeController {
     private static final Logger logger = LoggerFactory.getLogger(BadgeController.class);
     private final BadgeService badgeService;

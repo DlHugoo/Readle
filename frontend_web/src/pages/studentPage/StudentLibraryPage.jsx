@@ -1,4 +1,3 @@
-import { getApiBaseUrl, getImageUrl } from '../../utils/apiConfig';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import StudentNavbar from "../../components/StudentNavbar";
@@ -156,7 +155,11 @@ const StudentLibraryPage = () => {
 
         const headers = { Authorization: `Bearer ${token}` };
         const response = await axios.get(
+<<<<<<< HEAD
           `${getApiBaseUrl()}/api/progress/in-progress/${userId}`,
+=======
+          `http://localhost:3000/api/progress/in-progress/${userId}`,
+>>>>>>> parent of 1822e11 (Merge branch 'main' into Admin)
           { headers }
         );
 

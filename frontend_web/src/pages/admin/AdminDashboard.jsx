@@ -3,7 +3,6 @@ import axios from "axios";
 import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BadgeManagement from "../../components/BadgeManagement";
-import { getApiUrl, getImageUrl } from "../../utils/apiConfig";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -120,39 +119,18 @@ const AdminDashboard = () => {
     if (!file) return null;
 
     const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      // Convert file to base64
-      const base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      // Send as JSON instead of FormData
-      const response = await fetch("/api/books/upload-image-base64", {
-        method: "POST",
+      const response = await axios.post("/api/books/upload-image", formData, {
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          file: base64Data,
-          filename: file.name,
-          contentType: file.type,
-          uploadType: "bookcovers"
-        })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
-      }
-      
-      // The backend now returns file URL (like your old SkillMatch app)
-      const fileUrl = await response.text();
-      return fileUrl;
+      return response.data;
     } catch (error) {
       console.error("Image upload failed:", error);
       throw error;
@@ -256,7 +234,7 @@ const AdminDashboard = () => {
       difficultyLevel: book.difficultyLevel,
       imageURL: book.imageURL,
     });
-    setEditImagePreview(book.imageURL ? getImageUrl(book.imageURL) : null);
+    setEditImagePreview(book.imageURL ? `http://localhost:3000${book.imageURL}` : null);
     setEditImageFile(null);
     setMenuOpenIndex(null);
   };
@@ -264,37 +242,16 @@ const AdminDashboard = () => {
   const uploadEditImage = async () => {
     if (!editImageFile) return null;
     const token = localStorage.getItem("token");
-    
-    // Convert file to base64 (like other upload functions)
-    const base64Data = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
-      reader.onerror = reject;
-      reader.readAsDataURL(editImageFile);
-    });
+    const formData = new FormData();
+    formData.append("file", editImageFile);
 
-    const requestData = {
-      file: base64Data,
-      filename: editImageFile.name,
-      contentType: editImageFile.type,
-      uploadType: "bookcovers"
-    };
-
-    const res = await fetch(getApiUrl("api/books/upload-image"), {
-      method: "POST",
+    const res = await axios.post("/api/books/upload-image", formData, {
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(requestData)
     });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Upload failed: ${res.status} - ${errorText}`);
-    }
-
-    return await res.text();
+    return res.data;
   };
 
   const submitEdit = async () => {
@@ -438,7 +395,7 @@ const AdminDashboard = () => {
                         <div className="h-48 bg-gray-200 flex items-center justify-center">
                           {book.imageURL ? (
                             <img
-                              src={getImageUrl(book.imageURL)}
+                              src={`http://localhost:3000${book.imageURL}`}
                               alt={book.title}
                               className="h-full w-full object-cover"
                             />
@@ -770,7 +727,7 @@ const AdminDashboard = () => {
                       <div className="h-48 bg-gray-200 flex items-center justify-center">
                         {book.imageURL ? (
                           <img
-                            src={getImageUrl(book.imageURL)}
+                            src={`http://localhost:3000${book.imageURL}`}
                             alt={book.title}
                             className="h-full w-full object-cover"
                           />

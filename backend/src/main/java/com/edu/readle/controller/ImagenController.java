@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"})
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/imagen")
 public class ImagenController {
 

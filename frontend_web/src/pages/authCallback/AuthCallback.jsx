@@ -1,9 +1,8 @@
 import { useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
-import { getApiBaseUrl } from "../../utils/apiConfig";
 
-const BASE = getApiBaseUrl();
+const BASE = import.meta.env.VITE_BACKEND_BASE || ""; // e.g. http://localhost:3000
 
 export default function AuthCallback() {
   const { login: authLogin } = useAuth();

@@ -15,7 +15,7 @@ import com.edu.readle.repository.PredictionImageRepository;
 
 @RestController
 @RequestMapping("/api/prediction-checkpoint-attempts")
-@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"}, allowCredentials = "true")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class PredictionCheckpointAttemptController {
 
     @Autowired

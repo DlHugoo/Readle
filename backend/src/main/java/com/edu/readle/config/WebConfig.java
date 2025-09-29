@@ -14,17 +14,13 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     // CORS setup
-@Override
-public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**")
-            .allowedOrigins(
-                "http://localhost:5173",               // local dev
-                "https://readle-pi.vercel.app"       // your Vercel prod domain // 
-            )
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("*")
-            .exposedHeaders("Authorization")
-            .allowCredentials(true);
-}
-
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:5173") // React dev server
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .exposedHeaders("Authorization") // ✅ Needed for token to be passed in fetch/Axios
+                .allowCredentials(true);
+    }
 }

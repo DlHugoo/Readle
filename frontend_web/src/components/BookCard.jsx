@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import fallbackImage from "../assets/not-available.jpeg"; // Update the path if needed
-import { getImageUrl } from "../utils/apiConfig";
 
 const BookCard = ({ book }) => {
   const navigate = useNavigate();
@@ -17,7 +16,11 @@ const BookCard = ({ book }) => {
     >
       <div className="book-cover overflow-hidden rounded-lg shadow-md">
         <img
-          src={getImageUrl(book.imageURL)}
+          src={
+            book.imageURL?.startsWith("/uploads")
+              ? `http://localhost:3000${book.imageURL}`
+              : book.imageURL
+          }
           alt={book.title}
           className="w-full h-auto object-cover"
           onError={(e) => {

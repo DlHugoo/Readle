@@ -12,7 +12,6 @@ import {
 import Slot from "../storySequencingPage/Slot";
 import ImageCard from "../storySequencingPage/ImageCard";
 import sequenceBg from "../../../assets/sequence-bg1.png";
-import { getImageUrl } from "../../../utils/apiConfig";
 
 const PredictionCheckpointPage = () => {
   const { bookId } = useParams();
@@ -41,22 +40,14 @@ const PredictionCheckpointPage = () => {
     const fetchPredictionData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          `/api/prediction-checkpoints/by-book/${bookId}`,
+        const res = await axios.get(
+          `http://localhost:3000/api/prediction-checkpoints/by-book/${bookId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
-        
-        // Handle 400 response (no checkpoint found)
-        if (res.status === 400) {
-          console.log("No prediction checkpoint found for this book");
-          return;
-        }
-        
-        const data = await res.json();
 
         const {
           title,
@@ -64,7 +55,7 @@ const PredictionCheckpointPage = () => {
           sequenceImages,
           options: predictionOptions,
           pageNumber: checkpointPage,
-        } = data;
+        } = res.data;
 
         setPageNumber(checkpointPage);
 
@@ -74,7 +65,7 @@ const PredictionCheckpointPage = () => {
           .map((img) => ({
             id: img.id,
             url: img.imageUrl.startsWith("/uploads")
-              ? getImageUrl(img.imageUrl)
+              ? `http://localhost:3000${img.imageUrl}`
               : img.imageUrl,
             locked: true,
           }));
@@ -87,7 +78,7 @@ const PredictionCheckpointPage = () => {
         const formattedOptions = predictionOptions.map((opt) => ({
           id: opt.id,
           url: opt.imageUrl.startsWith("/uploads")
-            ? getImageUrl(opt.imageUrl)
+            ? `http://localhost:3000${opt.imageUrl}`
             : opt.imageUrl,
         }));
 
@@ -145,37 +136,32 @@ const PredictionCheckpointPage = () => {
       const userId = localStorage.getItem("userId");
 
       // Check if the prediction is correct first
-      const response = await fetch(
-        `/api/prediction-checkpoints/${storyData.id}/check`,
+      const response = await axios.post(
+        `http://localhost:3000/api/prediction-checkpoints/${storyData.id}/check`,
         {
-          method: 'POST',
+          selectedImageId: predictionSlot.id,
+          userId: userId,
+        },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            selectedImageId: predictionSlot.id,
-            userId: userId,
-          })
         }
       );
-      const result = await response.json();
 
       // Then create an attempt record using the correct endpoint
       // In your handleSubmit function, modify the second axios call:
-      await fetch(
-        `/api/prediction-checkpoint-attempts?userId=${userId}&checkpointId=${storyData.id}&selectedImageId=${predictionSlot.id}&isCorrect=${result.correct}`,
+      await axios.post(
+        `http://localhost:3000/api/prediction-checkpoint-attempts?userId=${userId}&checkpointId=${storyData.id}&selectedImageId=${predictionSlot.id}&isCorrect=${response.data.correct}`,
+        {},
         {
-          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({})
         }
       );
 
-      setIsCorrect(result.correct);
+      setIsCorrect(response.data.correct);
       setShowFeedback(true);
 
       // After showing feedback, continue to the next page
