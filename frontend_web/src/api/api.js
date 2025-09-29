@@ -1,9 +1,8 @@
 // src/api/api.js
 import axios from "axios";
 
-// Set in frontend_web/.env.local:
-// VITE_BACKEND_BASE=http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000  (or leave empty if using Vite proxy)
-const BASE = "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+// Use environment variable for API base URL, fallback to relative URLs for Vercel proxy
+const BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // ---- token helpers ----
 export const getToken = () => localStorage.getItem("token");

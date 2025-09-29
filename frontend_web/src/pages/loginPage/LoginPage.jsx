@@ -4,8 +4,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { login as apiLogin } from "../../api/api";
 import mascot from "../../assets/mascot.png";
 
-// NEW: backend base (env with fallback)
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+// Use environment variable for API base URL, fallback to relative URLs for Vercel proxy
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -80,9 +80,10 @@ const LoginPage = () => {
     }
   };
 
-  // NEW: Microsoft login
+  // Microsoft login
   const handleMicrosoftLogin = () => {
-    window.location.href = `${API_BASE}/auth/microsoft/start`;
+    const authUrl = API_BASE ? `${API_BASE}/auth/microsoft/start` : "/auth/microsoft/start";
+    window.location.href = authUrl;
   };
 
   return (
