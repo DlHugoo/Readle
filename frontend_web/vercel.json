@@ -1,20 +1,16 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/$1"
+      "source": "/api/:path*",
+      "destination": "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/:path*"
     },
     {
-      "source": "/oauth2/(.*)",
-      "destination": "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/oauth2/$1"
+      "source": "/oauth2/:path*",
+      "destination": "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/oauth2/:path*"
     },
     {
-      "source": "/auth/microsoft/start",
-      "destination": "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/auth/microsoft/start"
-    },
-    {
-      "source": "/auth/microsoft/callback",
-      "destination": "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/auth/microsoft/callback"
+      "source": "/auth/:path*",
+      "destination": "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/auth/:path*"
     }
   ]
 }
