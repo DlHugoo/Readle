@@ -151,20 +151,27 @@ const AdminDashboard = () => {
       });
 
       // Send as JSON instead of FormData
-      const response = await axios.post("/api/books/upload-image", {
-        file: base64Data,
-        filename: file.name,
-        contentType: file.type,
-        uploadType: "bookcovers"
-      }, {
+      const response = await fetch("/api/books/upload-image", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          file: base64Data,
+          filename: file.name,
+          contentType: file.type,
+          uploadType: "bookcovers"
+        })
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
       
       // The backend now returns file URL (like your old SkillMatch app)
-      const fileUrl = response.data;
+      const fileUrl = await response.text();
       return fileUrl;
     } catch (error) {
       console.error("Image upload failed:", error);

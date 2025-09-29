@@ -215,21 +215,28 @@ const ClassroomContentManager = () => {
 
     // Send as JSON instead of FormData
     console.log("Sending request to /api/books/upload-image");
-    const response = await axios.post("/api/books/upload-image", requestData, {
+    const response = await fetch("/api/books/upload-image", {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify(requestData)
     });
     
     console.log("Response received:", {
       status: response.status,
-      dataLength: response.data ? response.data.length : "NULL",
-      dataType: typeof response.data
+      ok: response.ok,
+      statusText: response.statusText
     });
     
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+    }
+    
     // The backend now returns file URL (like your old SkillMatch app)
-    const fileUrl = response.data;
+    const fileUrl = await response.text();
     
     console.log("File URL received:", fileUrl);
     console.log("=== FRONTEND UPLOAD DEBUG END ===");
