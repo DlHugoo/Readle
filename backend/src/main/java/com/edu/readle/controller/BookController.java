@@ -184,7 +184,7 @@ public class BookController {
     }
 
     // 🔹 Test endpoint to check if backend is reachable
-    @GetMapping("/test")
+    @GetMapping("/health")
     public ResponseEntity<String> test() {
         System.out.println("=== TEST ENDPOINT CALLED ===");
         return ResponseEntity.ok("Backend is working!");

@@ -28,7 +28,7 @@
         async function testDirectEC2() {
             try {
                 console.log('Testing direct EC2 connection...');
-                const response = await fetch('http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/test', {
+                const response = await fetch('http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/health', {
                     mode: 'cors'
                 });
                 const data = await response.text();
@@ -45,7 +45,7 @@
         async function testVercelProxy() {
             try {
                 console.log('Testing Vercel proxy...');
-                const response = await fetch('/api/books/test');
+                const response = await fetch('/api/books/health');
                 const data = await response.text();
                 console.log('Vercel proxy response:', data);
                 document.getElementById('proxy-result').innerHTML = 
