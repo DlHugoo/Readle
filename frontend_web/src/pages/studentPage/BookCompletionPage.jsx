@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import Confetti from "react-confetti";
 import axios from "axios";
+import { getImageUrl } from "../../utils/apiConfig";
 
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
@@ -72,14 +73,14 @@ const BookCompletionPage = () => {
 
         // First get the tracker ID for this user and book
         const progressRes = await axios.get(
-          `http://localhost:3000/api/progress/book/${userId}/${bookId}`,
+          `/api/progress/book/${userId}/${bookId}`,
           { headers }
         );
 
         if (progressRes.data?.id) {
           // Now complete the book using the tracker ID
           await axios.put(
-            `http://localhost:3000/api/progress/complete/${progressRes.data.id}`,
+            `/api/progress/complete/${progressRes.data.id}`,
             {},
             { headers }
           );

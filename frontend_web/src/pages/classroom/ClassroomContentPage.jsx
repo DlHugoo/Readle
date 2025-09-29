@@ -4,6 +4,7 @@ import StudentNavbar from "../../components/StudentNavbar";
 import mascot from "../../assets/mascot.png";
 import arrow from "../../assets/arrow.png";
 import fallbackImage from "../../assets/not-available.jpeg";
+import { getImageUrl as getImageUrlUtil } from "../../utils/apiConfig";
 
 const ClassroomContentPage = () => {
   const { classroomId } = useParams();
@@ -58,8 +59,7 @@ const ClassroomContentPage = () => {
     fetchBooks();
   }, [classroomId]);
 
-  const getImageUrl = (path) =>
-    path?.startsWith("/uploads") ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${path}` : path;
+  const getImageUrl = (path) => getImageUrlUtil(path);
 
   const estimateReadTime = (pageCount) => {
     const pages = parseInt(pageCount);
