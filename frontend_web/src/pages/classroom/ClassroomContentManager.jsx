@@ -177,18 +177,30 @@ const ClassroomContentManager = () => {
   const uploadImage = async (file) => {
   if (!file) return null;
 
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const token = localStorage.getItem("token"); // Ensure token is retrieved
+  const token = localStorage.getItem("token");
 
   try {
-    const response = await axios.post("http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/upload-image", formData, {
+    // Convert file to base64
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    // Send as JSON instead of FormData
+    const response = await axios.post("/api/books/upload-image", {
+      file: base64Data,
+      filename: file.name,
+      contentType: file.type,
+      uploadType: "bookcontent"
+    }, {
       headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`, // Include token in headers
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
     });
+    
     return response.data;
   } catch (error) {
     console.error("Error uploading image:", error);
