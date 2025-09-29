@@ -22,10 +22,20 @@ export default async function handler(req, res) {
     console.log('Request headers:', req.headers);
 
     // Prepare headers for the backend request
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
+    const headers = {};
+
+    // Copy relevant headers from the original request
+    if (req.headers['content-type']) {
+      headers['Content-Type'] = req.headers['content-type'];
+    } else {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    if (req.headers['accept']) {
+      headers['Accept'] = req.headers['accept'];
+    } else {
+      headers['Accept'] = 'application/json';
+    }
 
     // Add authorization header if present
     if (req.headers.authorization) {
@@ -40,8 +50,10 @@ export default async function handler(req, res) {
 
     // Add body for non-GET requests
     if (req.method !== 'GET' && req.body) {
-      // Ensure body is properly formatted
-      if (typeof req.body === 'string') {
+      // For file uploads, pass the body as-is
+      if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+        requestOptions.body = req.body;
+      } else if (typeof req.body === 'string') {
         requestOptions.body = req.body;
       } else {
         requestOptions.body = JSON.stringify(req.body);
