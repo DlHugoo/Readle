@@ -149,7 +149,9 @@ public class BadgeService {
         
         if (existingUserBadge.isPresent()) {
             userBadge = existingUserBadge.get();
-            boolean isNewlyEarned = userBadge.updateProgress(progressValue);
+            // ACCUMULATE progress instead of overriding
+            int newTotal = Math.max(0, userBadge.getCurrentProgress()) + Math.max(0, progressValue);
+            boolean isNewlyEarned = userBadge.updateProgress(newTotal);
             
             // If badge was just earned, update the earned time
             if (isNewlyEarned && userBadge.getEarnedAt() == null) {
@@ -157,10 +159,11 @@ public class BadgeService {
             }
         } else {
             userBadge = new UserBadgeEntity(user, badge);
-            userBadge.setCurrentProgress(progressValue);
+            // Initialize with the provided progress value
+            userBadge.setCurrentProgress(Math.max(0, progressValue));
             
             // If already earned on creation
-            if (progressValue >= badge.getThresholdValue()) {
+            if (Math.max(0, progressValue) >= badge.getThresholdValue()) {
                 userBadge.setEarnedAt(LocalDateTime.now());
             }
         }

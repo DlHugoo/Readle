@@ -160,8 +160,8 @@ const StudentBadgeDashboard = () => {
     if (!badge || !badge.badge) {
       console.error("Invalid badge data:", badge);
       return (
-        <div className="relative flex flex-col items-center p-4 rounded-lg shadow-md bg-red-50">
-          <p className="text-red-500">Invalid badge data</p>
+        <div className="relative flex flex-col items-center p-6 rounded-2xl shadow-lg bg-red-50 border border-red-200">
+          <p className="text-red-500 font-medium">Invalid badge data</p>
         </div>
       );
     }
@@ -170,46 +170,70 @@ const StudentBadgeDashboard = () => {
     const categoryIcon = getBadgeCategoryIcon(criteria);
     
     return (
-      <div className={`relative flex flex-col items-center p-4 rounded-lg shadow-md transition-all duration-300 hover:shadow-lg ${earned ? 'bg-blue-50' : 'bg-white'}`}>
-        <div className="absolute top-2 right-2 text-lg" title={criteria}>
+      <div className={`relative flex flex-col items-center p-6 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+        earned 
+          ? 'bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200' 
+          : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200'
+      }`}>
+        {/* Category Icon */}
+        <div className="absolute top-4 right-4 text-2xl bg-white rounded-full p-2 shadow-md" title={criteria}>
           {categoryIcon}
         </div>
         
-        <div className="relative mb-3">
+        {/* Badge Image */}
+        <div className="relative mb-4">
           <img 
             src={getBadgeImage(badge)} 
             alt={badge.badge.name} 
-            className={`w-24 h-24 object-contain ${!earned && 'opacity-60 grayscale'}`}
+            className={`w-28 h-28 object-contain transition-all duration-300 ${!earned && 'opacity-60 grayscale'}`}
           />
           {earned && (
-            <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+            <div className="absolute -top-3 -right-3 bg-green-500 text-white text-sm font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-lg animate-pulse">
               ✓
             </div>
           )}
         </div>
         
-        <h3 className="text-lg font-semibold text-center text-gray-800">{badge.badge.name}</h3>
-        <p className="text-sm text-gray-600 text-center mb-3">{badge.badge.description}</p>
+        {/* Badge Info */}
+        <div className="text-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800 mb-2">{badge.badge.name}</h3>
+          <p className="text-sm text-gray-600 leading-relaxed">{badge.badge.description}</p>
+        </div>
         
+        {/* Progress Section */}
         {!earned && (
           <div className="w-full mt-auto">
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-600">Progress</span>
+              <span className="text-sm font-bold text-blue-600">{badge.progressPercentage.toFixed(0)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
               <div 
-                className="bg-blue-600 h-2.5 rounded-full" 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-1000" 
                 style={{ width: `${badge.progressPercentage}%` }}
               ></div>
             </div>
             <div className="flex justify-between text-xs text-gray-500">
-              <span>{badge.currentProgress}</span>
-              <span>{badge.progressPercentage.toFixed(0)}%</span>
-              <span>{badge.requiredProgress}</span>
+              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                {badge.currentProgress}
+              </span>
+              <span className="text-gray-400">of</span>
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-medium">
+                {badge.requiredProgress}
+              </span>
             </div>
           </div>
         )}
         
+        {/* Earned Badge Info */}
         {earned && badge.earnedAt && (
-          <div className="mt-auto text-xs text-gray-500">
-            Earned on {new Date(badge.earnedAt).toLocaleDateString()}
+          <div className="mt-auto text-center">
+            <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium mb-2">
+              🎉 Earned!
+            </div>
+            <div className="text-xs text-gray-500">
+              Earned on {new Date(badge.earnedAt).toLocaleDateString()}
+            </div>
           </div>
         )}
       </div>
@@ -219,70 +243,138 @@ const StudentBadgeDashboard = () => {
   return (
     <>
       <StudentNavbar />
-      <div className="max-w-5xl mx-auto mt-8 mb-8 px-4">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">Achievements</h1>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          {/* Header Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
+              🏆 Achievement Dashboard
+            </h1>
+            <p className="text-lg text-gray-600 mb-6">Celebrate your reading milestones and unlock amazing badges!</p>
+          </div>
 
-        <div className="flex justify-center mb-6">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              activeTab === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            All Badges
-          </button>
-          <button
-            onClick={() => setActiveTab('earned')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors mx-2 ${
-              activeTab === 'earned' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            Earned Badges
-          </button>
-          <button
-            onClick={() => setActiveTab('in-progress')}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              activeTab === 'in-progress' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            In Progress
-          </button>
-        </div>
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-purple-500">
+              <div className="bg-purple-100 rounded-full p-4 mb-4">
+                <span className="text-3xl">🏆</span>
+              </div>
+              <span className="text-gray-600 text-xl mb-3 font-medium">Total Badges</span>
+              <span className="text-5xl font-bold text-purple-600">{allBadges.length}</span>
+              <div className="mt-2 text-sm text-gray-500">Available to earn</div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-green-500">
+              <div className="bg-green-100 rounded-full p-4 mb-4">
+                <span className="text-3xl">✅</span>
+              </div>
+              <span className="text-gray-600 text-xl mb-3 font-medium">Earned Badges</span>
+              <span className="text-5xl font-bold text-green-600">{earnedBadges.length}</span>
+              <div className="mt-2 text-sm text-gray-500">Congratulations!</div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-blue-500">
+              <div className="bg-blue-100 rounded-full p-4 mb-4">
+                <span className="text-3xl">🎯</span>
+              </div>
+              <span className="text-gray-600 text-xl mb-3 font-medium">In Progress</span>
+              <span className="text-5xl font-bold text-blue-600">{inProgressBadges.length}</span>
+              <div className="mt-2 text-sm text-gray-500">Keep going!</div>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {loading ? (
-            <p className="text-center col-span-full">Loading badges...</p>
-          ) : error ? (
-            <p className="text-center col-span-full text-red-500">{error}</p>
-          ) : activeTab === 'all' ? (
-            allBadges.length > 0 ? (
-              allBadges.map((badge) => (
-                <BadgeCard 
-                  key={badge.id} 
-                  badge={badge} 
-                  earned={earnedBadges.some((eb) => eb.badge?.id === badge.badge?.id)} 
-                />
-              ))
-            ) : (
-              <p className="text-center col-span-full text-gray-500">No badges available yet.</p>
-            )
-          ) : activeTab === 'earned' ? (
-            earnedBadges.length > 0 ? (
-              earnedBadges.map((badge) => (
-                <BadgeCard key={badge.id} badge={badge} earned />
-              ))
-            ) : (
-              <p className="text-center col-span-full text-gray-500">You haven't earned any badges yet.</p>
-            )
-          ) : (
-            inProgressBadges.length > 0 ? (
-              inProgressBadges.map((badge) => (
-                <BadgeCard key={badge.id} badge={badge} />
-              ))
-            ) : (
-              <p className="text-center col-span-full text-gray-500">No badges in progress.</p>
-            )
-          )}
+          {/* Tab Navigation */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div className="flex justify-center mb-8">
+              <div className="bg-gray-100 rounded-full p-2 flex space-x-2">
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                    activeTab === 'all' 
+                      ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  🏆 All Badges
+                </button>
+                <button
+                  onClick={() => setActiveTab('earned')}
+                  className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                    activeTab === 'earned' 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  ✅ Earned Badges
+                </button>
+                <button
+                  onClick={() => setActiveTab('in-progress')}
+                  className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                    activeTab === 'in-progress' 
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  🎯 In Progress
+                </button>
+              </div>
+            </div>
+
+            {/* Badge Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {loading ? (
+                <div className="col-span-full flex justify-center items-center py-12">
+                  <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-4 text-lg text-gray-600">Loading badges...</span>
+                </div>
+              ) : error ? (
+                <div className="col-span-full text-center py-12">
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg">
+                    <strong className="font-bold">Error: </strong>
+                    {error}
+                  </div>
+                </div>
+              ) : activeTab === 'all' ? (
+                allBadges.length > 0 ? (
+                  allBadges.map((badge) => (
+                    <BadgeCard 
+                      key={badge.id} 
+                      badge={badge} 
+                      earned={earnedBadges.some((eb) => eb.badge?.id === badge.badge?.id)} 
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <div className="text-6xl mb-4">🏆</div>
+                    <p className="text-gray-500 text-xl">No badges available yet.</p>
+                    <p className="text-gray-400 mt-2">Check back later for new achievements!</p>
+                  </div>
+                )
+              ) : activeTab === 'earned' ? (
+                earnedBadges.length > 0 ? (
+                  earnedBadges.map((badge) => (
+                    <BadgeCard key={badge.id} badge={badge} earned />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <div className="text-6xl mb-4">🎯</div>
+                    <p className="text-gray-500 text-xl">You haven't earned any badges yet.</p>
+                    <p className="text-gray-400 mt-2">Keep reading to unlock your first achievement!</p>
+                  </div>
+                )
+              ) : (
+                inProgressBadges.length > 0 ? (
+                  inProgressBadges.map((badge) => (
+                    <BadgeCard key={badge.id} badge={badge} />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <div className="text-6xl mb-4">📚</div>
+                    <p className="text-gray-500 text-xl">No badges in progress.</p>
+                    <p className="text-gray-400 mt-2">Start reading to begin earning badges!</p>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>
