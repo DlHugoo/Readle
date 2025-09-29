@@ -26,8 +26,9 @@ const BookCompletionPage = () => {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const res = await axios.get(`/api/books/${bookId}`);
-        if (res.data) setBook(res.data);
+        const res = await fetch(`/api/books/${bookId}`);
+        const data = await res.json();
+        if (data) setBook(data);
       } catch (err) {
         console.error("Error fetching book details:", err);
       }
@@ -39,8 +40,9 @@ const BookCompletionPage = () => {
         const headers = { Authorization: `Bearer ${token}` };
         
         // Check for SSA
-        const ssaRes = await axios.get(`/api/ssa/by-book/${bookId}`, { headers });
-        setHasSSA(!!ssaRes.data);
+        const ssaRes = await fetch(`/api/ssa/by-book/${bookId}`, { headers });
+        const ssaData = await ssaRes.json();
+        setHasSSA(!!ssaData);
       } catch (err) {
         setHasSSA(false);
       }
@@ -50,8 +52,9 @@ const BookCompletionPage = () => {
         const headers = { Authorization: `Bearer ${token}` };
         
         // Check for Snake Game
-        const snakeRes = await axios.get(`/api/snake-questions/book/${bookId}`, { headers });
-        setHasSnakeGame(!!snakeRes.data && snakeRes.data.length > 0);
+        const snakeRes = await fetch(`/api/snake-questions/book/${bookId}`, { headers });
+        const snakeData = await snakeRes.json();
+        setHasSnakeGame(!!snakeData && snakeData.length > 0);
       } catch (err) {
         setHasSnakeGame(false);
       }
@@ -72,17 +75,21 @@ const BookCompletionPage = () => {
         setCompletionError(null);
 
         // First get the tracker ID for this user and book
-        const progressRes = await axios.get(
+        const progressRes = await fetch(
           `/api/progress/book/${userId}/${bookId}`,
           { headers }
         );
+        const progressData = await progressRes.json();
 
-        if (progressRes.data?.id) {
+        if (progressData?.id) {
           // Now complete the book using the tracker ID
-          await axios.put(
-            `/api/progress/complete/${progressRes.data.id}`,
-            {},
-            { headers }
+          await fetch(
+            `/api/progress/complete/${progressData.id}`,
+            {
+              method: 'PUT',
+              headers: { ...headers, 'Content-Type': 'application/json' },
+              body: JSON.stringify({})
+            }
           );
           console.log("Book completed successfully!");
         } else {
