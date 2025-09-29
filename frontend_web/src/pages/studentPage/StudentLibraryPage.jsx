@@ -7,7 +7,6 @@ import FeaturedCarousel from "../../components/FeaturedCarousel";
 import Banner1 from "../../assets/Banner-1.jpg";
 import Banner2 from "../../assets/Banner-2.jpg";
 import Banner3 from "../../assets/Banner-3.jpg";
-import { useNavigate } from "react-router-dom";
 
 // 📌 Error Modal
 const ErrorModal = ({ message, onClose }) => (
@@ -93,7 +92,6 @@ const JoinClassroomModal = ({ onClose }) => {
 };
 
 const StudentLibraryPage = () => {
-  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [inProgressBooks, setInProgressBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -200,7 +198,13 @@ const StudentLibraryPage = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {books.map((book, index) => (
-                <BookCard key={`for-you-${book.bookID || index}`} book={book} />
+                <div
+                  key={`for-you-${book.bookID || index}`}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/read/${book.bookID}/page/1`)}
+                >
+                  <BookCard book={book} />
+                </div>
               ))}
             </div>
           )}
