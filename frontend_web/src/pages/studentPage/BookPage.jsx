@@ -63,13 +63,14 @@ const BookPage = () => {
   useEffect(() => {
     const loadBookAndPages = async () => {
       try {
-        const bookRes = await axios.get(`/api/books/${bookId}`);
-        const pagesRes = await axios.get(`/api/pages/${bookId}`);
-        const pagesData = pagesRes.data.sort(
+        const bookRes = await fetch(`/api/books/${bookId}`);
+        const pagesRes = await fetch(`/api/pages/${bookId}`);
+        const bookData = await bookRes.json();
+        const pagesData = (await pagesRes.json()).sort(
           (a, b) => a.pageNumber - b.pageNumber
         );
 
-        if (bookRes.data) setBook(bookRes.data);
+        if (bookData) setBook(bookData);
         setPages(pagesData);
 
         // Get page number from URL query params first
@@ -83,22 +84,23 @@ const BookPage = () => {
         } else {
           // If no page param, check for user's last read page
           const storedUserId = localStorage.getItem("userId");
-          if (storedUserId && bookRes.data?.bookID) {
+          if (storedUserId && bookData?.bookID) {
             const token = localStorage.getItem("token");
             try {
-              const progressRes = await axios.get(
-                getApiUrl(`api/progress/book/${storedUserId}/${bookRes.data.bookID}`),
+              const progressRes = await fetch(
+                getApiUrl(`api/progress/book/${storedUserId}/${bookData.bookID}`),
                 { headers: { Authorization: `Bearer ${token}` } }
               );
+              const progressData = await progressRes.json();
 
-              if (progressRes.data && progressRes.data.lastPageRead) {
+              if (progressData && progressData.lastPageRead) {
                 // Set to last read page (subtract 1 for zero-based index)
                 const lastPage = Math.min(
-                  progressRes.data.lastPageRead - 1,
+                  progressData.lastPageRead - 1,
                   pagesData.length - 1
                 );
                 setCurrentPageIndex(lastPage);
-                if (progressRes.data.id) setTrackerId(progressRes.data.id);
+                if (progressData.id) setTrackerId(progressData.id);
               }
             } catch (err) {
               // If no progress found or error, default to first page
@@ -233,21 +235,23 @@ const BookPage = () => {
 
       try {
         // 1) Load the checkpoint metadata for this book
-        const { data: checkpoint } = await axios.get(
+        const checkpointRes = await fetch(
           getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        const checkpoint = await checkpointRes.json();
 
         // 2) If this checkpoint lives on the *next* page…
         if (checkpoint.pageNumber === currentPageIndex + 1) {
           const checkpointId = checkpoint.id;
 
           // 3) Ask how many times the user has tried this checkpoint
-          const { data: attemptCount } = await axios.get(
+          const attemptRes = await fetch(
             getApiUrl(`api/prediction-checkpoint-attempts/user/${userId}` +
               `/checkpoint/${checkpointId}/count`),
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          const attemptCount = await attemptRes.json();
 
           // 4) Only redirect into the prediction if they've never attempted yet
           if (attemptCount === 0) {
@@ -272,11 +276,17 @@ const BookPage = () => {
       // Finally, update reading progress if we have a tracker
       if (trackerId) {
         try {
-          await axios.put(
+          await fetch(
             getApiUrl(`api/progress/update/${trackerId}` +
               `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`),
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
+            {
+              method: 'PUT',
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({})
+            }
           );
         } catch (updateErr) {
           console.error("Error updating progress:", updateErr);
