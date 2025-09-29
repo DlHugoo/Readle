@@ -18,14 +18,9 @@ export default async function handler(req, res) {
     const targetUrl = `${backendUrl}${path}`;
 
     console.log(`Proxying ${req.method} ${path} to ${targetUrl}`);
-    console.log('Request body:', req.body);
-    console.log('Request headers:', req.headers);
 
-    // Prepare headers for the backend request
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
+    // Prepare headers
+    const headers = {};
 
     // Add authorization header if present
     if (req.headers.authorization) {
@@ -40,21 +35,11 @@ export default async function handler(req, res) {
 
     // Add body for non-GET requests
     if (req.method !== 'GET' && req.body) {
-      // Ensure body is properly formatted
-      if (typeof req.body === 'string') {
-        requestOptions.body = req.body;
-      } else {
-        requestOptions.body = JSON.stringify(req.body);
-      }
+      requestOptions.body = JSON.stringify(req.body);
     }
-
-    console.log('Request options:', requestOptions);
 
     // Forward the request to the backend
     const response = await fetch(targetUrl, requestOptions);
-    
-    console.log('Backend response status:', response.status);
-    console.log('Backend response headers:', Object.fromEntries(response.headers.entries()));
     
     // Set response status
     res.status(response.status);
@@ -73,7 +58,6 @@ export default async function handler(req, res) {
     // Handle different content types
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
-      console.log('Backend response data:', data);
       res.json(data);
     } else if (contentType && contentType.startsWith('image/')) {
       // Handle image responses
@@ -82,7 +66,6 @@ export default async function handler(req, res) {
     } else {
       // Handle text responses
       const data = await response.text();
-      console.log('Backend response text:', data);
       res.send(data);
     }
     
