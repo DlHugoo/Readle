@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 
-const BASE = import.meta.env.VITE_BACKEND_BASE || ""; // e.g. http://localhost:3000
+const BASE = import.meta.env.VITE_BACKEND_BASE || ""; // e.g. http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000
 
 export default function AuthCallback() {
   const { login: authLogin } = useAuth();

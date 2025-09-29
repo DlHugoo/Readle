@@ -277,7 +277,7 @@ const AdminDashboard = () => {
       difficultyLevel: book.difficultyLevel,
       imageURL: book.imageURL,
     });
-    setEditImagePreview(book.imageURL ? `http://localhost:3000${book.imageURL}` : null);
+    setEditImagePreview(book.imageURL ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${book.imageURL}` : null);
     setEditImageFile(null);
     setMenuOpenIndex(null);
   };
@@ -448,7 +448,7 @@ const AdminDashboard = () => {
                         <div className="h-48 bg-gray-200 flex items-center justify-center">
                           {book.imageURL ? (
                             <img
-                              src={`http://localhost:3000${book.imageURL}`}
+                              src={`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${book.imageURL}`}
                               alt={book.title}
                               className="h-full w-full object-cover"
                             />

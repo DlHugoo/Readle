@@ -60,7 +60,7 @@ const ArchivedBooks = () => {
     }
   };
 
-  const fullImg = (path) => path ? `http://localhost:3000${path}` : '';
+  const fullImg = (path) => path ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${path}` : '';
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">

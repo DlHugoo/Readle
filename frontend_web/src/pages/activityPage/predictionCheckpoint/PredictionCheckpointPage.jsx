@@ -41,7 +41,7 @@ const PredictionCheckpointPage = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          `http://localhost:3000/api/prediction-checkpoints/by-book/${bookId}`,
+          `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoints/by-book/${bookId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -65,7 +65,7 @@ const PredictionCheckpointPage = () => {
           .map((img) => ({
             id: img.id,
             url: img.imageUrl.startsWith("/uploads")
-              ? `http://localhost:3000${img.imageUrl}`
+              ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${img.imageUrl}`
               : img.imageUrl,
             locked: true,
           }));
@@ -78,7 +78,7 @@ const PredictionCheckpointPage = () => {
         const formattedOptions = predictionOptions.map((opt) => ({
           id: opt.id,
           url: opt.imageUrl.startsWith("/uploads")
-            ? `http://localhost:3000${opt.imageUrl}`
+            ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${opt.imageUrl}`
             : opt.imageUrl,
         }));
 
@@ -137,7 +137,7 @@ const PredictionCheckpointPage = () => {
 
       // Check if the prediction is correct first
       const response = await axios.post(
-        `http://localhost:3000/api/prediction-checkpoints/${storyData.id}/check`,
+        `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoints/${storyData.id}/check`,
         {
           selectedImageId: predictionSlot.id,
           userId: userId,
@@ -152,7 +152,7 @@ const PredictionCheckpointPage = () => {
       // Then create an attempt record using the correct endpoint
       // In your handleSubmit function, modify the second axios call:
       await axios.post(
-        `http://localhost:3000/api/prediction-checkpoint-attempts?userId=${userId}&checkpointId=${storyData.id}&selectedImageId=${predictionSlot.id}&isCorrect=${response.data.correct}`,
+        `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoint-attempts?userId=${userId}&checkpointId=${storyData.id}&selectedImageId=${predictionSlot.id}&isCorrect=${response.data.correct}`,
         {},
         {
           headers: {

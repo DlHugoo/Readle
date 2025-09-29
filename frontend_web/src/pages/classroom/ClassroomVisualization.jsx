@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 
 // Add API base URL constant
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000';
 
 const ClassroomVisualization = () => {
   const { classroomId } = useParams();

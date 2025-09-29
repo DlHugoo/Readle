@@ -61,7 +61,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
   const getFullImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("/uploads")) {
-      return `http://localhost:3000${url}`;
+      return `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${url}`;
     }
     return url;
   };

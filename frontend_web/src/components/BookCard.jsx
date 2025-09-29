@@ -18,7 +18,7 @@ const BookCard = ({ book }) => {
         <img
           src={
             book.imageURL?.startsWith("/uploads")
-              ? `http://localhost:3000${book.imageURL}`
+              ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${book.imageURL}`
               : book.imageURL
           }
           alt={book.title}
