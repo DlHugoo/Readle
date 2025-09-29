@@ -180,33 +180,71 @@ const ClassroomContentManager = () => {
   const token = localStorage.getItem("token");
 
   try {
+    console.log("=== FRONTEND UPLOAD DEBUG START ===");
+    console.log("File details:", {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
+
     // Convert file to base64
     const base64Data = await new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+      reader.onload = () => {
+        const result = reader.result.split(',')[1]; // Remove data: prefix
+        console.log("Base64 data length:", result.length);
+        resolve(result);
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
 
-    // Send as JSON instead of FormData
-    const response = await axios.post("/api/books/upload-image", {
+    const requestData = {
       file: base64Data,
       filename: file.name,
       contentType: file.type,
       uploadType: "bookcontent"
-    }, {
+    };
+
+    console.log("Request data:", {
+      filename: requestData.filename,
+      contentType: requestData.contentType,
+      uploadType: requestData.uploadType,
+      base64Length: requestData.file.length
+    });
+
+    // Send as JSON instead of FormData
+    console.log("Sending request to /api/books/upload-image");
+    const response = await axios.post("/api/books/upload-image", requestData, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
     });
     
-    // The backend now returns base64 data directly (like your old app)
-    // Convert it to a data URL for display
-    const base64Response = response.data;
-    return `data:${file.type};base64,${base64Response}`;
+    console.log("Response received:", {
+      status: response.status,
+      dataLength: response.data ? response.data.length : "NULL",
+      dataType: typeof response.data
+    });
+    
+    // The backend now returns file URL (like your old SkillMatch app)
+    const fileUrl = response.data;
+    
+    console.log("File URL received:", fileUrl);
+    console.log("=== FRONTEND UPLOAD DEBUG END ===");
+    
+    return fileUrl;
   } catch (error) {
-    console.error("Error uploading image:", error);
+    console.error("=== FRONTEND UPLOAD ERROR ===");
+    console.error("Error details:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
+    console.error("Full error:", error);
+    console.error("=== FRONTEND UPLOAD ERROR END ===");
     throw error;
   }
 };

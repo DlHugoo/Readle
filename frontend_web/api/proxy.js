@@ -17,9 +17,23 @@ export default async function handler(req, res) {
     const path = req.url.replace('/api/proxy', '');
     const targetUrl = `${backendUrl}${path}`;
 
+    console.log('=== VERCEL PROXY DEBUG START ===');
     console.log(`Proxying ${req.method} ${path} to ${targetUrl}`);
-    console.log('Request body:', req.body);
+    console.log('Request body type:', typeof req.body);
+    console.log('Request body length:', req.body ? JSON.stringify(req.body).length : 'NULL');
     console.log('Request headers:', req.headers);
+    
+    // Log specific upload request details
+    if (path.includes('upload-image')) {
+      console.log('=== UPLOAD REQUEST DEBUG ===');
+      console.log('Content-Type:', req.headers['content-type']);
+      console.log('Body keys:', req.body ? Object.keys(req.body) : 'NULL');
+      if (req.body && req.body.file) {
+        console.log('File base64 length:', req.body.file.length);
+        console.log('File base64 preview:', req.body.file.substring(0, 50) + '...');
+      }
+      console.log('=== UPLOAD REQUEST DEBUG END ===');
+    }
 
     // Prepare headers for the backend request
     const headers = {};
@@ -63,10 +77,22 @@ export default async function handler(req, res) {
     console.log('Request options:', requestOptions);
 
     // Forward the request to the backend
+    console.log('Sending request to backend with options:', {
+      method: requestOptions.method,
+      headers: requestOptions.headers,
+      bodyLength: requestOptions.body ? requestOptions.body.length : 'NULL'
+    });
+    
     const response = await fetch(targetUrl, requestOptions);
     
+    console.log('=== BACKEND RESPONSE DEBUG ===');
     console.log('Backend response status:', response.status);
     console.log('Backend response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (path.includes('upload-image')) {
+      console.log('Upload response status:', response.status);
+      console.log('Upload response ok:', response.ok);
+    }
     
     // Set response status
     res.status(response.status);

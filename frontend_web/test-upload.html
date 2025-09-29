@@ -22,32 +22,61 @@
                 return;
             }
             
+            console.log('=== TEST UPLOAD DEBUG START ===');
+            console.log('File details:', {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            });
+            
             try {
                 // Convert to base64 (like your old app)
+                console.log('Converting to base64...');
                 const base64Data = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onload = () => {
+                        const result = reader.result.split(',')[1];
+                        console.log('Base64 data length:', result.length);
+                        resolve(result);
+                    };
                     reader.onerror = reject;
                     reader.readAsDataURL(file);
                 });
                 
+                const requestData = {
+                    file: base64Data,
+                    filename: file.name,
+                    contentType: file.type,
+                    uploadType: 'bookcovers'
+                };
+                
+                console.log('Request data:', {
+                    filename: requestData.filename,
+                    contentType: requestData.contentType,
+                    uploadType: requestData.uploadType,
+                    base64Length: requestData.file.length
+                });
+                
                 // Send to backend (like your old app)
+                console.log('Sending request to /api/books/upload-image');
                 const response = await fetch('/api/books/upload-image', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + localStorage.getItem('token')
                     },
-                    body: JSON.stringify({
-                        file: base64Data,
-                        filename: file.name,
-                        contentType: file.type,
-                        uploadType: 'bookcovers'
-                    })
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('Response received:', {
+                    status: response.status,
+                    ok: response.ok,
+                    statusText: response.statusText
                 });
                 
                 if (response.ok) {
                     const base64Response = await response.text();
+                    console.log('Base64 response length:', base64Response.length);
                     
                     // Display the result (like your old app)
                     document.getElementById('result').innerHTML = 
@@ -58,14 +87,25 @@
                     document.getElementById('preview').src = `data:${file.type};base64,${base64Response}`;
                 } else {
                     const error = await response.text();
+                    console.error('Upload failed:', error);
                     document.getElementById('result').innerHTML = 
                         '<p style="color: red;">❌ Upload failed: ' + error + '</p>';
                 }
                 
             } catch (error) {
+                console.error('=== TEST UPLOAD ERROR ===');
+                console.error('Error details:', {
+                    message: error.message,
+                    name: error.name,
+                    stack: error.stack
+                });
+                console.error('=== TEST UPLOAD ERROR END ===');
+                
                 document.getElementById('result').innerHTML = 
                     '<p style="color: red;">❌ Error: ' + error.message + '</p>';
             }
+            
+            console.log('=== TEST UPLOAD DEBUG END ===');
         }
     </script>
 </body>
