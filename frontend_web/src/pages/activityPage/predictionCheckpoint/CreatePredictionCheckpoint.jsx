@@ -28,6 +28,7 @@ import {
   Trash2
 } from "lucide-react";
 import axios from "axios";
+import { getApiUrl } from "../../../utils/apiConfig";
 import TeacherNav from "../../../components/TeacherNav";
 
 const Modal = ({ open, onClose, type, message }) => {
@@ -276,7 +277,7 @@ const CreatePredictionCheckpoint = () => {
         formData.append("uploadType", "prediction");
 
         const response = await axios.post(
-          "API_BASE_URL/api/books/upload-image",
+          getApiUrl("api/books/upload-image"),
           formData,
           {
             headers: {
@@ -300,7 +301,7 @@ const CreatePredictionCheckpoint = () => {
 
       // Create the prediction checkpoint
       await axios.post(
-        "API_BASE_URL/api/prediction-checkpoints",
+        getApiUrl("api/prediction-checkpoints"),
         {
           title,
           bookId: selectedBookId,

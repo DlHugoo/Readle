@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import axios from "axios";
+import { getImageUrl, getApiUrl } from "../../../utils/apiConfig";
 import TeacherNav from '../../../components/TeacherNav';
 const Modal = ({ open, onClose, type, message }) => {
   if (!open) return null;
@@ -78,7 +79,7 @@ const TeacherCreateSSA = () => {
     // Only fetch books if no book ID was passed
     if (!passedBookId) {
       axios
-        .get("API_BASE_URL/api/books")
+        .get(getApiUrl("api/books"))
         .then((res) => setBooks(res.data))
         .catch(console.error);
     }
@@ -288,7 +289,7 @@ const TeacherCreateSSA = () => {
 
           try {
             const res = await axios.post(
-              "API_BASE_URL/api/books/upload-image",
+              getApiUrl("api/books/upload-image"),
               formData,
               {
                 headers: { Authorization: `Bearer ${token}` }, // Include token in headers
@@ -308,7 +309,7 @@ const TeacherCreateSSA = () => {
       );
 
       await axios.post(
-        "API_BASE_URL/api/ssa/create",
+        getApiUrl("api/ssa/create"),
         {
           title,
           bookId: selectedBookId,

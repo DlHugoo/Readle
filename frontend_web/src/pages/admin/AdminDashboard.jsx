@@ -3,6 +3,7 @@ import axios from "axios";
 import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BadgeManagement from "../../components/BadgeManagement";
+import { getApiUrl, getImageUrl } from "../../utils/apiConfig";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -309,7 +310,7 @@ const AdminDashboard = () => {
     const formData = new FormData();
     formData.append("file", editImageFile);
 
-    const res = await axios.post("http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/upload-image", formData, {
+    const res = await axios.post(getApiUrl("api/books/upload-image"), formData, {
       headers: {
         "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${token}`,
@@ -823,7 +824,7 @@ const AdminDashboard = () => {
                       <div className="h-48 bg-gray-200 flex items-center justify-center">
                         {book.imageURL ? (
                           <img
-                            src={`http://localhost:3000${book.imageURL}`}
+                            src={getImageUrl(book.imageURL)}
                             alt={book.title}
                             className="h-full w-full object-cover"
                           />
