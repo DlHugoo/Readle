@@ -4,6 +4,7 @@ import TeahcerNav from '../../components/TeacherNav';
 import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check, Sparkles, Star, Heart, Zap, GraduationCap, Users, Edit, Trash2, Archive, MoreVertical, X } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from 'axios'; // Import axios
+import { getImageUrl } from "../../utils/apiConfig";
 
 const ClassroomContentManager = () => {
   const { classroomId } = useParams(); // Retrieve classroomId from the route
