@@ -36,6 +36,13 @@ public class BookController {
         return bookService.getGlobalBooksForStudents();
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping("/admin/archived")
+    public ResponseEntity<List<BookEntity>> getArchivedBooksForAdmin() {
+        List<BookEntity> archivedBooks = bookService.getArchivedBooks();
+        return ResponseEntity.ok(archivedBooks);
+    }
+
     // 🔹 ADMIN: Create a global book
     @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/admin")
@@ -73,6 +80,18 @@ public class BookController {
     @GetMapping("/{bookId}")
     public Optional<BookEntity> getBookById(@PathVariable Long bookId) {
         return bookService.getBookById(bookId);
+    }
+
+    // 🔹 ADMIN: Delete a global book
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @DeleteMapping("/admin/{bookId}")
+    public ResponseEntity<?> deleteBookAsAdmin(@PathVariable Long bookId) {
+        try {
+            bookService.deleteBookAsAdmin(bookId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage()); // return readable message
+        }
     }
 
     // 🔹 Delete book
@@ -168,4 +187,11 @@ public class BookController {
         List<BookEntity> archivedBooks = bookService.getArchivedBooksByClassroomId(classroomId);
         return ResponseEntity.ok(archivedBooks);
     }
+
+    @GetMapping("/archived")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<List<BookEntity>> getArchivedBooks() {
+        return ResponseEntity.ok(bookService.getArchivedBooks());
+    }
+
 }
