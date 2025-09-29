@@ -16,6 +16,10 @@
     {
       "source": "/auth/:path*",
       "destination": "/api/proxy"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "/api/proxy"
     }
   ]
 }
