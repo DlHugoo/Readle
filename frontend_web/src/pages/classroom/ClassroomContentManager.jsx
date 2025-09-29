@@ -663,9 +663,8 @@ const ClassroomContentManager = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
                 {classroomContent.map((book, index) => {
-                  // Construct the full image URL
-                  const backendBaseUrl = "API_BASE_URL"; // Backend URL
-                  const fullImageUrl = `${backendBaseUrl}${book.imageURL}`;
+                  // Use getImageUrl for proper image URL handling
+                  const fullImageUrl = book.imageURL ? getImageUrl(book.imageURL) : null;
 
                   return (
                     <div
