@@ -1,3 +1,4 @@
+import { getApiBaseUrl, getImageUrl } from '../../utils/apiConfig';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import StudentNavbar from "../../components/StudentNavbar";
@@ -153,7 +154,7 @@ const StudentLibraryPage = () => {
 
         const headers = { Authorization: `Bearer ${token}` };
         const response = await axios.get(
-          `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/in-progress/${userId}`,
+          `/api/progress/in-progress/${userId}`,
           { headers }
         );
 

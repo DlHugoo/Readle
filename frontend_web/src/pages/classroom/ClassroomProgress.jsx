@@ -5,8 +5,9 @@ import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filte
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import StudentDetailsModal from './StudentDetailsModal';
 import axios from "axios";
+import { getApiBaseUrl } from "../../utils/apiConfig";
 
-const API_BASE_URL = 'http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000';
+const API_BASE_URL = getApiBaseUrl();
 
 const ClassroomProgress = () => {
   const { classroomId } = useParams();

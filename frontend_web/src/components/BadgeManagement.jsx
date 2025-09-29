@@ -222,7 +222,7 @@ const BadgeManagement = () => {
       achievementCriteria: badge.achievementCriteria,
       thresholdValue: badge.thresholdValue
     });
-    setEditImagePreview(badge.imageUrl ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${badge.imageUrl}` : null);
+    setEditImagePreview(badge.imageUrl ? getImageUrl(badge.imageUrl) : null);
     setEditImageFile(null);
     setShowEditModal(true);
   };
@@ -373,7 +373,7 @@ const BadgeManagement = () => {
               <div className="h-48 bg-gray-200 flex items-center justify-center relative">
                 {badge.imageUrl ? (
                   <img
-                    src={`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${badge.imageUrl}`}
+                    src={getImageUrl(badge.imageUrl)}
                     alt={badge.name}
                     className="h-full w-full object-cover"
                   />

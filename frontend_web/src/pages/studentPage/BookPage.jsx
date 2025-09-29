@@ -7,6 +7,7 @@ import noContentImage from "../../assets/no-content.png";
 import StoryProgressIndicator from "../../components/StoryProgressIndicator";
 import VocabularyHighlighter from "../../components/VocabularyHighlighter";
 import { jwtDecode } from "jwt-decode";
+import { getImageUrl, getApiUrl } from "../../utils/apiConfig";
 import {
   Maximize2,
   Minimize2,
@@ -23,12 +24,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const getImageURL = (url) => {
-  if (url?.startsWith("/uploads")) {
-    return `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${url}`;
-  }
-  return url;
-};
+// Use utility function for image URLs
+const getImageURL = getImageUrl;
 
 const BookPage = () => {
   const { bookId } = useParams();
@@ -90,7 +87,7 @@ const BookPage = () => {
             const token = localStorage.getItem("token");
             try {
               const progressRes = await axios.get(
-                `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/book/${storedUserId}/${bookRes.data.bookID}`,
+                getApiUrl(`api/progress/book/${storedUserId}/${bookRes.data.bookID}`),
                 { headers: { Authorization: `Bearer ${token}` } }
               );
 
@@ -152,7 +149,7 @@ const BookPage = () => {
     // First try to get existing progress
     axios
       .get(
-        `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/book/${storedUserId}/${book.bookID}`,
+        getApiUrl(`api/progress/book/${storedUserId}/${book.bookID}`),
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((res) => {
@@ -179,7 +176,7 @@ const BookPage = () => {
           console.log("No existing progress found, creating new tracker");
           axios
             .post(
-              `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/start/${storedUserId}/${book.bookID}`,
+              getApiUrl(`api/progress/start/${storedUserId}/${book.bookID}`),
               {},
               { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -212,9 +209,9 @@ const BookPage = () => {
       const token = localStorage.getItem("token");
       axios
         .put(
-          `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/update/${trackerId}?pageNumber=${
+          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${
             currentPageIndex + 1
-          }&readingTimeMinutes=1`,
+          }&readingTimeMinutes=1`),
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         )
@@ -237,7 +234,7 @@ const BookPage = () => {
       try {
         // 1) Load the checkpoint metadata for this book
         const { data: checkpoint } = await axios.get(
-          `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoints/by-book/${bookId}`,
+          getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -247,8 +244,8 @@ const BookPage = () => {
 
           // 3) Ask how many times the user has tried this checkpoint
           const { data: attemptCount } = await axios.get(
-            `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/prediction-checkpoint-attempts/user/${userId}` +
-              `/checkpoint/${checkpointId}/count`,
+            getApiUrl(`api/prediction-checkpoint-attempts/user/${userId}` +
+              `/checkpoint/${checkpointId}/count`),
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
@@ -276,8 +273,8 @@ const BookPage = () => {
       if (trackerId) {
         try {
           await axios.put(
-            `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/update/${trackerId}` +
-              `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`,
+            getApiUrl(`api/progress/update/${trackerId}` +
+              `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`),
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -305,7 +302,7 @@ const BookPage = () => {
         const pageNumber = prevIndex + 1;
         axios
           .put(
-            `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`,
+            getApiUrl(`api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`),
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )

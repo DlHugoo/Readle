@@ -78,7 +78,7 @@ const TeacherCreateSSA = () => {
     // Only fetch books if no book ID was passed
     if (!passedBookId) {
       axios
-        .get("http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books")
+        .get("API_BASE_URL/api/books")
         .then((res) => setBooks(res.data))
         .catch(console.error);
     }
@@ -91,7 +91,7 @@ const TeacherCreateSSA = () => {
     const token = localStorage.getItem("token");
     
     axios
-      .get(`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/ssa/by-book/${selectedBookId}`, {
+      .get(`/api/ssa/by-book/${selectedBookId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then((res) => {
@@ -102,7 +102,7 @@ const TeacherCreateSSA = () => {
             id: `${Date.now()}-${idx}`,
             file: null,
             preview: img.imageUrl.startsWith("/uploads")
-              ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${img.imageUrl}`
+              ? getImageUrl(img.imageUrl)
               : img.imageUrl,
             originalId: img.id
           }));
@@ -233,7 +233,7 @@ const TeacherCreateSSA = () => {
       }));
 
       await axios.put(
-        `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/ssa/update-positions/${existingSSA.id}`,
+        `/api/ssa/update-positions/${existingSSA.id}`,
         { images: updatedImages },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -288,7 +288,7 @@ const TeacherCreateSSA = () => {
 
           try {
             const res = await axios.post(
-              "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/books/upload-image",
+              "API_BASE_URL/api/books/upload-image",
               formData,
               {
                 headers: { Authorization: `Bearer ${token}` }, // Include token in headers
@@ -308,7 +308,7 @@ const TeacherCreateSSA = () => {
       );
 
       await axios.post(
-        "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/ssa/create",
+        "API_BASE_URL/api/ssa/create",
         {
           title,
           bookId: selectedBookId,
@@ -327,7 +327,7 @@ const TeacherCreateSSA = () => {
       
       // Refresh the data after creating
       axios
-        .get(`http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000/api/ssa/by-book/${selectedBookId}`)
+        .get(`/api/ssa/by-book/${selectedBookId}`)
         .then((res) => {
           if (res.data && res.data.images && res.data.images.length > 0) {
             setExistingSSA(res.data);
@@ -336,7 +336,7 @@ const TeacherCreateSSA = () => {
               id: `${Date.now()}-${idx}`,
               file: null,
               preview: img.imageUrl.startsWith("/uploads")
-                ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${img.imageUrl}`
+                ? getImageUrl(img.imageUrl)
                 : img.imageUrl,
               originalId: img.id
             }));
