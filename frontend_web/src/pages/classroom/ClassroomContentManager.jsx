@@ -277,7 +277,7 @@ const ClassroomContentManager = () => {
     setBookGenre(book.genre);
     setBookDifficulty(book.difficultyLevel);
     setBookImageURL(book.imageURL);
-    setImagePreview(book.imageURL ? `http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000${book.imageURL}` : null);
+    setImagePreview(book.imageURL ? getImageUrl(book.imageURL) : null);
     setShowEditModal(true);
   };
 
@@ -603,7 +603,7 @@ const ClassroomContentManager = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
                 {classroomContent.map((book, index) => {
                   // Construct the full image URL
-                  const backendBaseUrl = "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000"; // Backend URL
+                  const backendBaseUrl = "API_BASE_URL"; // Backend URL
                   const fullImageUrl = `${backendBaseUrl}${book.imageURL}`;
 
                   return (
