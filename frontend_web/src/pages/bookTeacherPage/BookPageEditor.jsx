@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import TeacherNav from "../../components/TeacherNav";
-import AdminNav from "../../components/AdminNav";
+import TeahcerNav from "../../components/TeacherNav";
 import {
   ChevronLeft,
   ChevronRight,
@@ -30,7 +29,7 @@ import { Link } from "react-router-dom";
 import axios from "axios"; // Import axios
 import AIImageGenerator from "../../components/AIImageGenerator";
 
-const BookPageEditor = ({ role = "teacher" }) => {
+const BookPageEditor = () => {
   const { bookId } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
@@ -420,7 +419,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
   if (isLoading) {
     return (
       <div className="w-full min-h-screen pt-20">
-        {role === "admin" ? <AdminNav /> : <TeacherNav />}
+        <TeahcerNav />
         <div className="p-6 max-w-7xl mx-auto">
           <div className="flex justify-center items-center h-64">
             <p className="text-xl text-gray-500">Loading book pages...</p>
@@ -433,7 +432,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
   if (error) {
     return (
       <div className="w-full min-h-screen pt-20">
-        {role === "admin" ? <AdminNav /> : <TeacherNav />}
+        <TeahcerNav />
         <div className="p-6 max-w-7xl mx-auto">
           <div className="flex flex-col justify-center items-center h-64">
             <p className="text-xl text-red-500 mb-4">Error: {error}</p>
@@ -453,7 +452,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
     <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Navigation Bar - Full Width */}
       <div className="w-full">
-        {role === "admin" ? <AdminNav /> : <TeacherNav />}
+        <TeahcerNav />
       </div>
 
       {/* Main Content - Centered and Wider with top padding to prevent navbar overlap */}
@@ -474,9 +473,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
               className="group flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 hover:bg-white/80 transition-all duration-300 hover:scale-105"
             >
               <ChevronLeft size={20} className="text-blue-600 group-hover:text-blue-700" />
-              <button>
-                Back to {role === "admin" ? "Dashboard" : "Classroom"}
-              </button>
+              <span className="font-semibold text-blue-600 group-hover:text-blue-700">Back to Classroom</span>
             </button>
             
             {/* Decorative elements */}
@@ -498,7 +495,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
                   </div>
                   <div>
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
-                      {book?.title || "Book Editor"} ({role === "admin" ? "Admin View" : "Teacher View"})
+                      {book?.title || "Book Editor"}
                     </h1>
                     <p className="text-sm text-gray-600 flex items-center">
                       <span className="mr-2">Author:</span>
@@ -543,9 +540,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">Content Creator</h2>
-                    <p className="text-indigo-100">
-                      {role === "admin" ? "Review and manage book pages" : "Design engaging pages for your students"}
-                    </p>
+                    <p className="text-indigo-100">Design engaging pages for your students</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">

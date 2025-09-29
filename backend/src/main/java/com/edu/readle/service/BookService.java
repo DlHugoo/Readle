@@ -28,11 +28,7 @@ public class BookService {
 
     // 🔹 For student "For You" section
     public List<BookEntity> getGlobalBooksForStudents() {
-        return bookRepository.findByArchivedFalse();
-    }
-
-    public List<BookEntity> getArchivedBooks() {
-        return bookRepository.findByArchivedTrue();
+        return bookRepository.findByVisibleToAllTrue();
     }
 
     // 🔹 Admin creates global book
@@ -131,27 +127,6 @@ public class BookService {
             bookRepository.save(book);
         });
     }
-
-   @Transactional
-    public void deleteBookAsAdmin(Long bookId) {
-        Optional<BookEntity> bookOpt = bookRepository.findById(bookId);
-        if (bookOpt.isEmpty()) {
-            throw new RuntimeException("Book not found");
-        }
-
-        BookEntity book = bookOpt.get();
-
-        boolean hasPages = book.getPages() != null && !book.getPages().isEmpty();
-        boolean hasSnake = book.getSnakeQuestions() != null && !book.getSnakeQuestions().isEmpty();
-        boolean hasProgress = hasProgress(book);
-
-        if (hasPages || hasSnake || hasProgress) {
-            throw new RuntimeException("Cannot delete this book because it has associated content or progress.");
-        }
-
-        bookRepository.deleteById(bookId);
-    }
-
 
     @Transactional
     public void deleteBook(Long bookID) {

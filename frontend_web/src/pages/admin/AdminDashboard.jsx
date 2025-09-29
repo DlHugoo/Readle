@@ -20,9 +20,6 @@ const AdminDashboard = () => {
   const [success, setSuccess] = useState("");
   const [showAddBookModal, setShowAddBookModal] = useState(false);
   const [alertModal, setAlertModal] = useState({ show: false, type: "", message: "" });
-  const GENRES = ["Fiction", "Nonfiction", "Mystery", "Fantasy", "Fable"];
-  const [archivedBooks, setArchivedBooks] = useState([]);
-
 
   // Edit state
   const [editingBook, setEditingBook] = useState(null);
@@ -48,14 +45,9 @@ const AdminDashboard = () => {
     if (role !== "ADMIN") {
       navigate("/admin-login");
     } else {
-      if (activeTab === "books") {
-        fetchBooks();
-      } else if (activeTab === "archived") {
-        fetchArchivedBooks();
-      }
+      fetchBooks();
     }
-  }, [navigate, activeTab]);
-
+  }, [navigate]);
 
   const fetchBooks = async () => {
     try {
@@ -64,19 +56,6 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Failed to fetch books", error);
       showAlertModal("error", "Failed to fetch books. Please try again later.");
-    }
-  };
-
-  const fetchArchivedBooks = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("/api/books/archived", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setArchivedBooks(response.data);  // ✅ update archivedBooks, not books
-    } catch (error) {
-      console.error("Failed to fetch archived books", error);
-      showAlertModal("error", "Failed to fetch archived books.");
     }
   };
 
@@ -225,47 +204,25 @@ const AdminDashboard = () => {
     setMenuOpenIndex(null);
   };
 
-  const handleArchiveClick = async (book) => {
-    const token = localStorage.getItem("token");
-
-    try {
-      if (book.archived) {
-        await axios.put(`/api/books/${book.bookID}/unarchive`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        showAlertModal("success", "Book unarchived successfully!");
-      } else {
-        await axios.put(`/api/books/${book.bookID}/archive`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        showAlertModal("success", "Book archived successfully!");
-      }
-
-      // Refresh books
-      fetchBooks();
-    } catch (error) {
-      console.error("Archive/unarchive failed:", error);
-      showAlertModal("error", `Failed to update archive state: ${error.response?.data || error.message}`);
-    }
-  };
-
-
   const confirmDeleteBook = async () => {
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`/api/books/admin/${selectedBook.bookID}`, {
+      await axios.delete(`/api/books/${selectedBook.bookID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setBooks(books.filter((b) => b.bookID !== selectedBook.bookID));
       showAlertModal("success", "Book deleted successfully!");
       setShowDeleteModal(false);
     } catch (error) {
-  console.error("Failed to delete book:", error);
-
-      const msg = error.response?.data || "An unknown error occurred";
-      showAlertModal("error", `Failed to delete book: ${msg}`);
+      console.error("Failed to delete book:", error);
+      
+      // Show a more specific error message
+      if (error.response && error.response.status === 500) {
+        showAlertModal("error", "Cannot delete this book because it has associated content (pages or questions). Please remove the content first.");
+      } else {
+        showAlertModal("error", `Failed to delete book: ${error.response?.data?.message || "An unknown error occurred"}`);
+      }
     }
-
   };
 
   const openEditModal = (book, index) => {
@@ -336,7 +293,7 @@ const AdminDashboard = () => {
 
   const handleBookClick = (bookId) => {
     console.log("Navigating to book with ID:", bookId);
-    navigate(`/admin-book-editor/${bookId}`);
+    navigate(`/book-editor/${bookId}`);
   };
 
   const getDifficultyStars = (level) =>
@@ -364,16 +321,6 @@ const AdminDashboard = () => {
               }`}
             >
               Books
-            </button>
-            <button
-              onClick={() => setActiveTab("archived")}
-              className={`py-2 px-4 font-semibold text-gray-700 ${
-                activeTab === "archived"
-                  ? "border-b-2 border-[#3B82F6] text-[#3B82F6]"
-                  : "hover:text-gray-900"
-              }`}
-            >
-              Archived
             </button>
             <button
               onClick={() => setActiveTab("badges")}
@@ -487,25 +434,16 @@ const AdminDashboard = () => {
                             <button
                               className="block w-full text-left px-4 py-2 hover:bg-yellow-200 text-yellow-600 font-semibold"
                               onClick={(e) => {
-                                e.stopPropagation();
+                                e.stopPropagation(); // Prevent triggering other events
                                 openEditModal(book, index);
                               }}
                             >
                               ✏️ Edit
                             </button>
                             <button
-                              className="block w-full text-left px-4 py-2 hover:bg-blue-200 text-blue-600 font-semibold"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleArchiveClick(book);
-                              }}
-                            >
-                              📦 {book.archived ? "Unarchive" : "Archive"}
-                            </button>
-                            <button
                               className="block w-full text-left px-4 py-2 hover:bg-red-200 text-red-600 font-semibold"
                               onClick={(e) => {
-                                e.stopPropagation();
+                                e.stopPropagation(); // Prevent triggering other events
                                 handleDeleteClick(book);
                               }}
                             >
@@ -513,7 +451,6 @@ const AdminDashboard = () => {
                             </button>
                           </div>
                         )}
-
                       </div>
                     ))}
                   </div>
@@ -544,20 +481,14 @@ const AdminDashboard = () => {
                       className="w-full mb-3 p-3 border border-gray-300 rounded"
                     />
 
-                    <select
+                    <input
+                      type="text"
                       name="genre"
+                      placeholder="Genre"
                       value={newBook.genre}
                       onChange={handleChange}
                       className="w-full mb-3 p-3 border border-gray-300 rounded"
-                    >
-                      <option value="">Select a genre</option>
-                      {GENRES.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
-
+                    />
 
                     <input
                       type="number"
@@ -647,19 +578,13 @@ const AdminDashboard = () => {
                       className="w-full mb-3 p-3 border border-gray-300 rounded"
                     />
 
-                    <select
+                    <input
+                      type="text"
+                      placeholder="Genre"
                       value={editFields.genre}
                       onChange={(e) => setEditFields({ ...editFields, genre: e.target.value })}
                       className="w-full mb-3 p-3 border border-gray-300 rounded"
-                    >
-                      <option value="">Select a genre</option>
-                      {GENRES.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
-
+                    />
 
                     <input
                       type="number"
@@ -781,52 +706,6 @@ const AdminDashboard = () => {
                 </div>
               )}
             </>
-          )}
-
-          {activeTab === "archived" && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                <BookOpen size={20} className="mr-2 text-blue-500" />
-                <span>Archived Books</span>
-              </h2>
-
-              {archivedBooks.length === 0 ? (
-                <p className="text-gray-500">No archived books.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {archivedBooks.map((book) => (
-                    <div
-                      key={book.bookID}
-                      className="bg-white rounded-lg shadow-lg overflow-hidden"
-                    >
-                      <div className="h-48 bg-gray-200 flex items-center justify-center">
-                        {book.imageURL ? (
-                          <img
-                            src={`http://localhost:3000${book.imageURL}`}
-                            alt={book.title}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-gray-500">No Image</span>
-                        )}
-                      </div>
-                      <div className="p-3">
-                        <h3 className="text-lg font-bold text-[#3B82F6] truncate">
-                          {book.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">by {book.author}</p>
-                        <button
-                          onClick={() => handleArchiveClick(book)}
-                          className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                          Unarchive
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           )}
 
           {activeTab === "badges" && <BadgeManagement />}
