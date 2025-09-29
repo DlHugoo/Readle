@@ -2,6 +2,8 @@
 import axios from "axios";
 
 // Use environment variable for API base URL, fallback to relative URLs for Vercel proxy
+// For production: empty string uses Vercel proxy
+// For local dev: set VITE_API_BASE_URL=http://localhost:3000
 const BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // ---- token helpers ----
