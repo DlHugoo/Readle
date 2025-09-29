@@ -212,25 +212,38 @@ public class BookController {
             }
 
             // Check base64 size (approximate)
-            if (base64Data.length() > MAX_FILE_SIZE * 4 / 3) { // Base64 is ~33% larger than binary
-                System.out.println("ERROR: File too large: " + base64Data.length() + " > " + (MAX_FILE_SIZE * 4 / 3));
+            long maxBase64Size = MAX_FILE_SIZE * 4 / 3;
+            System.out.println("File size check: " + base64Data.length() + " <= " + maxBase64Size);
+            if (base64Data.length() > maxBase64Size) { // Base64 is ~33% larger than binary
+                System.out.println("ERROR: File too large: " + base64Data.length() + " > " + maxBase64Size);
                 return ResponseEntity.badRequest().body("File size exceeds the limit of 5MB");
             }
+            System.out.println("File size check passed");
 
             // Convert base64 to file and save to filesystem (like your old SkillMatch app)
             String uploadDir = "uploads/" + uploadType + "/";
+            System.out.println("Upload directory: " + uploadDir);
+            
             File directory = new File(uploadDir);
             if (!directory.exists()) {
-                directory.mkdirs();
+                System.out.println("Creating directory: " + uploadDir);
+                boolean created = directory.mkdirs();
+                System.out.println("Directory created: " + created);
             }
 
             // Generate unique filename like your old app
             String uniqueFileName = System.currentTimeMillis() + "_" + filename;
             Path filePath = Paths.get(uploadDir + uniqueFileName);
+            System.out.println("File path: " + filePath);
             
             // Decode base64 and write to file
+            System.out.println("Decoding base64 data...");
             byte[] fileBytes = Base64.getDecoder().decode(base64Data);
+            System.out.println("Decoded bytes length: " + fileBytes.length);
+            
+            System.out.println("Writing file...");
             Files.write(filePath, fileBytes);
+            System.out.println("File written successfully");
 
             // Return web-accessible path like your old app
             String fileUrl = "/uploads/" + uploadType + "/" + uniqueFileName;
