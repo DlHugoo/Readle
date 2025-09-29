@@ -1,7 +1,6 @@
 package com.edu.readle.controller;
 
 import com.edu.readle.dto.StorySequenceDTO;
-import com.edu.readle.dto.StorySequenceDTO.ImageDTO;
 import com.edu.readle.dto.UpdateImagePositionsDTO;
 import com.edu.readle.entity.*;
 import com.edu.readle.repository.*;
@@ -46,7 +45,7 @@ public class StorySequenceActivityController {
         Optional<StorySequenceActivityEntity> optionalSSA = ssaRepo.findByBook_BookID(bookId);
 
         if (optionalSSA.isEmpty()) {
-            return ResponseEntity.badRequest().body("No SSA found for book " + bookId);
+            return ResponseEntity.notFound().build();
         }
 
         StorySequenceActivityEntity ssa = optionalSSA.get();

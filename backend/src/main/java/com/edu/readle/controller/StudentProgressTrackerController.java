@@ -20,7 +20,6 @@ public class StudentProgressTrackerController {
     private final StudentProgressTrackerService progressTrackerService;
     private final BadgeService badgeService;
 
-    @Autowired
     public StudentProgressTrackerController(StudentProgressTrackerService progressTrackerService, 
                                            com.edu.readle.service.BadgeService badgeService) {
         this.progressTrackerService = progressTrackerService;
@@ -108,6 +107,12 @@ public class StudentProgressTrackerController {
     public ResponseEntity<StudentProgressDTO> getBookProgress(
             @PathVariable Long userId,
             @PathVariable Long bookId) {
-        return ResponseEntity.ok(progressTrackerService.getBookProgress(userId, bookId));
+        try {
+            StudentProgressDTO progress = progressTrackerService.getBookProgress(userId, bookId);
+            return ResponseEntity.ok(progress);
+        } catch (RuntimeException e) {
+            logger.warn("No progress found for user {} and book {}: {}", userId, bookId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 }

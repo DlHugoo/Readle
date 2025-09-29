@@ -41,9 +41,17 @@ const BookCompletionPage = () => {
         
         // Check for SSA
         const ssaRes = await fetch(`/api/ssa/by-book/${bookId}`, { headers });
-        const ssaData = await ssaRes.json();
-        setHasSSA(!!ssaData);
+        if (ssaRes.ok) {
+          const ssaData = await ssaRes.json();
+          setHasSSA(!!ssaData);
+        } else if (ssaRes.status === 404) {
+          setHasSSA(false);
+        } else {
+          console.error("Error checking SSA:", ssaRes.status);
+          setHasSSA(false);
+        }
       } catch (err) {
+        console.error("Error checking SSA:", err);
         setHasSSA(false);
       }
 
@@ -79,29 +87,32 @@ const BookCompletionPage = () => {
           `/api/progress/book/${userId}/${bookId}`,
           { headers }
         );
-        const progressData = await progressRes.json();
-
-        if (progressData?.id) {
-          // Now complete the book using the tracker ID
-          await fetch(
-            `/api/progress/complete/${progressData.id}`,
-            {
-              method: 'PUT',
-              headers: { ...headers, 'Content-Type': 'application/json' },
-              body: JSON.stringify({})
-            }
-          );
-          console.log("Book completed successfully!");
+        
+        if (progressRes.ok) {
+          const progressData = await progressRes.json();
+          
+          if (progressData?.id) {
+            // Now complete the book using the tracker ID
+            await fetch(
+              `/api/progress/complete/${progressData.id}`,
+              {
+                method: 'PUT',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+              }
+            );
+            console.log("Book completed successfully!");
+          } else {
+            setCompletionError("Could not find progress tracker for this book.");
+          }
+        } else if (progressRes.status === 404) {
+          setCompletionError("No progress found for this book. Please start reading first.");
         } else {
-          setCompletionError("Could not find progress tracker for this book.");
+          setCompletionError("Failed to get book progress. Please try again.");
         }
       } catch (err) {
         console.error("Error completing book:", err);
-        if (err.response?.status === 404) {
-          setCompletionError("No progress found for this book. Please start reading first.");
-        } else {
-          setCompletionError("Failed to complete book. Please try again.");
-        }
+        setCompletionError("Failed to complete book. Please try again.");
       } finally {
         setIsCompleting(false);
       }
