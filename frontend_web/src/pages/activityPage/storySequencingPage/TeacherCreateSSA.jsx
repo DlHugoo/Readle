@@ -283,19 +283,41 @@ const TeacherCreateSSA = () => {
             return { imageUrl: preview, correctPosition: idx + 1 };
           }
           
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("uploadType", "ssa");
+          // Convert file to base64 (like other upload functions)
+          const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          const requestData = {
+            file: base64Data,
+            filename: file.name,
+            contentType: file.type,
+            uploadType: "ssa"
+          };
 
           try {
-            const res = await axios.post(
+            const res = await fetch(
               getApiUrl("api/books/upload-image"),
-              formData,
               {
-                headers: { Authorization: `Bearer ${token}` }, // Include token in headers
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(requestData)
               }
             );
-            return { imageUrl: res.data, correctPosition: idx + 1 };
+
+            if (!res.ok) {
+              const errorText = await res.text();
+              throw new Error(`Upload failed: ${res.status} - ${errorText}`);
+            }
+
+            const imageUrl = await res.text();
+            return { imageUrl: imageUrl, correctPosition: idx + 1 };
           } catch (error) {
             // Handle upload errors
             console.error("Image upload error:", error);

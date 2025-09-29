@@ -272,21 +272,39 @@ const CreatePredictionCheckpoint = () => {
 
       // Upload all images first
       const uploadImage = async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("uploadType", "prediction");
+        // Convert file to base64 (like other upload functions)
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
 
-        const response = await axios.post(
+        const requestData = {
+          file: base64Data,
+          filename: file.name,
+          contentType: file.type,
+          uploadType: "prediction"
+        };
+
+        const response = await fetch(
           getApiUrl("api/books/upload-image"),
-          formData,
           {
+            method: "POST",
             headers: {
+              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
             },
+            body: JSON.stringify(requestData)
           }
         );
-        return response.data;
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+        }
+
+        return await response.text();
       };
 
       // Upload story images
