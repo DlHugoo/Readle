@@ -307,16 +307,37 @@ const AdminDashboard = () => {
   const uploadEditImage = async () => {
     if (!editImageFile) return null;
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-    formData.append("file", editImageFile);
+    
+    // Convert file to base64 (like other upload functions)
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+      reader.onerror = reject;
+      reader.readAsDataURL(editImageFile);
+    });
 
-    const res = await axios.post(getApiUrl("api/books/upload-image"), formData, {
+    const requestData = {
+      file: base64Data,
+      filename: editImageFile.name,
+      contentType: editImageFile.type,
+      uploadType: "bookcovers"
+    };
+
+    const res = await fetch(getApiUrl("api/books/upload-image"), {
+      method: "POST",
       headers: {
-        "Content-Type": "multipart/form-data",
+        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify(requestData)
     });
-    return res.data;
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Upload failed: ${res.status} - ${errorText}`);
+    }
+
+    return await res.text();
   };
 
   const submitEdit = async () => {
