@@ -1,9 +1,10 @@
 // src/api/api.js
 import axios from "axios";
 
-// Set in frontend_web/.env.local:
-// VITE_BACKEND_BASE=http://localhost:3000  (or leave empty if using Vite proxy)
-const BASE = import.meta.env.VITE_BACKEND_BASE || "";
+// Use environment variable for API base URL
+// For production: empty string uses Vercel proxy (HTTPS to HTTPS)
+// For local dev: set VITE_API_BASE_URL=http://localhost:3000
+const BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // ---- token helpers ----
 export const getToken = () => localStorage.getItem("token");

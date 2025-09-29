@@ -7,6 +7,7 @@ import noContentImage from "../../assets/no-content.png";
 import StoryProgressIndicator from "../../components/StoryProgressIndicator";
 import VocabularyHighlighter from "../../components/VocabularyHighlighter";
 import { jwtDecode } from "jwt-decode";
+import { getImageUrl, getApiUrl } from "../../utils/apiConfig";
 import {
   Maximize2,
   Minimize2,
@@ -23,12 +24,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const getImageURL = (url) => {
-  if (url?.startsWith("/uploads")) {
-    return `http://localhost:3000${url}`;
-  }
-  return url;
-};
+// Use utility function for image URLs
+const getImageURL = getImageUrl;
 
 const BookPage = () => {
   const { bookId } = useParams();
@@ -72,13 +69,14 @@ const BookPage = () => {
   useEffect(() => {
     const loadBookAndPages = async () => {
       try {
-        const bookRes = await axios.get(`/api/books/${bookId}`);
-        const pagesRes = await axios.get(`/api/pages/${bookId}`);
-        const pagesData = pagesRes.data.sort(
+        const bookRes = await fetch(getApiUrl(`api/books/${bookId}`));
+        const pagesRes = await fetch(getApiUrl(`api/pages/${bookId}`));
+        const bookData = await bookRes.json();
+        const pagesData = (await pagesRes.json()).sort(
           (a, b) => a.pageNumber - b.pageNumber
         );
 
-        if (bookRes.data) setBook(bookRes.data);
+        if (bookData) setBook(bookData);
         setPages(pagesData);
 
         // Get page number from URL query params first
@@ -92,22 +90,23 @@ const BookPage = () => {
         } else {
           // If no page param, check for user's last read page
           const storedUserId = localStorage.getItem("userId");
-          if (storedUserId && bookRes.data?.bookID) {
+          if (storedUserId && bookData?.bookID) {
             const token = localStorage.getItem("token");
             try {
-              const progressRes = await axios.get(
-                `http://localhost:3000/api/progress/book/${storedUserId}/${bookRes.data.bookID}`,
+              const progressRes = await fetch(
+                getApiUrl(`api/progress/book/${storedUserId}/${bookData.bookID}`),
                 { headers: { Authorization: `Bearer ${token}` } }
               );
+              const progressData = await progressRes.json();
 
-              if (progressRes.data && progressRes.data.lastPageRead) {
+              if (progressData && progressData.lastPageRead) {
                 // Set to last read page (subtract 1 for zero-based index)
                 const lastPage = Math.min(
-                  progressRes.data.lastPageRead - 1,
+                  progressData.lastPageRead - 1,
                   pagesData.length - 1
                 );
                 setCurrentPageIndex(lastPage);
-                if (progressRes.data.id) setTrackerId(progressRes.data.id);
+                if (progressData.id) setTrackerId(progressData.id);
               }
             } catch (err) {
               // If no progress found or error, default to first page
@@ -162,7 +161,7 @@ const BookPage = () => {
     // First try to get existing progress
     axios
       .get(
-        `http://localhost:3000/api/progress/book/${storedUserId}/${book.bookID}`,
+        getApiUrl(`api/progress/book/${storedUserId}/${book.bookID}`),
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((res) => {
@@ -191,7 +190,7 @@ const BookPage = () => {
           console.log("No existing progress found, creating new tracker");
           axios
             .post(
-              `http://localhost:3000/api/progress/start/${storedUserId}/${book.bookID}`,
+              getApiUrl(`api/progress/start/${storedUserId}/${book.bookID}`),
               {},
               { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -265,7 +264,7 @@ const BookPage = () => {
         const token = localStorage.getItem('token');
         const headers = { Authorization: `Bearer ${token}` };
         axios.put(
-          `http://localhost:3000/api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeSeconds=${remaining}`,
+          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeSeconds=${remaining}`),
           {},
           { headers }
         ).catch(() => {});
@@ -275,7 +274,7 @@ const BookPage = () => {
         if (storedUserId && minutesFromRemainder > 0) {
           axios
             .post(
-              `http://localhost:3000/api/badges/user/${storedUserId}/reading-time?minutes=${minutesFromRemainder}`,
+              getApiUrl(`api/badges/user/${storedUserId}/reading-time?minutes=${minutesFromRemainder}`),
               {},
               { headers }
             )
@@ -298,7 +297,7 @@ const BookPage = () => {
       const minutesToAdd = 1;
       axios
         .put(
-          `http://localhost:3000/api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeMinutes=${minutesToAdd}`,
+          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeMinutes=${minutesToAdd}`),
           {},
           { headers }
         )
@@ -309,7 +308,7 @@ const BookPage = () => {
       if (storedUserId) {
         axios
           .post(
-            `http://localhost:3000/api/badges/user/${storedUserId}/reading-time?minutes=${minutesToAdd}`,
+            getApiUrl(`api/badges/user/${storedUserId}/reading-time?minutes=${minutesToAdd}`),
             {},
             { headers }
           )
@@ -324,7 +323,7 @@ const BookPage = () => {
       const token = localStorage.getItem("token");
       axios
         .put(
-          `http://localhost:3000/api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}`,
+          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}`),
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         )
@@ -344,21 +343,23 @@ const BookPage = () => {
 
       try {
         // 1) Load the checkpoint metadata for this book
-        const { data: checkpoint } = await axios.get(
-          `http://localhost:3000/api/prediction-checkpoints/by-book/${bookId}`,
+        const checkpointRes = await fetch(
+          getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        const checkpoint = await checkpointRes.json();
 
         // 2) If this checkpoint lives on the *next* page…
         if (checkpoint.pageNumber === currentPageIndex + 1) {
           const checkpointId = checkpoint.id;
 
           // 3) Ask how many times the user has tried this checkpoint
-          const { data: attemptCount } = await axios.get(
-            `http://localhost:3000/api/prediction-checkpoint-attempts/user/${userId}` +
-              `/checkpoint/${checkpointId}/count`,
+          const attemptRes = await fetch(
+            getApiUrl(`api/prediction-checkpoint-attempts/user/${userId}` +
+              `/checkpoint/${checkpointId}/count`),
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          const attemptCount = await attemptRes.json();
 
           // 4) Only redirect into the prediction if they've never attempted yet
           if (attemptCount === 0) {
@@ -384,8 +385,8 @@ const BookPage = () => {
       if (trackerId) {
         try {
           await axios.put(
-            `http://localhost:3000/api/progress/update/${trackerId}` +
-              `?pageNumber=${nextIndex + 1}`,
+            getApiUrl(`api/progress/update/${trackerId}` +
+              `?pageNumber=${nextIndex + 1}`),
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -415,7 +416,7 @@ const BookPage = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       axios.put(
-        `http://localhost:3000/api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeSeconds=${remaining}`,
+        getApiUrl(`api/progress/update/${trackerId}?pageNumber=${currentPageIndex + 1}&readingTimeSeconds=${remaining}`),
         {},
         { headers }
       ).catch(() => {});
@@ -425,7 +426,7 @@ const BookPage = () => {
       if (storedUserId && minutesFromRemainder > 0) {
         axios
           .post(
-            `http://localhost:3000/api/badges/user/${storedUserId}/reading-time?minutes=${minutesFromRemainder}`,
+            getApiUrl(`api/badges/user/${storedUserId}/reading-time?minutes=${minutesFromRemainder}`),
             {},
             { headers }
           )
@@ -446,7 +447,7 @@ const BookPage = () => {
         const pageNumber = prevIndex + 1;
         axios
           .put(
-            `http://localhost:3000/api/progress/update/${trackerId}?pageNumber=${pageNumber}`,
+            getApiUrl(`api/progress/update/${trackerId}?pageNumber=${pageNumber}`),
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )

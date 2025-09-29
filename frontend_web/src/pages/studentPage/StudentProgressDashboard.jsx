@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import StudentNavbar from '../../components/StudentNavbar';
+import { getApiBaseUrl } from '../../utils/apiConfig';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = getApiBaseUrl();
 
 // Define the scoring functions outside the component
 // This ensures they're available everywhere in the file
@@ -384,17 +385,23 @@ const StudentProgressDashboard = () => {
     return (
         <>
             <StudentNavbar />
-            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
                 <div className="max-w-6xl mx-auto px-4 py-8">
                     {/* Header Section */}
                     <div className="text-center mb-12">
-                        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
-                            📖 Reading Progress
+                        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                            📚 Reading Progress Dashboard
                         </h1>
-                        <p className="text-lg text-gray-600">Track your journey and celebrate milestones as you read!</p>
+                        <p className="text-lg text-gray-600 mb-6">Track your reading journey and celebrate your achievements!</p>
+                        <button
+                            onClick={() => navigate('/student/badges')}
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-full shadow-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 hover:scale-105 font-semibold"
+                        >
+                            🏆 View Achievements
+                        </button>
                     </div>
 
-                    {/* Statistics Cards */}
+                    {/* Statistics Cards with Enhanced Design */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                         <div 
                             onClick={() => scrollToSection('completed-books')}
@@ -412,43 +419,69 @@ const StudentProgressDashboard = () => {
                             className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-yellow-500 cursor-pointer hover:shadow-2xl"
                         >
                             <div className="bg-yellow-100 rounded-full p-4 mb-4">
-                                <span className="text-3xl">📚</span>
+                                <span className="text-3xl">📖</span>
                             </div>
                             <span className="text-gray-600 text-xl mb-3 font-medium">Books in Progress</span>
                             <span className="text-5xl font-bold text-yellow-500">{stats.inProgressCount}</span>
-                            <div className="mt-2 text-sm text-gray-500">Keep going!</div>
+                            <div className="mt-2 text-sm text-gray-500">Keep reading!</div>
                         </div>
                     </div>
-
-                    {/* Average Scores Cards */}
+                
+                    {/* Average Scores Cards with Enhanced Design */}
                     <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
-                        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Average Activity Scores</h2>
+                        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                            🎯 Average Activity Scores
+                        </h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-gray-50 rounded-xl p-6 flex flex-col items-center">
-                                <span className="text-gray-500 text-md mb-2">Snake Game</span>
-                                <div className="flex items-center">
-                                    <span role="img" aria-label="snake" className="mr-2 text-2xl">🐍</span>
-                                    <span className="text-4xl font-bold text-green-600">{averageScores.snakeGame}</span>
+                            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 border border-green-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-green-700 font-bold text-lg">🐍 Snake Game</span>
+                                    <div className="bg-green-500 text-white rounded-full px-3 py-1 text-sm font-bold">
+                                        {averageScores.snakeGame}
+                                    </div>
                                 </div>
+                                <div className="w-full bg-green-200 rounded-full h-3">
+                                    <div 
+                                        className="bg-green-500 h-3 rounded-full transition-all duration-1000" 
+                                        style={{ width: `${averageScores.snakeGame}%` }}
+                                    ></div>
+                                </div>
+                                <div className="text-sm text-green-600 mt-2 text-center">Average Score</div>
                             </div>
-                            <div className="bg-gray-50 rounded-xl p-6 flex flex-col items-center">
-                                <span className="text-gray-500 text-md mb-2">Sequencing</span>
-                                <div className="flex items-center">
-                                    <span role="img" aria-label="puzzle" className="mr-2 text-2xl">🧩</span>
-                                    <span className="text-4xl font-bold text-blue-600">{averageScores.ssa}</span>
+                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 border border-blue-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-blue-700 font-bold text-lg">🧩 Sequencing</span>
+                                    <div className="bg-blue-500 text-white rounded-full px-3 py-1 text-sm font-bold">
+                                        {averageScores.ssa}
+                                    </div>
                                 </div>
+                                <div className="w-full bg-blue-200 rounded-full h-3">
+                                    <div 
+                                        className="bg-blue-500 h-3 rounded-full transition-all duration-1000" 
+                                        style={{ width: `${averageScores.ssa}%` }}
+                                    ></div>
+                                </div>
+                                <div className="text-sm text-blue-600 mt-2 text-center">Average Score</div>
                             </div>
-                            <div className="bg-gray-50 rounded-xl p-6 flex flex-col items-center">
-                                <span className="text-gray-500 text-md mb-2">Prediction</span>
-                                <div className="flex items-center">
-                                    <span role="img" aria-label="crystal-ball" className="mr-2 text-2xl">🔮</span>
-                                    <span className="text-4xl font-bold text-purple-600">{averageScores.prediction}</span>
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 border border-purple-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-purple-700 font-bold text-lg">🔮 Prediction</span>
+                                    <div className="bg-purple-500 text-white rounded-full px-3 py-1 text-sm font-bold">
+                                        {averageScores.prediction}
+                                    </div>
                                 </div>
+                                <div className="w-full bg-purple-200 rounded-full h-3">
+                                    <div 
+                                        className="bg-purple-500 h-3 rounded-full transition-all duration-1000" 
+                                        style={{ width: `${averageScores.prediction}%` }}
+                                    ></div>
+                                </div>
+                                <div className="text-sm text-purple-600 mt-2 text-center">Average Score</div>
                             </div>
                         </div>
                     </div>
-
-                    {/* Books in Progress */}
+                
+                    {/* Books in Progress with Enhanced Design */}
                     <div id="books-in-progress" className="bg-white rounded-2xl shadow-xl p-8 mb-12">
                         <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
                             📖 Books in Progress
@@ -515,16 +548,21 @@ const StudentProgressDashboard = () => {
                                             </div>
                                         </div>
                                         
-                                        <div className="w-full md:w-1/2 mt-2 md:mt-0">
-                                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                        <div className="lg:w-80">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm font-medium text-gray-600">Progress</span>
+                                                <span className="text-sm font-bold text-blue-600">
+                                                    {book.book.pageIds ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}%
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
                                                 <div
-                                                    className="bg-blue-500 h-3 rounded-full"
+                                                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-4 rounded-full transition-all duration-1000"
                                                     style={{ width: `${book.book.pageIds && book.lastPageRead ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}%` }}
                                                 ></div>
                                             </div>
-                                           
-                                            <div className="text-xs text-gray-400 mt-1 text-right">
-                                                {book.book.pageIds ? Math.round((book.lastPageRead / book.book.pageIds.length) * 100) : 0}% complete
+                                            <div className="text-xs text-gray-500 text-center">
+                                                {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} pages completed
                                             </div>
                                         </div>
                                     </div>
@@ -532,8 +570,8 @@ const StudentProgressDashboard = () => {
                             ))}
                         </div>
                     </div>
-                    
-                    {/* Completed Books */}
+
+                    {/* Completed Books with Enhanced Design */}
                     <div id="completed-books" className="bg-white rounded-2xl shadow-xl p-8">
                         <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
                             ✅ Completed Books
@@ -602,6 +640,19 @@ const StudentProgressDashboard = () => {
                                                         </div>
                                                     )}
                                                 </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="lg:w-80">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm font-medium text-gray-600">Reading Progress</span>
+                                                <span className="text-sm font-bold text-green-600">100%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
+                                                <div className="bg-gradient-to-r from-green-500 to-emerald-500 h-4 rounded-full w-full"></div>
+                                            </div>
+                                            <div className="text-xs text-gray-500 text-center">
+                                                All {book.book.pageIds ? book.book.pageIds.length : 1} pages completed
                                             </div>
                                         </div>
                                     </div>

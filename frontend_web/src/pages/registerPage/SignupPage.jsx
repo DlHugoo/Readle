@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import mascot from "../../assets/mascot.png";
 import { register as apiRegister } from "../../api/api";
+import { getApiBaseUrl } from "../../utils/apiConfig";
 
-// === NEW: backend base (env with fallback) ===
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+// Use utility function for API base URL
+const API_BASE = getApiBaseUrl();
 
 // ✅ Reusable Error Modal
 const ErrorModal = ({ message, onClose }) => (

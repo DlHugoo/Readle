@@ -6,6 +6,7 @@ import StudentNavbar from "../../../components/StudentNavbar";
 import SequencingBoard from "./SequencingBoard";
 import FeedbackModal from "./FeedbackModal";
 import sequenceBg from "../../../assets/sequence-bg2.png";
+import { getImageUrl } from "../../../utils/apiConfig";
 
 const StorySequencingPage = () => {
   const { bookId } = useParams();
@@ -18,6 +19,7 @@ const StorySequencingPage = () => {
   const [reshuffleTrigger, setReshuffleTrigger] = useState(0);
   const [resetCounter, setResetCounter] = useState(0);
   const [trackerId, setTrackerId] = useState(null);
+  const [modal, setModal] = useState({ open: false, message: "", type: "" });
   const userId = localStorage.getItem("userId");
 
   // Fetch trackerId for this user/book
@@ -25,7 +27,7 @@ const StorySequencingPage = () => {
     const token = localStorage.getItem("token");
     if (userId && bookId && token) {
       axios
-        .get(`http://localhost:3000/api/progress/book/${userId}/${bookId}`, {
+        .get(`/api/progress/book/${userId}/${bookId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setTrackerId(res.data.id))
@@ -61,7 +63,7 @@ const StorySequencingPage = () => {
         }
 
         const res = await axios.get(
-          `http://localhost:3000/api/ssa/by-book/${bookId}`,
+          `/api/ssa/by-book/${bookId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -86,7 +88,7 @@ const StorySequencingPage = () => {
           images: images.map((img) => ({
             id: img.id,
             url: img.imageUrl.startsWith("/uploads")
-              ? `http://localhost:3000${img.imageUrl}`
+              ? getImageUrl(img.imageUrl)
               : img.imageUrl,
           })),
         });
@@ -157,7 +159,7 @@ const StorySequencingPage = () => {
       }
 
       const res = await axios.post(
-        `http://localhost:3000/api/ssa/${storyData.ssaId}/check`,
+        `/api/ssa/${storyData.ssaId}/check`,
         { attemptedSequence: sequenceIds },
         {
           headers: {
@@ -177,7 +179,7 @@ const StorySequencingPage = () => {
       if (res.data.correct && trackerId) {
         axios
           .put(
-            `http://localhost:3000/api/progress/complete/${trackerId}`,
+            `/api/progress/complete/${trackerId}`,
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )
@@ -243,6 +245,30 @@ const StorySequencingPage = () => {
           onTryAgain={attemptsLeft > 0 ? handleTryAgain : null}
           onContinue={handleContinue}
         />
+      )}
+
+      {/* Modal for error messages */}
+      {modal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div className="flex items-center justify-center mb-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                modal.type === 'error' ? 'bg-red-100' : 
+                modal.type === 'success' ? 'bg-green-100' : 'bg-blue-100'
+              }`}>
+                {modal.type === 'error' ? '❌' : 
+                 modal.type === 'success' ? '✅' : 'ℹ️'}
+              </div>
+            </div>
+            <p className="text-center text-gray-700 mb-4">{modal.message}</p>
+            <button
+              onClick={() => setModal({ open: false, message: "", type: "" })}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+            >
+              OK
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import axios from "axios";
+import { getImageUrl, getApiUrl, getUploadUrl } from "../../../utils/apiConfig";
 import TeacherNav from '../../../components/TeacherNav';
 const Modal = ({ open, onClose, type, message }) => {
   if (!open) return null;
@@ -78,7 +79,7 @@ const TeacherCreateSSA = () => {
     // Only fetch books if no book ID was passed
     if (!passedBookId) {
       axios
-        .get("http://localhost:3000/api/books")
+        .get(getApiUrl("api/books"))
         .then((res) => setBooks(res.data))
         .catch(console.error);
     }
@@ -91,7 +92,7 @@ const TeacherCreateSSA = () => {
     const token = localStorage.getItem("token");
     
     axios
-      .get(`http://localhost:3000/api/ssa/by-book/${selectedBookId}`, {
+      .get(`/api/ssa/by-book/${selectedBookId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then((res) => {
@@ -102,7 +103,7 @@ const TeacherCreateSSA = () => {
             id: `${Date.now()}-${idx}`,
             file: null,
             preview: img.imageUrl.startsWith("/uploads")
-              ? `http://localhost:3000${img.imageUrl}`
+              ? getImageUrl(img.imageUrl)
               : img.imageUrl,
             originalId: img.id
           }));
@@ -233,7 +234,7 @@ const TeacherCreateSSA = () => {
       }));
 
       await axios.put(
-        `http://localhost:3000/api/ssa/update-positions/${existingSSA.id}`,
+        `/api/ssa/update-positions/${existingSSA.id}`,
         { images: updatedImages },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -282,19 +283,41 @@ const TeacherCreateSSA = () => {
             return { imageUrl: preview, correctPosition: idx + 1 };
           }
           
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("uploadType", "ssa");
+          // Convert file to base64 (like other upload functions)
+          const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data: prefix
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          const requestData = {
+            file: base64Data,
+            filename: file.name,
+            contentType: file.type,
+            uploadType: "ssa"
+          };
 
           try {
-            const res = await axios.post(
-              "http://localhost:3000/api/books/upload-image",
-              formData,
+            const res = await fetch(
+              "/api/books/upload-image-base64",
               {
-                headers: { Authorization: `Bearer ${token}` }, // Include token in headers
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(requestData)
               }
             );
-            return { imageUrl: res.data, correctPosition: idx + 1 };
+
+            if (!res.ok) {
+              const errorText = await res.text();
+              throw new Error(`Upload failed: ${res.status} - ${errorText}`);
+            }
+
+            const imageUrl = await res.text();
+            return { imageUrl: imageUrl, correctPosition: idx + 1 };
           } catch (error) {
             // Handle upload errors
             console.error("Image upload error:", error);
@@ -308,7 +331,7 @@ const TeacherCreateSSA = () => {
       );
 
       await axios.post(
-        "http://localhost:3000/api/ssa/create",
+        getApiUrl("api/ssa/create"),
         {
           title,
           bookId: selectedBookId,
@@ -327,7 +350,7 @@ const TeacherCreateSSA = () => {
       
       // Refresh the data after creating
       axios
-        .get(`http://localhost:3000/api/ssa/by-book/${selectedBookId}`)
+        .get(`/api/ssa/by-book/${selectedBookId}`)
         .then((res) => {
           if (res.data && res.data.images && res.data.images.length > 0) {
             setExistingSSA(res.data);
@@ -336,7 +359,7 @@ const TeacherCreateSSA = () => {
               id: `${Date.now()}-${idx}`,
               file: null,
               preview: img.imageUrl.startsWith("/uploads")
-                ? `http://localhost:3000${img.imageUrl}`
+                ? getImageUrl(img.imageUrl)
                 : img.imageUrl,
               originalId: img.id
             }));

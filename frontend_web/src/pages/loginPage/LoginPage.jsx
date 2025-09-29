@@ -4,8 +4,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { login as apiLogin } from "../../api/api";
 import mascot from "../../assets/mascot.png";
 
-// NEW: backend base (env with fallback)
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+// Use environment variable for API base URL
+// For production: empty string uses Vercel proxy (HTTPS to HTTPS)
+// For local dev: set VITE_API_BASE_URL=http://localhost:3000
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -80,9 +82,10 @@ const LoginPage = () => {
     }
   };
 
-  // NEW: Microsoft login
+  // Microsoft login
   const handleMicrosoftLogin = () => {
-    window.location.href = `${API_BASE}/auth/microsoft/start`;
+    const authUrl = API_BASE ? `${API_BASE}/auth/microsoft/start` : "/auth/microsoft/start";
+    window.location.href = authUrl;
   };
 
   return (

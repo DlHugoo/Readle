@@ -4,6 +4,7 @@ import TeahcerNav from '../../components/TeacherNav';
 import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check, Sparkles, Star, Heart, Zap, GraduationCap, Users, Edit, Trash2, Archive, MoreVertical, X } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from 'axios'; // Import axios
+import { getImageUrl } from "../../utils/apiConfig";
 
 const ClassroomContentManager = () => {
   const { classroomId } = useParams(); // Retrieve classroomId from the route
@@ -177,21 +178,81 @@ const ClassroomContentManager = () => {
   const uploadImage = async (file) => {
   if (!file) return null;
 
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const token = localStorage.getItem("token"); // Ensure token is retrieved
+  const token = localStorage.getItem("token");
 
   try {
-    const response = await axios.post("/api/books/upload-image", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`, // Include token in headers
-      },
+    console.log("=== FRONTEND UPLOAD DEBUG START ===");
+    console.log("File details:", {
+      name: file.name,
+      size: file.size,
+      type: file.type
     });
-    return response.data;
+
+    // Convert file to base64
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result.split(',')[1]; // Remove data: prefix
+        console.log("Base64 data length:", result.length);
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const requestData = {
+      file: base64Data,
+      filename: file.name,
+      contentType: file.type,
+      uploadType: "bookcontent"
+    };
+
+    console.log("Request data:", {
+      filename: requestData.filename,
+      contentType: requestData.contentType,
+      uploadType: requestData.uploadType,
+      base64Length: requestData.file.length
+    });
+
+    // Send as JSON instead of FormData
+    console.log("Sending request to /api/books/upload-image-base64");
+    const response = await fetch("/api/books/upload-image-base64", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestData)
+    });
+    
+    console.log("Response received:", {
+      status: response.status,
+      ok: response.ok,
+      statusText: response.statusText
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+    }
+    
+    // The backend now returns file URL (like your old SkillMatch app)
+    const fileUrl = await response.text();
+    
+    console.log("File URL received:", fileUrl);
+    console.log("=== FRONTEND UPLOAD DEBUG END ===");
+    
+    return fileUrl;
   } catch (error) {
-    console.error("Error uploading image:", error);
+    console.error("=== FRONTEND UPLOAD ERROR ===");
+    console.error("Error details:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
+    console.error("Full error:", error);
+    console.error("=== FRONTEND UPLOAD ERROR END ===");
     throw error;
   }
 };
@@ -277,7 +338,7 @@ const ClassroomContentManager = () => {
     setBookGenre(book.genre);
     setBookDifficulty(book.difficultyLevel);
     setBookImageURL(book.imageURL);
-    setImagePreview(book.imageURL ? `http://localhost:3000${book.imageURL}` : null);
+    setImagePreview(book.imageURL ? getImageUrl(book.imageURL) : null);
     setShowEditModal(true);
   };
 
@@ -602,9 +663,8 @@ const ClassroomContentManager = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
                 {classroomContent.map((book, index) => {
-                  // Construct the full image URL
-                  const backendBaseUrl = "http://localhost:3000"; // Backend URL
-                  const fullImageUrl = `${backendBaseUrl}${book.imageURL}`;
+                  // Use getImageUrl for proper image URL handling
+                  const fullImageUrl = book.imageURL ? getImageUrl(book.imageURL) : null;
 
                   return (
                     <div

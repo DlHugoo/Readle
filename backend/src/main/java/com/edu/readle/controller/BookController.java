@@ -16,9 +16,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.Base64;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://readle-pi.vercel.app"})
 @RequestMapping("/api/books")
 public class BookController {
 
@@ -139,7 +141,7 @@ public class BookController {
         return ResponseEntity.ok().build();
     }
 
-    // 🔹 Upload book cover image
+    // 🔹 Upload book cover image (multipart)
     @PostMapping("/upload-image")
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file,
             @RequestParam(value = "uploadType", defaultValue = "bookcovers") String uploadType)
@@ -178,6 +180,110 @@ public class BookController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+
+    // 🔹 Test endpoint to check if backend is reachable
+    @GetMapping("/health")
+    public ResponseEntity<String> test() {
+        System.out.println("=== TEST ENDPOINT CALLED ===");
+        return ResponseEntity.ok("Backend is working!");
+    }
+
+    // 🔹 Upload book cover image (base64) - Convert to file and store like your old SkillMatch app
+    @PostMapping(value = "/upload-image-base64", consumes = "application/json")
+    public ResponseEntity<String> uploadImageBase64(@RequestBody Map<String, Object> request) {
+        System.out.println("=== UPLOAD ENDPOINT CALLED ===");
+        System.out.println("Request body type: " + (request != null ? request.getClass().getName() : "NULL"));
+        System.out.println("Request body: " + request);
+        
+        try {
+            System.out.println("=== UPLOAD DEBUG START ===");
+            System.out.println("Request received: " + request);
+            System.out.println("Request keys: " + request.keySet());
+            
+            String base64Data = (String) request.get("file");
+            String filename = (String) request.get("filename");
+            String contentType = (String) request.get("contentType");
+            String uploadType = (String) request.getOrDefault("uploadType", "bookcovers");
+
+            System.out.println("Base64 data length: " + (base64Data != null ? base64Data.length() : "NULL"));
+            System.out.println("Filename: " + filename);
+            System.out.println("Content type: " + contentType);
+            System.out.println("Upload type: " + uploadType);
+
+            if (base64Data == null || base64Data.isEmpty()) {
+                System.out.println("ERROR: Base64 data is empty");
+                return ResponseEntity.badRequest().body("Base64 data is empty");
+            }
+
+            if (contentType == null || !contentType.startsWith("image/")) {
+                System.out.println("ERROR: Invalid content type: " + contentType);
+                return ResponseEntity.badRequest().body("Only image files are allowed");
+            }
+
+            // Check base64 size (approximate)
+            long maxBase64Size = MAX_FILE_SIZE * 4 / 3;
+            System.out.println("File size check: " + base64Data.length() + " <= " + maxBase64Size);
+            if (base64Data.length() > maxBase64Size) { // Base64 is ~33% larger than binary
+                System.out.println("ERROR: File too large: " + base64Data.length() + " > " + maxBase64Size);
+                return ResponseEntity.badRequest().body("File size exceeds the limit of 5MB");
+            }
+            System.out.println("File size check passed");
+
+            // Convert base64 to file and save to filesystem (like your old SkillMatch app)
+            String uploadDir = "uploads/" + uploadType + "/";
+            System.out.println("Upload directory: " + uploadDir);
+            System.out.println("Upload type from request: " + uploadType);
+            
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                System.out.println("Creating directory: " + uploadDir);
+                boolean created = directory.mkdirs();
+                System.out.println("Directory created: " + created);
+            }
+
+            // Generate unique filename like your old app
+            String uniqueFileName = System.currentTimeMillis() + "_" + filename;
+            Path filePath = Paths.get(uploadDir + uniqueFileName);
+            System.out.println("File path: " + filePath);
+            
+            // Decode base64 and write to file
+            System.out.println("Decoding base64 data...");
+            try {
+                byte[] fileBytes = Base64.getDecoder().decode(base64Data);
+                System.out.println("Decoded bytes length: " + fileBytes.length);
+                
+                System.out.println("Writing file...");
+                Files.write(filePath, fileBytes);
+                System.out.println("File written successfully");
+            } catch (IllegalArgumentException e) {
+                System.out.println("ERROR: Invalid base64 data: " + e.getMessage());
+                throw new IllegalArgumentException("Invalid base64 data: " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("ERROR: File write failed: " + e.getMessage());
+                throw new RuntimeException("File write failed: " + e.getMessage());
+            }
+
+            // Return web-accessible path like your old app
+            String fileUrl = "/uploads/" + uploadType + "/" + uniqueFileName;
+            
+            System.out.println("SUCCESS: File saved to: " + filePath);
+            System.out.println("SUCCESS: Web URL: " + fileUrl);
+            System.out.println("=== UPLOAD DEBUG END ===");
+            
+            return ResponseEntity.ok(fileUrl);
+
+        } catch (IllegalArgumentException e) {
+            System.out.println("ERROR: Invalid base64 data: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid base64 data: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("=== UPLOAD ERROR ===");
+            System.out.println("Exception type: " + e.getClass().getName());
+            System.out.println("Exception message: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=== UPLOAD ERROR END ===");
+            return ResponseEntity.status(500).body("Failed to upload image: " + e.getMessage());
         }
     }
 

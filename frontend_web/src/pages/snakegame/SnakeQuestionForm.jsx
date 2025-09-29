@@ -1,3 +1,4 @@
+import { getApiBaseUrl, getImageUrl } from '../../utils/apiConfig';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -75,7 +76,7 @@ const SnakeQuestionForm = () => {
   useEffect(() => {
     if (bookId && !bookTitle) {
       setLoading(true);
-      axios.get(`http://localhost:3000/api/books/${bookId}`)
+      axios.get(`/api/books/${bookId}`)
         .then(response => {
           setBookTitle(response.data.title);
         })
@@ -94,7 +95,7 @@ const SnakeQuestionForm = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      axios.get(`http://localhost:3000/api/snake-questions/book/${bookId}`, {
+      axios.get(`/api/snake-questions/book/${bookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -155,7 +156,7 @@ const handleSubmit = async (e) => {
     };
 
     const checkResponse = await axios.get(
-      `http://localhost:3000/api/snake-questions/book/${bookId}`,
+      `/api/snake-questions/book/${bookId}`,
       { headers }
     );
 
@@ -173,13 +174,13 @@ const handleSubmit = async (e) => {
     }));
 
     const promises = questionsToSubmit.map(q => 
-      axios.post('http://localhost:3000/api/snake-questions', q, { headers })
+      axios.post(getApiBaseUrl() + '/api/snake-questions', q, { headers })
     );
 
     await Promise.all(promises);
     
     // Instead of reloading, fetch the newly created questions and update state
-    const response = await axios.get(`http://localhost:3000/api/snake-questions/book/${bookId}`, { headers });
+    const response = await axios.get(`/api/snake-questions/book/${bookId}`, { headers });
     setExistingQuestions(response.data);
     setHasExistingQuestions(true);
     setShowSuccessModal(true);
@@ -245,7 +246,7 @@ const handleSubmit = async (e) => {
       };
 
       await axios.put(
-        `http://localhost:3000/api/snake-questions/${questionID}`,
+        `/api/snake-questions/${questionID}`,
         {
           text: editFormData.text,
           answer: editFormData.answer,
@@ -254,7 +255,7 @@ const handleSubmit = async (e) => {
         { headers }
       );
 
-      const response = await axios.get(`http://localhost:3000/api/snake-questions/book/${bookId}`, { headers });
+      const response = await axios.get(`/api/snake-questions/book/${bookId}`, { headers });
       setExistingQuestions(response.data);
       setEditingQuestionId(null);
       setShowSuccessModal(true);
