@@ -29,6 +29,22 @@
       "destination": "/api/proxy"
     },
     {
+      "source": "/test-ec2.html",
+      "destination": "/test-ec2.html"
+    },
+    {
+      "source": "/debug-test.html",
+      "destination": "/debug-test.html"
+    },
+    {
+      "source": "/compare-test.html",
+      "destination": "/compare-test.html"
+    },
+    {
+      "source": "/test-upload.html",
+      "destination": "/test-upload.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
