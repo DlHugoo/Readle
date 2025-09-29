@@ -2,9 +2,16 @@
   "functions": {
     "api/proxy.js": {
       "maxDuration": 30
+    },
+    "api/upload.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
+    {
+      "source": "/api/books/upload-image",
+      "destination": "/api/upload"
+    },
     {
       "source": "/api/:path*",
       "destination": "/api/proxy"
