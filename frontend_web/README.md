@@ -68,3 +68,24 @@
    npm run dev
    ```
 9. Open `http://localhost:5173` in your browser.
+
+## 🔧 Environment Configuration
+
+### For Local Development
+Create a `.env.local` file in the `frontend_web` directory:
+```env
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+### For Production Deployment
+The app is configured to work with Vercel's proxy system. No additional configuration is needed for production deployment.
+
+### Alternative: Custom Domain Setup
+If you want to use a custom domain for your API:
+
+1. Get a domain name (e.g., `api.yourdomain.com`)
+2. Point it to your EC2 instance IP
+3. Create a `.env.production` file:
+   ```env
+   VITE_API_BASE_URL=https://api.yourdomain.com
+   ```
