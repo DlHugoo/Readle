@@ -8,6 +8,11 @@ export const getApiBaseUrl = () => {
 
 // Get the direct backend URL for file uploads (bypasses proxy)
 export const getDirectBackendUrl = () => {
+  // Try using a different approach - use the same domain with different port
+  if (typeof window !== 'undefined' && window.location.hostname === 'readle-pi.vercel.app') {
+    // For production, we'll use a workaround
+    return "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+  }
   return "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
 };
 
