@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import axios from "axios";
-import { getImageUrl, getApiUrl } from "../../../utils/apiConfig";
+import { getImageUrl, getApiUrl, getUploadUrl } from "../../../utils/apiConfig";
 import TeacherNav from '../../../components/TeacherNav';
 const Modal = ({ open, onClose, type, message }) => {
   if (!open) return null;
@@ -300,7 +300,7 @@ const TeacherCreateSSA = () => {
 
           try {
             const res = await fetch(
-              getApiUrl("api/books/upload-image"),
+              "/api/books/upload-image-base64",
               {
                 method: "POST",
                 headers: {

@@ -1,7 +1,7 @@
 // Alternative file upload method using base64 encoding
 // This bypasses the need for multipart/form-data
 
-export const uploadFileAsBase64 = async (file, endpoint = '/api/books/upload-image') => {
+export const uploadFileAsBase64 = async (file, endpoint = '/api/books/upload-image-base64') => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     

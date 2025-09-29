@@ -215,8 +215,8 @@ const ClassroomContentManager = () => {
     });
 
     // Send as JSON instead of FormData
-    console.log("Sending request to /api/books/upload-image");
-    const response = await fetch("/api/books/upload-image", {
+    console.log("Sending request to /api/books/upload-image-base64");
+    const response = await fetch("/api/books/upload-image-base64", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
