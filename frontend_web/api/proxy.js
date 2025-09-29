@@ -83,6 +83,9 @@ export default async function handler(req, res) {
       bodyLength: requestOptions.body ? requestOptions.body.length : 'NULL'
     });
     
+    console.log('Target URL:', targetUrl);
+    console.log('Request body preview:', requestOptions.body ? requestOptions.body.substring(0, 200) + '...' : 'NULL');
+    
     const response = await fetch(targetUrl, requestOptions);
     
     console.log('=== BACKEND RESPONSE DEBUG ===');
@@ -125,10 +128,16 @@ export default async function handler(req, res) {
     }
     
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error('=== PROXY ERROR ===');
+    console.error('Error type:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('=== PROXY ERROR END ===');
+    
     res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message 
+      message: error.message,
+      type: error.name
     });
   }
 }
