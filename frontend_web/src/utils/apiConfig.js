@@ -6,6 +6,11 @@ export const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || "";
 };
 
+// Get the direct backend URL for file uploads (bypasses proxy)
+export const getDirectBackendUrl = () => {
+  return "http://ec2-3-25-81-177.ap-southeast-2.compute.amazonaws.com:3000";
+};
+
 // Get the full image URL for uploaded images
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
@@ -39,4 +44,11 @@ export const getApiUrl = (endpoint) => {
   
   // For Vercel proxy, use relative URL
   return `/${cleanEndpoint}`;
+};
+
+// Get the upload URL for file uploads (uses direct backend)
+export const getUploadUrl = (endpoint) => {
+  const directBackend = getDirectBackendUrl();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return `${directBackend}/${cleanEndpoint}`;
 };
