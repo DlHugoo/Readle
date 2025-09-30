@@ -14,6 +14,7 @@ const ClassroomContentManager = () => {
   const [classroomContent, setClassroomContent] = useState([]); // State to hold classroom-specific content
   const [classroomName, setClassroomName] = useState(""); // State to hold classroom name
   const [classroomCode, setClassroomCode] = useState(""); // State to hold classroom code
+  const [isLoading, setIsLoading] = useState(true); // Loading state for initial content load
   const [menuOpenIndex, setMenuOpenIndex] = useState(null); // State to track which menu is open
   const [selectedBook, setSelectedBook] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -50,12 +51,14 @@ const ClassroomContentManager = () => {
   // Fetch classroom-specific content and details
   useEffect(() => {
     const fetchClassroomDetails = async () => {
+      setIsLoading(true);
       const token = localStorage.getItem('token');
       console.log("Fetching details for classroomId:", classroomId);
       console.log("Token:", token);
 
       if (!token) {
         console.error("No token found. Please log in.");
+        setIsLoading(false);
         return;
       }
 
@@ -77,6 +80,8 @@ const ClassroomContentManager = () => {
         await fetchActiveBooks();
       } catch (error) {
         console.error("Failed to fetch classroom details. Status:", error.response?.status, "Error:", error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -516,13 +521,31 @@ const ClassroomContentManager = () => {
                   </div>
                   <div className="hidden lg:flex items-center space-x-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{classroomContent.length}</div>
-                      <div className="text-sm text-gray-500">Active Books</div>
+                      {isLoading ? (
+                        <div className="animate-pulse">
+                          <div className="h-8 w-12 bg-gray-300 rounded mb-1"></div>
+                          <div className="h-4 w-16 bg-gray-300 rounded"></div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-2xl font-bold text-blue-600">{classroomContent.length}</div>
+                          <div className="text-sm text-gray-500">Active Books</div>
+                        </>
+                      )}
                     </div>
                     <div className="w-px h-12 bg-gray-300"></div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">{classroomName}</div>
-                      <div className="text-sm text-gray-500">Classroom</div>
+                      {isLoading ? (
+                        <div className="animate-pulse">
+                          <div className="h-8 w-24 bg-gray-300 rounded mb-1"></div>
+                          <div className="h-4 w-20 bg-gray-300 rounded"></div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-2xl font-bold text-purple-600">{classroomName}</div>
+                          <div className="text-sm text-gray-500">Classroom</div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -541,13 +564,22 @@ const ClassroomContentManager = () => {
                   <Users size={32} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
-                    {classroomName}
-                  </h2>
-                  <p className="text-sm text-gray-600 flex items-center">
-                    <span className="mr-2">Classroom ID:</span>
-                    <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{classroomId}</span>
-                  </p>
+                  {isLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-8 w-48 bg-gray-300 rounded mb-2"></div>
+                      <div className="h-4 w-32 bg-gray-300 rounded"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
+                        {classroomName}
+                      </h2>
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <span className="mr-2">Classroom ID:</span>
+                        <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{classroomId}</span>
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
               
@@ -561,12 +593,23 @@ const ClassroomContentManager = () => {
                   <Heart size={16} className="text-red-400" />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    {classroomCode}
-                  </span>
+                  {isLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-8 w-24 bg-gray-300 rounded"></div>
+                    </div>
+                  ) : (
+                    <span className="font-mono text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      {classroomCode}
+                    </span>
+                  )}
                   <button 
                     onClick={copyClassroomCode}
-                    className="group p-2 rounded-lg hover:bg-blue-100 transition-all duration-300 hover:scale-110"
+                    disabled={isLoading}
+                    className={`group p-2 rounded-lg transition-all duration-300 hover:scale-110 ${
+                      isLoading 
+                        ? "cursor-not-allowed opacity-50" 
+                        : "hover:bg-blue-100"
+                    }`}
                     title="Copy classroom code"
                   >
                     {codeCopied ? 
@@ -587,40 +630,80 @@ const ClassroomContentManager = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <button
               onClick={() => handleSelectModule("library")}
-              className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-200 ease-out hover:shadow-2xl relative overflow-hidden"
+              disabled={isLoading}
+              className={`group font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-200 ease-out relative overflow-hidden ${
+                isLoading
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white hover:shadow-2xl"
+              }`}
             >
               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <BookOpen size={24} />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isLoading ? "bg-gray-400" : "bg-white/20"
+                  }`}>
+                    {isLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    ) : (
+                      <BookOpen size={24} />
+                    )}
                   </div>
                   <div className="text-left">
-                    <span className="block text-lg font-bold">Digital Library</span>
-                    <span className="block text-sm opacity-90">Add & manage books</span>
+                    <span className="block text-lg font-bold">
+                      {isLoading ? "Loading..." : "Digital Library"}
+                    </span>
+                    <span className="block text-sm opacity-90">
+                      {isLoading ? "Please wait..." : "Add & manage books"}
+                    </span>
                   </div>
                 </div>
-                <PlusCircle size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+                {isLoading ? (
+                  <div className="animate-pulse w-6 h-6 bg-gray-400 rounded"></div>
+                ) : (
+                  <PlusCircle size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+                )}
               </div>
             </button>
 
             <button
               onClick={() => navigate(`/classroom-archived/${classroomId}`)}
-              className="group bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-200 ease-out hover:shadow-2xl relative overflow-hidden border border-gray-300"
+              disabled={isLoading}
+              className={`group font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-200 ease-out relative overflow-hidden border ${
+                isLoading
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
+                  : "bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 hover:shadow-2xl border-gray-300"
+              }`}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-gray-200/20 to-gray-300/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center">
-                    <Archive size={24} className="text-white" />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isLoading ? "bg-gray-400" : "bg-gradient-to-br from-gray-500 to-gray-600"
+                  }`}>
+                    {isLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    ) : (
+                      <Archive size={24} className="text-white" />
+                    )}
                   </div>
                   <div className="text-left">
-                    <span className="block text-lg font-bold">Archived Books</span>
-                    <span className="block text-sm text-gray-600">View archived content</span>
+                    <span className="block text-lg font-bold">
+                      {isLoading ? "Loading..." : "Archived Books"}
+                    </span>
+                    <span className="block text-sm text-gray-600">
+                      {isLoading ? "Please wait..." : "View archived content"}
+                    </span>
                   </div>
                 </div>
-                <div className="w-8 h-8 bg-gray-200 group-hover:bg-gray-300 rounded-lg flex items-center justify-center transition-colors duration-300">
-                  <Star size={16} className="text-gray-600 group-hover:text-gray-700" />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-300 ${
+                  isLoading ? "bg-gray-300" : "bg-gray-200 group-hover:bg-gray-300"
+                }`}>
+                  {isLoading ? (
+                    <div className="animate-pulse w-4 h-4 bg-gray-400 rounded"></div>
+                  ) : (
+                    <Star size={16} className="text-gray-600 group-hover:text-gray-700" />
+                  )}
                 </div>
               </div>
             </button>
@@ -640,7 +723,25 @@ const ClassroomContentManager = () => {
               </div>
             </div>
             
-            {classroomContent.length === 0 ? (
+            {isLoading ? (
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-12 text-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50"></div>
+                <div className="relative z-10">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">Loading Your Library</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Please wait while we fetch your classroom's book collection...
+                  </p>
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
+            ) : classroomContent.length === 0 ? (
               <div className="bg-white/70 backdrop-blur-sm border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50"></div>
                 <div className="relative z-10">

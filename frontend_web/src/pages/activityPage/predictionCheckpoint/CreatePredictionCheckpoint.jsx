@@ -28,7 +28,7 @@ import {
   Trash2
 } from "lucide-react";
 import axios from "axios";
-import { getApiUrl } from "../../../utils/apiConfig";
+import { getApiUrl, getImageUrl } from "../../../utils/apiConfig";
 import TeacherNav from "../../../components/TeacherNav";
 
 const Modal = ({ open, onClose, type, message }) => {
@@ -109,39 +109,50 @@ const CreatePredictionCheckpoint = () => {
       })
         .then(res => res.json())
         .then((data) => {
+          console.log("Fetched existing checkpoint data:", data);
           if (data) {
             setExistingCheckpoint(data);
             setTitle(data.title);
             setPageNumber(data.pageNumber.toString());
+            
+            // Debug sequence images
+            console.log("Sequence images:", data.sequenceImages);
+            
             // Set story images
-            setStoryImages(
-              data.sequenceImages
-                .sort((a, b) => a.position - b.position)
-                .map((img, idx) => ({
+            const storyImagesData = data.sequenceImages
+              .sort((a, b) => a.position - b.position)
+              .map((img, idx) => {
+                const previewUrl = img.imageUrl ? (img.imageUrl.startsWith("/uploads") ? getImageUrl(img.imageUrl) : img.imageUrl) : '';
+                console.log(`Story image ${idx}:`, { originalUrl: img.imageUrl, previewUrl });
+                return {
                   id: `${Date.now()}-${idx}`,
                   file: null,
-                  preview: img.imageUrl.startsWith("/uploads")
-                    ? getImageUrl(img.imageUrl)
-                    : img.imageUrl,
+                  preview: previewUrl,
                   originalId: img.id,
                   position: img.position
-                }))
-            );
+                };
+              });
+            setStoryImages(storyImagesData);
+            
+            // Debug option images
+            console.log("Option images:", data.options);
+            
             // Set option images - sort by isCorrect so correct option appears first
             const sortedOptions = [...data.options].sort((a, b) => 
               a.isCorrect === b.isCorrect ? 0 : (a.isCorrect ? -1 : 1)
             );
-            setOptionImages(
-              sortedOptions.map((opt, idx) => ({
+            const optionImagesData = sortedOptions.map((opt, idx) => {
+              const previewUrl = opt.imageUrl ? (opt.imageUrl.startsWith("/uploads") ? getImageUrl(opt.imageUrl) : opt.imageUrl) : '';
+              console.log(`Option image ${idx}:`, { originalUrl: opt.imageUrl, previewUrl, isCorrect: opt.isCorrect });
+              return {
                 id: `${Date.now()}-option-${idx}`,
                 file: null,
-                preview: opt.imageUrl.startsWith("/uploads")
-                  ? getImageUrl(opt.imageUrl)
-                  : opt.imageUrl,
+                preview: previewUrl,
                 originalId: opt.id,
                 isCorrect: opt.isCorrect
-              }))
-            );
+              };
+            });
+            setOptionImages(optionImagesData);
           }
         })
         .catch((err) => {
@@ -858,11 +869,23 @@ const CreatePredictionCheckpoint = () => {
 
                         {/* Image */}
                         <div className="relative">
-                  <img
-                    src={img.preview}
-                    alt={`Story ${index + 1}`}
+                          <img
+                            src={img.preview}
+                            alt={`Story ${index + 1}`}
                             className="w-full h-40 object-cover"
+                            onError={(e) => {
+                              console.error(`Failed to load story image ${index + 1}:`, img.preview);
+                              e.target.style.display = 'none';
+                            }}
                           />
+                          {!img.preview && (
+                            <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+                              <div className="text-center">
+                                <ImageIcon size={32} className="text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-gray-500">Image not available</p>
+                              </div>
+                            </div>
+                          )}
                           {/* Position overlay */}
                           <div className="absolute top-3 left-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
                             #{index + 1}
@@ -1036,7 +1059,19 @@ const CreatePredictionCheckpoint = () => {
                             src={img.preview}
                             alt={`Option ${index + 1}`}
                             className="w-full h-40 object-cover"
+                            onError={(e) => {
+                              console.error(`Failed to load option image ${index + 1}:`, img.preview);
+                              e.target.style.display = 'none';
+                            }}
                           />
+                          {!img.preview && (
+                            <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
+                              <div className="text-center">
+                                <ImageIcon size={32} className="text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-gray-500">Image not available</p>
+                              </div>
+                            </div>
+                          )}
                           {/* Position overlay */}
                           <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-gray-800 px-2 py-1 rounded-full text-xs font-bold shadow-lg">
                             #{index + 1}
