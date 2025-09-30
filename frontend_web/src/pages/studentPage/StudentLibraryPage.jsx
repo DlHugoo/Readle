@@ -1,5 +1,6 @@
 import { getApiBaseUrl, getImageUrl } from '../../utils/apiConfig';
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import StudentNavbar from "../../components/StudentNavbar";
 import BookCard from "../../components/BookCard";
@@ -99,6 +100,7 @@ const StudentLibraryPage = () => {
   const [error, setError] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const navigate = useNavigate();
 
   const featuredBanners = [
     { id: 1, imageURL: Banner1 },
