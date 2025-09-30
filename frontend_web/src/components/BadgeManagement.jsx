@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { PlusCircle, Edit, Trash2, Award, Upload, AlertCircle, CheckCircle } from "lucide-react";
+import { getImageUrl } from "../utils/apiConfig";
 
 const BadgeManagement = () => {
   const [badges, setBadges] = useState([]);
