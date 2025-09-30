@@ -18,4 +18,5 @@ public interface BookRepository extends JpaRepository<BookEntity, Long> {
     List<BookEntity> findByClassroomIdAndArchivedTrue(Long classroomId);
     List<BookEntity> findByArchivedFalse();
     List<BookEntity> findByArchivedTrue();
+    List<BookEntity> findByArchivedFalseAndVisibleToAllTrueAndCreatedByAdminIdIsNotNull();
 }
