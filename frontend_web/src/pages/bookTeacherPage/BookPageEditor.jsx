@@ -46,6 +46,11 @@ const BookPageEditor = ({ role = "teacher" }) => {
   const [pageImage, setPageImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
+  // Loading states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Add modal state
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
@@ -191,6 +196,8 @@ const BookPageEditor = ({ role = "teacher" }) => {
 
   // Create a new page
   const createNewPage = async () => {
+    if (isCreating) return; // Prevent multiple clicks
+
     // Validate that the book has all required fields
     if (!book) {
       setModalTitle("Error");
@@ -209,6 +216,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
       return;
     }
 
+    setIsCreating(true);
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
@@ -244,6 +252,8 @@ const BookPageEditor = ({ role = "teacher" }) => {
       setModalTitle("Error");
       setModalMessage(err.response?.data?.message || err.message);
       setShowModal(true);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -254,6 +264,9 @@ const BookPageEditor = ({ role = "teacher" }) => {
 
   // Actual delete function that gets called after confirmation
   const confirmDeletePage = async () => {
+    if (isDeleting) return; // Prevent multiple clicks
+
+    setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
       const currentPage = pages[currentPageIndex];
@@ -308,11 +321,15 @@ const BookPageEditor = ({ role = "teacher" }) => {
       setModalTitle("Error");
       setModalMessage(err.response?.data?.message || err.message);
       setShowModal(true);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   // Save the current page
   const savePage = async () => {
+    if (isSaving) return; // Prevent multiple clicks
+
     // Validate that the page content is not empty
     if (!pageContent || pageContent.trim() === "") {
       setModalTitle("Empty Content");
@@ -323,6 +340,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
       return;
     }
 
+    setIsSaving(true);
     try {
       const token = localStorage.getItem("token");
       const currentPage = pages[currentPageIndex];
@@ -410,6 +428,8 @@ const BookPageEditor = ({ role = "teacher" }) => {
       setModalTitle("Error");
       setModalMessage(err.response?.data?.message || err.message);
       setShowModal(true);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -601,10 +621,24 @@ const BookPageEditor = ({ role = "teacher" }) => {
                   </p>
                   <button
                     onClick={createNewPage}
-                    className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl"
+                    disabled={isCreating}
+                    className={`group inline-flex items-center px-8 py-4 text-white rounded-xl transition-all duration-300 transform shadow-xl hover:shadow-2xl ${
+                      isCreating
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105"
+                    }`}
                   >
-                    <Plus size={20} className="mr-3 group-hover:rotate-90 transition-transform duration-300" />
-                    <span className="font-semibold">Add Your First Page</span>
+                    {isCreating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                        <span className="font-semibold">Creating Page...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={20} className="mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                        <span className="font-semibold">Add Your First Page</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -752,34 +786,72 @@ const BookPageEditor = ({ role = "teacher" }) => {
                         <>
                           <button
                             onClick={() => setIsEditing(false)}
-                            className="group px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
+                            disabled={isSaving}
+                            className={`group px-6 py-3 text-gray-700 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center ${
+                              isSaving
+                                ? "bg-gray-200 cursor-not-allowed"
+                                : "bg-gray-100 hover:bg-gray-200 hover:scale-105"
+                            }`}
                           >
                             <X size={18} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
                             <span className="font-semibold">Cancel</span>
                           </button>
                           <button
                             onClick={savePage}
-                            className="group px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
+                            disabled={isSaving}
+                            className={`group px-6 py-3 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center ${
+                              isSaving
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 hover:scale-105"
+                            }`}
                           >
-                            <Save size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
-                            <span className="font-semibold">Save Page</span>
+                            {isSaving ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                <span className="font-semibold">Saving...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Save size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                                <span className="font-semibold">Save Page</span>
+                              </>
+                            )}
                           </button>
                         </>
                       ) : (
                         <>
                           <button
                             onClick={() => setIsEditing(true)}
-                            className="group px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
+                            disabled={isDeleting}
+                            className={`group px-6 py-3 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center ${
+                              isDeleting
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 hover:scale-105"
+                            }`}
                           >
                             <Edit size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
                             <span className="font-semibold">Edit Page</span>
                           </button>
                           <button
                             onClick={deletePage}
-                            className="group px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center"
+                            disabled={isDeleting}
+                            className={`group px-6 py-3 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center ${
+                              isDeleting
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 hover:scale-105"
+                            }`}
                           >
-                            <Trash2 size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
-                            <span className="font-semibold">Delete Page</span>
+                            {isDeleting ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                <span className="font-semibold">Deleting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 size={18} className="mr-2 group-hover:rotate-12 transition-transform duration-300" />
+                                <span className="font-semibold">Delete Page</span>
+                              </>
+                            )}
                           </button>
                         </>
                       )}
@@ -820,9 +892,18 @@ const BookPageEditor = ({ role = "teacher" }) => {
                         </button>
                         <button
                           onClick={createNewPage}
-                          className="group p-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+                          disabled={isCreating}
+                          className={`group p-3 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl ${
+                            isCreating
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 hover:scale-110"
+                          }`}
                         >
-                          <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                          {isCreating ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          ) : (
+                            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -882,14 +963,31 @@ const BookPageEditor = ({ role = "teacher" }) => {
               <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  disabled={isDeleting}
+                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${
+                    isDeleting
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-red-600 hover:bg-red-700"
+                  }`}
                   onClick={confirmDeletePage}
                 >
-                  Delete
+                  {isDeleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
                 </button>
                 <button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
+                  disabled={isDeleting}
+                  className={`mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 text-base font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm ${
+                    isDeleting
+                      ? "bg-gray-100 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50"
+                  }`}
                   onClick={() => setShowDeleteModal(false)}
                 >
                   Cancel

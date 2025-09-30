@@ -4,6 +4,7 @@ import TeahcerNav from '../../components/TeacherNav';
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import { Menu, ArrowLeft, RotateCcw, Archive, Sparkles, Star, Heart, Zap } from "lucide-react";
 import axios from "axios";
+import { getImageUrl } from "../../utils/apiConfig";
 
 const ArchivedBooks = () => {
   const { classroomId } = useParams();
@@ -13,6 +14,7 @@ const ArchivedBooks = () => {
   const [classroomName, setClassroomName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [unarchiving, setUnarchiving] = useState(new Set()); // Track which books are being unarchived
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -45,18 +47,36 @@ const ArchivedBooks = () => {
   }, [classroomId]);
 
   const unarchive = async (bookId) => {
+    // Prevent multiple clicks
+    if (unarchiving.has(bookId)) return;
+    
     try {
+      setUnarchiving(prev => new Set(prev).add(bookId));
       const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
+      
       await axios.put(`/api/books/${bookId}/unarchive`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       // Refresh the archived books list
       const res = await axios.get(`/api/books/classroom/${classroomId}/archived`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBooks(res.data || []);
+      setError(null); // Clear any previous errors
     } catch (e) {
-      setError('Failed to unarchive book');
+      console.error('Error unarchiving book:', e);
+      setError('Failed to unarchive book. Please try again.');
+    } finally {
+      setUnarchiving(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(bookId);
+        return newSet;
+      });
     }
   };
 
@@ -229,10 +249,24 @@ const ArchivedBooks = () => {
                       <div className="p-4 border-t border-gray-200/50">
                         <button 
                           onClick={() => unarchive(book.bookID)} 
-                          className="group/btn w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                          disabled={unarchiving.has(book.bookID)}
+                          className={`group/btn w-full flex items-center justify-center gap-2 px-4 py-3 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl ${
+                            unarchiving.has(book.bookID)
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 hover:scale-105"
+                          }`}
                         >
-                          <RotateCcw size={16} className="group-hover/btn:rotate-180 transition-transform duration-300" />
-                          <span className="font-semibold">Unarchive</span>
+                          {unarchiving.has(book.bookID) ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span className="font-semibold">Unarchiving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <RotateCcw size={16} className="group-hover/btn:rotate-180 transition-transform duration-300" />
+                              <span className="font-semibold">Unarchive</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
