@@ -5,10 +5,12 @@ import com.edu.readle.dto.UserBadgeDTO;
 import com.edu.readle.entity.BadgeEntity;
 import com.edu.readle.entity.UserBadgeEntity;
 import com.edu.readle.entity.UserEntity;
+import com.edu.readle.entity.StudentProgressTracker;
 import com.edu.readle.entity.Role;  // Add this import
 import com.edu.readle.repository.BadgeRepository;
 import com.edu.readle.repository.UserBadgeRepository;
 import com.edu.readle.repository.UserRepository;
+import com.edu.readle.repository.StudentProgressTrackerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,14 +27,17 @@ public class BadgeService {
     private final BadgeRepository badgeRepository;
     private final UserBadgeRepository userBadgeRepository;
     private final UserRepository userRepository;
+    private final StudentProgressTrackerRepository progressTrackerRepository;
 
     @Autowired
     public BadgeService(BadgeRepository badgeRepository, 
                        UserBadgeRepository userBadgeRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       StudentProgressTrackerRepository progressTrackerRepository) {
         this.badgeRepository = badgeRepository;
         this.userBadgeRepository = userBadgeRepository;
         this.userRepository = userRepository;
+        this.progressTrackerRepository = progressTrackerRepository;
     }
 
     // Get all badges
@@ -300,13 +305,15 @@ public class BadgeService {
     public List<UserBadgeDTO> checkAllBadgeProgress(Long userId) {
         List<UserBadgeDTO> updatedBadges = new ArrayList<>();
         
-        // Check each achievement criteria
-        // In a real implementation, you would get these values from other services
-        int loginCount = 1; // Example value
-        int booksCompleted = 0; // Example value
-        int genresRead = 0; // Example value
-        int readingTimeMinutes = 0; // Example value
-        int pagesRead = 0; // Example value
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Get accurate data from database
+        int loginCount = 1; // This would need to be tracked separately, for now using 1
+        int booksCompleted = progressTrackerRepository.countCompletedBooksByUser(user).intValue();
+        int genresRead = getUniqueGenresReadByUser(user);
+        int readingTimeMinutes = getTotalReadingTimeByUser(user);
+        int pagesRead = getTotalPagesReadByUser(user);
         
         UserBadgeDTO loginBadge = updateUserBadgeProgress(userId, "LOGIN_COUNT", loginCount);
         if (loginBadge != null) updatedBadges.add(loginBadge);
@@ -324,5 +331,31 @@ public class BadgeService {
         if (pagesBadge != null) updatedBadges.add(pagesBadge);
         
         return updatedBadges;
+    }
+    
+    // Helper method to get unique genres read by user
+    private int getUniqueGenresReadByUser(UserEntity user) {
+        List<StudentProgressTracker> completedBooks = progressTrackerRepository.findCompletedBooksByUser(user);
+        return (int) completedBooks.stream()
+                .map(tracker -> tracker.getBook().getGenre())
+                .filter(genre -> genre != null && !genre.isEmpty())
+                .distinct()
+                .count();
+    }
+    
+    // Helper method to get total reading time by user in minutes
+    private int getTotalReadingTimeByUser(UserEntity user) {
+        List<StudentProgressTracker> allBooks = progressTrackerRepository.findByUser(user);
+        return allBooks.stream()
+                .mapToInt(tracker -> (int) tracker.getTotalReadingTime().toMinutes())
+                .sum();
+    }
+    
+    // Helper method to get total pages read by user
+    private int getTotalPagesReadByUser(UserEntity user) {
+        List<StudentProgressTracker> allBooks = progressTrackerRepository.findByUser(user);
+        return allBooks.stream()
+                .mapToInt(StudentProgressTracker::getLastPageRead)
+                .sum();
     }
 }
