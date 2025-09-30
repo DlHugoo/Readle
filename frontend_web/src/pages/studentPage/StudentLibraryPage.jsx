@@ -203,7 +203,7 @@ const StudentLibraryPage = () => {
                 <div
                   key={`for-you-${book.bookID || index}`}
                   className="cursor-pointer"
-                  onClick={() => navigate(`/read/${book.bookID}/page/1`)}
+                  onClick={() => navigate(`/book/${book.bookID}/page/1`)}
                 >
                   <BookCard book={book} />
                 </div>
