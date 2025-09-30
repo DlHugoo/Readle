@@ -28,7 +28,7 @@ public class BookService {
 
     // 🔹 For student "For You" section
     public List<BookEntity> getGlobalBooksForStudents() {
-        return bookRepository.findByArchivedFalse();
+        return bookRepository.findByArchivedFalseAndVisibleToAllTrueAndCreatedByAdminIdIsNotNull();
     }
 
     public List<BookEntity> getArchivedBooks() {
