@@ -47,13 +47,6 @@ const BookPage = () => {
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
   const contentRef = useRef(null);
-  
-  // Stopwatch timer state
-  const [readingStartTime, setReadingStartTime] = useState(null);
-  const [pausedTime, setPausedTime] = useState(0);
-  const [isReading, setIsReading] = useState(false);
-  const [displayTime, setDisplayTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
-  const intervalRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -66,96 +59,6 @@ const BookPage = () => {
       }
     }
   }, []);
-
-  // Stopwatch timer functions
-  const startReadingTimer = () => {
-    if (!isReading) {
-      const now = Date.now();
-      setReadingStartTime(now);
-      setIsReading(true);
-    }
-  };
-
-  const pauseReadingTimer = () => {
-    if (isReading && readingStartTime) {
-      const elapsed = Date.now() - readingStartTime;
-      setPausedTime(prev => prev + elapsed);
-      setIsReading(false);
-      setReadingStartTime(null);
-    }
-  };
-
-  const resetReadingTimer = () => {
-    setReadingStartTime(null);
-    setPausedTime(0);
-    setIsReading(false);
-    setDisplayTime({ hours: 0, minutes: 0, seconds: 0 });
-  };
-
-  // Update display time every second
-  useEffect(() => {
-    if (isReading) {
-      intervalRef.current = setInterval(() => {
-        if (readingStartTime) {
-          const now = Date.now();
-          const totalElapsed = pausedTime + (now - readingStartTime);
-          const totalSeconds = Math.floor(totalElapsed / 1000);
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const seconds = totalSeconds % 60;
-          setDisplayTime({ hours, minutes, seconds });
-        }
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [isReading, readingStartTime, pausedTime]);
-
-  // Start timer when component mounts and book is loaded
-  useEffect(() => {
-    if (book && pages.length > 0 && !isReading) {
-      startReadingTimer();
-    }
-  }, [book, pages.length]);
-
-  // Pause timer when user navigates away
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      pauseReadingTimer();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        pauseReadingTimer();
-      } else if (book && pages.length > 0) {
-        startReadingTimer();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [book, pages.length]);
-
-  // Get total reading time in minutes for API calls
-  const getTotalReadingTimeMinutes = () => {
-    const totalElapsed = pausedTime + (isReading && readingStartTime ? Date.now() - readingStartTime : 0);
-    return Math.floor(totalElapsed / 60000); // Convert to minutes
-  };
 
   useEffect(() => {
     const loadBookAndPages = async () => {
@@ -306,12 +209,11 @@ const BookPage = () => {
   useEffect(() => {
     if (trackerId && pages.length > 0) {
       const token = localStorage.getItem("token");
-      const readingTimeMinutes = getTotalReadingTimeMinutes();
       axios
         .put(
           getApiUrl(`api/progress/update/${trackerId}?pageNumber=${
             currentPageIndex + 1
-          }&readingTimeMinutes=${readingTimeMinutes}`),
+          }&readingTimeMinutes=1`),
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         )
@@ -374,10 +276,9 @@ const BookPage = () => {
       // Finally, update reading progress if we have a tracker
       if (trackerId) {
         try {
-          const readingTimeMinutes = getTotalReadingTimeMinutes();
           await fetch(
             getApiUrl(`api/progress/update/${trackerId}` +
-              `?pageNumber=${nextIndex + 1}&readingTimeMinutes=${readingTimeMinutes}`),
+              `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`),
             {
               method: 'PUT',
               headers: { 
@@ -409,10 +310,9 @@ const BookPage = () => {
       if (userId && book && trackerId) {
         const token = localStorage.getItem("token");
         const pageNumber = prevIndex + 1;
-        const readingTimeMinutes = getTotalReadingTimeMinutes();
         axios
           .put(
-            getApiUrl(`api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=${readingTimeMinutes}`),
+            getApiUrl(`api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=1`),
             {},
             { headers: { Authorization: `Bearer ${token}` } }
           )
@@ -682,31 +582,6 @@ const BookPage = () => {
                 {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                 {isAudioEnabled ? "Audio On" : "Audio Off"}
               </button>
-            </div>
-
-            {/* Reading Timer */}
-            <div className="mb-4">
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  readingTheme === "dark" ? "text-gray-200" : "text-gray-700"
-                }`}
-              >
-                Reading Time
-              </label>
-              <div className={`p-3 rounded-lg border text-center ${
-                readingTheme === "dark" 
-                  ? "bg-gray-700 border-gray-600 text-gray-200" 
-                  : "bg-gray-50 border-gray-200 text-gray-800"
-              }`}>
-                <div className="text-2xl font-mono font-bold">
-                  {String(displayTime.hours).padStart(2, '0')}:
-                  {String(displayTime.minutes).padStart(2, '0')}:
-                  {String(displayTime.seconds).padStart(2, '0')}
-                </div>
-                <div className="text-xs mt-1">
-                  {isReading ? "Reading..." : "Paused"}
-                </div>
-              </div>
             </div>
 
             {/* Keyboard Shortcuts */}

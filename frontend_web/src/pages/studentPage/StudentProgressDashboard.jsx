@@ -263,8 +263,7 @@ const StudentProgressDashboard = () => {
         }
         const hours = Math.floor(mins / 60);
         const remainingMinutes = mins % 60;
-        const seconds = Math.floor((mins % 1) * 60);
-        return `${hours}h ${remainingMinutes}m ${seconds}s`;
+        return `${hours}h ${remainingMinutes}m`;
     };
 
     if (loading) {
