@@ -141,13 +141,22 @@ const StudentProgressDashboard = () => {
                                 const checkpointId = predictionCheckpointRes.data.id;
                                 // Defensive check: only proceed if both userId and checkpointId are valid numbers
                                 if (!isNaN(Number(userId)) && !isNaN(Number(checkpointId))) {
-                                    // Now fetch the latest attempt using the correct checkpoint ID
-                                    const predictionLatestAttemptRes = await axios.get(
-                                        `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/latest`,
+                                    // First check if there are any attempts to avoid 404s
+                                    const attemptCountRes = await axios.get(
+                                        `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/count`,
                                         { headers }
                                     );
-                                    if (predictionLatestAttemptRes.data && typeof predictionLatestAttemptRes.data.correct === 'boolean') {
-                                        predictionAttemptsData[bookId] = { correct: predictionLatestAttemptRes.data.correct };
+                                    if (attemptCountRes.data && Number(attemptCountRes.data) > 0) {
+                                        // Fetch the latest attempt only if there is at least one
+                                        const predictionLatestAttemptRes = await axios.get(
+                                            `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/latest`,
+                                            { headers }
+                                        );
+                                        if (predictionLatestAttemptRes.data && typeof predictionLatestAttemptRes.data.correct === 'boolean') {
+                                            predictionAttemptsData[bookId] = { correct: predictionLatestAttemptRes.data.correct };
+                                        } else {
+                                            predictionAttemptsData[bookId] = { correct: null };
+                                        }
                                     } else {
                                         predictionAttemptsData[bookId] = { correct: null };
                                     }
