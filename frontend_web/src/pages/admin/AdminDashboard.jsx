@@ -323,7 +323,7 @@ const AdminDashboard = () => {
       uploadType: "bookcovers"
     };
 
-    const res = await fetch(getApiUrl("api/books/upload-image"), {
+    const res = await fetch(getApiUrl("api/books/upload-image-base64"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
