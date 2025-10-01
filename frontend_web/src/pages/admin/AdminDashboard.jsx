@@ -410,11 +410,6 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col pt-6">
         <div className="p-6 max-w-7xl mx-auto w-full">
-          {/* Page Title */}
-          <h1 className="text-3xl font-bold mb-6 text-[#3B82F6] flex items-center">
-            <BookOpen size={32} className="mr-3 text-[#3B82F6]" />
-            Admin Dashboard
-          </h1>
 
           {/* Tabs */}
           <div className="flex border-b border-gray-200 mb-6">
