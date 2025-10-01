@@ -387,6 +387,26 @@ const AdminDashboard = () => {
 
   return (
     <div className="w-full min-h-screen bg-gray-50">
+        {/* Top Bar with Logout */}
+        <div className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full">
+          <h1 className="text-3xl font-bold text-[#3B82F6] flex items-center">
+            <BookOpen size={32} className="mr-3 text-[#3B82F6]" />
+            Admin Dashboard
+          </h1>
+
+          {/* Logout Button */}
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("role");
+              localStorage.removeItem("userId");
+              navigate("/login");
+            }}
+            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col pt-6">
         <div className="p-6 max-w-7xl mx-auto w-full">
