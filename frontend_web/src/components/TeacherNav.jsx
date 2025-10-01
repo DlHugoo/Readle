@@ -12,12 +12,12 @@ function TeahcerNav() {
   const dropdownRef = useRef(null);
   const token = localStorage.getItem('token');
 
-  // Get user ID from token
-  const getUserIdFromToken = () => {
+  // Get user email from token
+  const getUserEmailFromToken = () => {
     if (!token) return null;
     try {
       const decoded = jwtDecode(token);
-      return decoded.userID || decoded.id || decoded.sub;
+      return decoded.email || decoded.sub;
     } catch (error) {
       console.error("Failed to decode token", error);
       return null;
@@ -26,11 +26,11 @@ function TeahcerNav() {
 
   // Fetch teacher name
   const fetchTeacherName = async () => {
-    const teacherId = getUserIdFromToken();
-    if (!teacherId) return;
+    const userEmail = getUserEmailFromToken();
+    if (!userEmail) return;
 
     try {
-      const response = await axios.get(`/api/users/${teacherId}`, {
+      const response = await axios.get(`/api/users/by-email/${encodeURIComponent(userEmail)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
