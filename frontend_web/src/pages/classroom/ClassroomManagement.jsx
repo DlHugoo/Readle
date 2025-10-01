@@ -229,78 +229,31 @@ const ClassroomManagement = () => {
       {/* Main Content - Centered and Wider with top padding to prevent navbar overlap */}
       <div className="p-6 max-w-7xl mx-auto pt-32">
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 shadow-lg">
-            <GraduationCap size={40} className="text-white" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            Classroom Management
-          </h1>
-          
-          {/* Interactive Expandable Description */}
-          <div className="max-w-2xl mx-auto mb-8">
-            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-white/50">
-              <p className="text-gray-700 text-base mb-3">
-                Create, manage, and organize your teaching spaces with ease.
-              </p>
-              
-              {/* Expandable Content */}
-              <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                descriptionExpanded ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-              }`}>
-                <div className="border-t border-gray-200 pt-3 mt-3">
-                  <div className="grid md:grid-cols-2 gap-4 text-left">
-                    <div className="space-y-2">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Users size={12} className="text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800 text-sm">Student Management</h4>
-                          <p className="text-xs text-gray-600">Organize students with classroom codes and progress tracking.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <BookOpen size={12} className="text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800 text-sm">Content Library</h4>
-                          <p className="text-xs text-gray-600">Access reading materials, activities, and assessments.</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Star size={12} className="text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800 text-sm">Progress Tracking</h4>
-                          <p className="text-xs text-gray-600">Monitor achievements and identify support areas.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-pink-500 to-red-600 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Zap size={12} className="text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800 text-sm">Interactive Learning</h4>
-                          <p className="text-xs text-gray-600">Create engaging experiences with real-time feedback.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        <div className="mb-12">
+          {/* Main Hero Content - Horizontal Layout */}
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-8">
+            {/* Left Side - Icon and Title */}
+            <div className="flex items-center gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                  <GraduationCap size={40} className="text-white" />
                 </div>
               </div>
-              
-              {/* Toggle Button */}
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Classroom Management
+                </h1>
+                <p className="text-gray-600 text-lg mt-2">
+                  Create, manage, and organize your teaching spaces with ease.
+                </p>
+              </div>
+            </div>
+            
+            {/* Right Side - Learn More Button */}
+            <div className="flex-shrink-0">
               <button
                 onClick={() => setDescriptionExpanded(!descriptionExpanded)}
-                className="group inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium mt-4 transition-all duration-300"
+                className="group inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-white hover:text-gray-900 border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-300"
               >
                 <Info size={16} />
                 <span>{descriptionExpanded ? 'Show Less' : 'Learn More'}</span>
@@ -311,6 +264,55 @@ const ClassroomManagement = () => {
                   }`} 
                 />
               </button>
+            </div>
+          </div>
+          
+          {/* Expandable Content - Full Width */}
+          <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
+            descriptionExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}>
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Users size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 text-base mb-1">Student Management</h4>
+                    <p className="text-sm text-gray-600">Organize students with classroom codes and progress tracking.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <BookOpen size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 text-base mb-1">Content Library</h4>
+                    <p className="text-sm text-gray-600">Access reading materials, activities, and assessments.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Star size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 text-base mb-1">Progress Tracking</h4>
+                    <p className="text-sm text-gray-600">Monitor achievements and identify support areas.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Zap size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 text-base mb-1">Interactive Learning</h4>
+                    <p className="text-sm text-gray-600">Create engaging experiences with real-time feedback.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
