@@ -451,11 +451,88 @@ const BookPageEditor = ({ role = "teacher" }) => {
 
   if (isLoading) {
     return (
-      <div className="w-full min-h-screen pt-20">
-        {role === "admin" ? <AdminNav /> : <TeacherNav />}
-        <div className="p-6 max-w-7xl mx-auto">
-          <div className="flex justify-center items-center h-64">
-            <p className="text-xl text-gray-500">Loading book pages...</p>
+      <div className="w-full min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        {/* Navigation Bar */}
+        <div className="w-full">
+          {role === "admin" ? <AdminNav /> : <TeacherNav />}
+        </div>
+
+        {/* Enhanced Loading State */}
+        <div className="p-6 max-w-7xl mx-auto pt-32">
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            {/* Animated Book Icon */}
+            <div className="relative mb-8">
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse">
+                <BookOpen size={48} className="text-white" />
+              </div>
+              {/* Floating decorative elements */}
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full animate-bounce"></div>
+              <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-gradient-to-br from-pink-400 to-red-400 rounded-full animate-bounce" style={{animationDelay: '0.5s'}}></div>
+            </div>
+
+            {/* Loading Animation */}
+            <div className="flex flex-col items-center space-y-6">
+              {/* Animated Loading Text */}
+              <div className="text-center">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                  Preparing Your Book
+                </h2>
+                <p className="text-gray-600 text-lg">Loading book pages and content...</p>
+              </div>
+
+              {/* Enhanced Loading Spinner */}
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+                <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-3 h-3 bg-pink-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-64 bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"></div>
+              </div>
+
+              {/* Loading Features */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                <div className="flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/50">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <FileText size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Loading Pages</p>
+                    <p className="text-xs text-gray-600">Fetching content</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/50">
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                    <Image size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Processing Images</p>
+                    <p className="text-xs text-gray-600">Optimizing assets</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/50">
+                  <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center">
+                    <Sparkles size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Preparing Editor</p>
+                    <p className="text-xs text-gray-600">Setting up interface</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fun Loading Message */}
+              <div className="text-center mt-6">
+                <p className="text-sm text-gray-500 italic">
+                  "Great stories are worth the wait..." 
+                  <span className="ml-2 text-blue-500">✨</span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
