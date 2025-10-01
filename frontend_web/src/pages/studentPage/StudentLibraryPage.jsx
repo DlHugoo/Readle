@@ -200,11 +200,7 @@ const StudentLibraryPage = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {books.map((book, index) => (
-                <div
-                  key={`for-you-${book.bookID || index}`}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/book/${book.bookID}/page/1`)}
-                >
+                <div key={`for-you-${book.bookID || index}`} className="cursor-pointer">
                   <BookCard book={book} />
                 </div>
               ))}
