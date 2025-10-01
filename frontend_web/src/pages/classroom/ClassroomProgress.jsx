@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye, Download, Sparkles, Star, Heart, Zap } from "lucide-react";
+import { Menu, BookOpen, Clock, CheckCircle, AlertTriangle, Users, Search, Filter, Award, BarChart, Eye, Download, Sparkles, Star, Heart, Zap, RotateCcw } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import StudentDetailsModal from './StudentDetailsModal';
 import axios from "axios";
@@ -34,6 +34,10 @@ const ClassroomProgress = () => {
   const [filterByActivity, setFilterByActivity] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Sort states
+  const [sortBy, setSortBy] = useState('none'); // 'none', 'performance', 'activity'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
+  
   // Modal state
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -53,6 +57,30 @@ const ClassroomProgress = () => {
   const closeStudentModal = () => {
     setIsModalOpen(false);
     setSelectedStudent(null);
+  };
+
+  // Sort functions
+  const handlePerformanceSort = () => {
+    if (sortBy === 'performance') {
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortBy('performance');
+      setSortOrder('desc'); // Default to highest first
+    }
+  };
+
+  const handleActivitySort = () => {
+    if (sortBy === 'activity') {
+      setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortBy('activity');
+      setSortOrder('desc'); // Default to most recent first
+    }
+  };
+
+  const handleClearSorts = () => {
+    setSortBy('none');
+    setSortOrder('desc');
   };
   
   // Navigate to visualization dashboard
@@ -512,12 +540,24 @@ const filteredStudents = progressData.map(student => {
     }
   
     return true;
+  }).sort((a, b) => {
+    // Apply sorting
+    if (sortBy === 'performance') {
+      const scoreA = a.progressData?.avgComprehensionScore || 0;
+      const scoreB = b.progressData?.avgComprehensionScore || 0;
+      return sortOrder === 'desc' ? scoreB - scoreA : scoreA - scoreB;
+    } else if (sortBy === 'activity') {
+      const dateA = a.progressData?.lastActivityDate ? new Date(a.progressData.lastActivityDate) : new Date(0);
+      const dateB = b.progressData?.lastActivityDate ? new Date(b.progressData.lastActivityDate) : new Date(0);
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    }
+    return 0; // No sorting
   });
   
   // Update the summary stats calculation to use the filtered data
   useEffect(() => {
     calculateSummaryStats(filteredStudents);
-  }, [progressData, showOnlyClassroomBooks, filterByPerformance, filterByActivity, searchTerm]);
+  }, [progressData, showOnlyClassroomBooks, filterByPerformance, filterByActivity, searchTerm, sortBy, sortOrder]);
   
   // Add new function to handle CSV export
   const exportToCSV = () => {
@@ -824,33 +864,50 @@ const filteredStudents = progressData.map(student => {
                     </div>
                     <div className="flex gap-3">
                       <button
-                        onClick={() => setFilterByPerformance(filterByPerformance === 'high' ? 'all' : 'high')}
+                        onClick={handlePerformanceSort}
                         className={`group px-6 py-3 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                          filterByPerformance === 'high' 
+                          sortBy === 'performance' 
                             ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent shadow-lg' 
                             : 'border-gray-300 bg-white/70 backdrop-blur-sm hover:border-green-500 hover:shadow-md'
                         }`}
                       >
                         <span className="font-semibold flex items-center gap-2">
-                          High Performance 
-                          {filterByPerformance === 'high' && (
-                            <span className="group-hover:rotate-180 transition-transform duration-300">✓</span>
+                          Sort by Performance 
+                          {sortBy === 'performance' && (
+                            <span className="group-hover:rotate-180 transition-transform duration-300">
+                              {sortOrder === 'desc' ? '↓' : '↑'}
+                            </span>
                           )}
                         </span>
                       </button>
                       <button
-                        onClick={() => setFilterByActivity(filterByActivity === 'recent' ? 'all' : 'recent')}
+                        onClick={handleActivitySort}
                         className={`group px-6 py-3 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                          filterByActivity === 'recent' 
+                          sortBy === 'activity' 
                             ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent shadow-lg' 
                             : 'border-gray-300 bg-white/70 backdrop-blur-sm hover:border-blue-500 hover:shadow-md'
                         }`}
                       >
                         <span className="font-semibold flex items-center gap-2">
-                          Recent Activity 
-                          {filterByActivity === 'recent' && (
-                            <span className="group-hover:rotate-180 transition-transform duration-300">✓</span>
+                          Sort by Activity 
+                          {sortBy === 'activity' && (
+                            <span className="group-hover:rotate-180 transition-transform duration-300">
+                              {sortOrder === 'desc' ? '↓' : '↑'}
+                            </span>
                           )}
+                        </span>
+                      </button>
+                      <button
+                        onClick={handleClearSorts}
+                        className={`group px-6 py-3 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
+                          sortBy !== 'none'
+                            ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white border-transparent shadow-lg' 
+                            : 'border-gray-300 bg-white/70 backdrop-blur-sm hover:border-orange-500 hover:shadow-md'
+                        }`}
+                      >
+                        <span className="font-semibold flex items-center gap-2">
+                          <RotateCcw size={16} />
+                          Clear Sorts
                         </span>
                       </button>
                     </div>

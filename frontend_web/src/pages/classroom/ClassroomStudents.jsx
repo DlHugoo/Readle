@@ -524,9 +524,22 @@ const ClassroomStudents = () => {
   const sortStudents = (studentsArray) => {
     return [...studentsArray].sort((a, b) => {
       if (sortConfig.key === 'name') {
-        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
-        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
-        return sortConfig.direction === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        // Sort by last name first, then by first name as secondary sort
+        const lastNameA = (a.lastName || '').toLowerCase();
+        const lastNameB = (b.lastName || '').toLowerCase();
+        const firstNameA = (a.firstName || '').toLowerCase();
+        const firstNameB = (b.firstName || '').toLowerCase();
+        
+        // First compare last names
+        const lastNameComparison = lastNameA.localeCompare(lastNameB);
+        
+        // If last names are the same, compare first names
+        if (lastNameComparison === 0) {
+          const firstNameComparison = firstNameA.localeCompare(firstNameB);
+          return sortConfig.direction === 'asc' ? firstNameComparison : -firstNameComparison;
+        }
+        
+        return sortConfig.direction === 'asc' ? lastNameComparison : -lastNameComparison;
       }
       if (sortConfig.key === 'email') {
         return sortConfig.direction === 'asc' 
@@ -546,12 +559,17 @@ const filterStudents = (studentsArray) => {
   });
 };
 
-// Add this function to handle sort changes
+  // Add this function to handle sort changes
 const handleSort = (key) => {
   setSortConfig(prevConfig => ({
     key,
     direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
   }));
+};
+
+// Add this function to clear sorts
+const handleClearSorts = () => {
+  setSortConfig({ key: 'firstName', direction: 'asc' });
 };
 
   // Add Student Modal Component
@@ -900,7 +918,7 @@ const handleSort = (key) => {
                 }`}
               >
                 <span className="font-semibold flex items-center gap-2">
-                  Sort by Name 
+                  Sort by Last Name 
                   {sortConfig.key === 'name' && (
                     <span className="group-hover:rotate-180 transition-transform duration-200 ease-out">
                       {sortConfig.direction === 'asc' ? '↑' : '↓'}
@@ -923,6 +941,15 @@ const handleSort = (key) => {
                       {sortConfig.direction === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
+                </span>
+              </button>
+              <button
+                onClick={handleClearSorts}
+                className="group px-6 py-3 rounded-xl border-2 border-gray-300 bg-white/70 backdrop-blur-sm hover:border-gray-400 hover:shadow-md transition-all duration-150 ease-out"
+              >
+                <span className="font-semibold flex items-center gap-2 text-gray-700 group-hover:text-gray-900">
+                  <X size={16} className="group-hover:rotate-90 transition-transform duration-200 ease-out" />
+                  Clear Sorts
                 </span>
               </button>
             </div>
