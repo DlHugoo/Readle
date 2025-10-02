@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import StudentNavbar from '../../components/StudentNavbar';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 
@@ -50,6 +50,14 @@ const StudentProgressDashboard = () => {
     });
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    
+    // Filter state
+    const [filterType, setFilterType] = useState('global'); // 'global' or 'classroom'
+    const [selectedClassroomId, setSelectedClassroomId] = useState(null);
+    const [classrooms, setClassrooms] = useState([]);
+    const [filteredCompletedBooks, setFilteredCompletedBooks] = useState([]);
+    const [filteredInProgressBooks, setFilteredInProgressBooks] = useState([]);
 
     // 🔒 Redirect admins trying to access this dashboard
     useEffect(() => {
@@ -57,6 +65,124 @@ const StudentProgressDashboard = () => {
             navigate('/admin-dashboard');
         }
     }, [role, navigate]);
+
+    // Initialize filter state from URL parameters
+    useEffect(() => {
+        const urlFilterType = searchParams.get('filter') || 'global';
+        const urlClassroomId = searchParams.get('classroom');
+        
+        setFilterType(urlFilterType);
+        if (urlClassroomId) {
+            setSelectedClassroomId(parseInt(urlClassroomId));
+        }
+    }, [searchParams]);
+
+    // Update URL when filter changes
+    const updateFilter = (newFilterType, newClassroomId = null) => {
+        setFilterType(newFilterType);
+        setSelectedClassroomId(newClassroomId);
+        
+        const newParams = new URLSearchParams();
+        newParams.set('filter', newFilterType);
+        if (newClassroomId) {
+            newParams.set('classroom', newClassroomId.toString());
+        }
+        setSearchParams(newParams);
+    };
+
+    // Fetch user's classrooms
+    const fetchClassrooms = async () => {
+        if (!userId || !token) return;
+        
+        try {
+            const headers = { Authorization: `Bearer ${token}` };
+            const response = await axios.get(`${API_BASE_URL}/api/classrooms/student/${userId}`, { headers });
+            setClassrooms(response.data);
+            console.log('Fetched classrooms:', response.data);
+        } catch (error) {
+            console.error('Error fetching classrooms:', error);
+        }
+    };
+
+    // Filter books based on selected filter
+    const filterBooks = (books) => {
+        if (filterType === 'global') {
+            return books; // Show all books
+        } else if (filterType === 'classroom' && selectedClassroomId) {
+            return books.filter(book => 
+                book.book.classroomId === selectedClassroomId
+            );
+        }
+        return books;
+    };
+
+    // Update filtered books when filter changes
+    useEffect(() => {
+        setFilteredCompletedBooks(filterBooks(completedBooks));
+        setFilteredInProgressBooks(filterBooks(inProgressBooks));
+    }, [filterType, selectedClassroomId, completedBooks, inProgressBooks]);
+
+    // Update stats when filtered books change
+    useEffect(() => {
+        setStats({
+            completedCount: filteredCompletedBooks.length,
+            inProgressCount: filteredInProgressBooks.length,
+        });
+    }, [filteredCompletedBooks, filteredInProgressBooks]);
+
+    // Recalculate average scores when filtered books change
+    useEffect(() => {
+        const allFilteredBooks = [...filteredCompletedBooks, ...filteredInProgressBooks];
+        
+        if (allFilteredBooks.length === 0) {
+            setAverageScores({
+                snakeGame: 0,
+                ssa: 0,
+                prediction: 0
+            });
+            return;
+        }
+
+        // Get book IDs from the filtered books
+        const bookIds = allFilteredBooks.map(book => book.book.bookID);
+        
+        // Calculate average snake game score
+        let snakeTotal = 0;
+        let snakeCount = 0;
+        bookIds.forEach(bookId => {
+            if (snakeGameAttempts[bookId] > 0) {
+                snakeTotal += calculateSnakeGameScore(snakeGameAttempts[bookId]);
+                snakeCount++;
+            }
+        });
+        
+        // Calculate average SSA score
+        let ssaTotal = 0;
+        let ssaCount = 0;
+        bookIds.forEach(bookId => {
+            if (ssaAttempts[bookId] > 0) {
+                ssaTotal += calculateSSAScore(ssaAttempts[bookId]);
+                ssaCount++;
+            }
+        });
+        
+        // Calculate average prediction score (use correct)
+        let predictionTotal = 0;
+        let predictionCount = 0;
+        bookIds.forEach(bookId => {
+            const attempt = predictionAttempts[bookId];
+            if (attempt && typeof attempt.correct === 'boolean') {
+                predictionTotal += attempt.correct ? 100 : 0;
+                predictionCount++;
+            }
+        });
+        
+        setAverageScores({
+            snakeGame: snakeCount > 0 ? Math.round(snakeTotal / snakeCount) : 0,
+            ssa: ssaCount > 0 ? Math.round(ssaTotal / ssaCount) : 0,
+            prediction: predictionCount > 0 ? Math.round(predictionTotal / predictionCount) : 0
+        });
+    }, [filteredCompletedBooks, filteredInProgressBooks, snakeGameAttempts, ssaAttempts, predictionAttempts]);
 
     useEffect(() => {
         const fetchProgressData = async () => {
@@ -189,12 +315,15 @@ const StudentProgressDashboard = () => {
                 setSSAAttempts(ssaAttemptsData);
                 setPredictionAttempts(predictionAttemptsData); // Set prediction attempts state
                 
-                // Calculate average scores
-                const calculateAverages = () => {
+                // Calculate average scores based on current filter
+                const calculateAverages = (booksToCalculate) => {
+                    // Get book IDs from the filtered books
+                    const bookIds = booksToCalculate.map(book => book.book.bookID);
+                    
                     // Calculate average snake game score
                     let snakeTotal = 0;
                     let snakeCount = 0;
-                    Object.keys(snakeAttemptsData).forEach(bookId => {
+                    bookIds.forEach(bookId => {
                         if (snakeAttemptsData[bookId] > 0) {
                             snakeTotal += calculateSnakeGameScore(snakeAttemptsData[bookId]);
                             snakeCount++;
@@ -204,7 +333,7 @@ const StudentProgressDashboard = () => {
                     // Calculate average SSA score
                     let ssaTotal = 0;
                     let ssaCount = 0;
-                    Object.keys(ssaAttemptsData).forEach(bookId => {
+                    bookIds.forEach(bookId => {
                         if (ssaAttemptsData[bookId] > 0) {
                             ssaTotal += calculateSSAScore(ssaAttemptsData[bookId]);
                             ssaCount++;
@@ -214,7 +343,7 @@ const StudentProgressDashboard = () => {
                     // Calculate average prediction score (use correct)
                     let predictionTotal = 0;
                     let predictionCount = 0;
-                    Object.keys(predictionAttemptsData).forEach(bookId => {
+                    bookIds.forEach(bookId => {
                         const attempt = predictionAttemptsData[bookId];
                         if (attempt && typeof attempt.correct === 'boolean') {
                             predictionTotal += attempt.correct ? 100 : 0;
@@ -229,7 +358,8 @@ const StudentProgressDashboard = () => {
                     });
                 };
                 
-                calculateAverages();
+                // Calculate initial averages with all books
+                calculateAverages([...completedBooksRes.data, ...inProgressBooksRes.data]);
                 setError(null);
             } catch (error) {
                 console.error('Error fetching progress data:', error);
@@ -259,6 +389,7 @@ const StudentProgressDashboard = () => {
 
         if (userId) {
             fetchProgressData();
+            fetchClassrooms();
         }
     }, [userId, token]);
 
@@ -334,6 +465,72 @@ const StudentProgressDashboard = () => {
                         </button>
                     </div>
 
+                    {/* Filter Section */}
+                    <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+                        <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            🔍 Filter Books
+                        </h2>
+                        <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
+                            {/* Filter Type Toggle */}
+                            <div className="flex bg-gray-100 rounded-lg p-1">
+                                <button
+                                    onClick={() => updateFilter('global')}
+                                    className={`px-4 py-2 rounded-md transition-all duration-200 ${
+                                        filterType === 'global'
+                                            ? 'bg-white text-blue-600 shadow-sm font-semibold'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    🌍 Global
+                                </button>
+                                <button
+                                    onClick={() => updateFilter('classroom')}
+                                    className={`px-4 py-2 rounded-md transition-all duration-200 ${
+                                        filterType === 'classroom'
+                                            ? 'bg-white text-blue-600 shadow-sm font-semibold'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    🏫 By Classroom
+                                </button>
+                            </div>
+
+                            {/* Classroom Selector */}
+                            {filterType === 'classroom' && (
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm font-medium text-gray-700">Classroom:</label>
+                                    <select
+                                        value={selectedClassroomId || ''}
+                                        onChange={(e) => {
+                                            const classroomId = e.target.value ? parseInt(e.target.value) : null;
+                                            updateFilter('classroom', classroomId);
+                                        }}
+                                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+                                    >
+                                        <option value="">Select a classroom</option>
+                                        {classrooms.map((classroom) => (
+                                            <option key={classroom.id} value={classroom.id}>
+                                                {classroom.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Filter Status */}
+                        <div className="mt-4 text-center">
+                            <span className="text-sm text-gray-600">
+                                {filterType === 'global' 
+                                    ? 'Showing all books'
+                                    : selectedClassroomId 
+                                        ? `Showing books from ${classrooms.find(c => c.id === selectedClassroomId)?.name || 'selected classroom'}`
+                                        : 'Please select a classroom'
+                                }
+                            </span>
+                        </div>
+                    </div>
+
                     {/* Statistics Cards with Enhanced Design */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                         <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center transform hover:scale-105 transition-all duration-300 border-l-4 border-blue-500">
@@ -356,9 +553,17 @@ const StudentProgressDashboard = () => {
                 
                     {/* Average Scores Cards with Enhanced Design */}
                     <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
-                        <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                        <h2 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                             🎯 Average Activity Scores
                         </h2>
+                        <p className="text-center text-gray-600 mb-8">
+                            {filterType === 'global' 
+                                ? 'Across all books'
+                                : selectedClassroomId 
+                                    ? `For ${classrooms.find(c => c.id === selectedClassroomId)?.name || 'selected classroom'}`
+                                    : 'Please select a classroom to view scores'
+                            }
+                        </p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 border border-green-200">
                                 <div className="flex items-center justify-between mb-4">
@@ -373,7 +578,9 @@ const StudentProgressDashboard = () => {
                                         style={{ width: `${averageScores.snakeGame}%` }}
                                     ></div>
                                 </div>
-                                <div className="text-sm text-green-600 mt-2 text-center">Average Score</div>
+                                <div className="text-sm text-green-600 mt-2 text-center">
+                                    {filterType === 'global' ? 'Global Average' : 'Classroom Average'}
+                                </div>
                             </div>
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 border border-blue-200">
                                 <div className="flex items-center justify-between mb-4">
@@ -388,7 +595,9 @@ const StudentProgressDashboard = () => {
                                         style={{ width: `${averageScores.ssa}%` }}
                                     ></div>
                                 </div>
-                                <div className="text-sm text-blue-600 mt-2 text-center">Average Score</div>
+                                <div className="text-sm text-blue-600 mt-2 text-center">
+                                    {filterType === 'global' ? 'Global Average' : 'Classroom Average'}
+                                </div>
                             </div>
                             <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300 border border-purple-200">
                                 <div className="flex items-center justify-between mb-4">
@@ -403,7 +612,9 @@ const StudentProgressDashboard = () => {
                                         style={{ width: `${averageScores.prediction}%` }}
                                     ></div>
                                 </div>
-                                <div className="text-sm text-purple-600 mt-2 text-center">Average Score</div>
+                                <div className="text-sm text-purple-600 mt-2 text-center">
+                                    {filterType === 'global' ? 'Global Average' : 'Classroom Average'}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -414,14 +625,26 @@ const StudentProgressDashboard = () => {
                             📖 Books in Progress
                         </h2>
                         <div className="space-y-6">
-                            {inProgressBooks.length === 0 && (
+                            {filteredInProgressBooks.length === 0 && (
                                 <div className="text-center py-12">
                                     <div className="text-6xl mb-4">📚</div>
-                                    <p className="text-gray-500 text-xl">No books in progress yet.</p>
-                                    <p className="text-gray-400 mt-2">Start reading to see your progress here!</p>
+                                    <p className="text-gray-500 text-xl">
+                                        {filterType === 'global' 
+                                            ? 'No books in progress yet.'
+                                            : selectedClassroomId 
+                                                ? 'No books in progress for this classroom.'
+                                                : 'Please select a classroom to view books.'
+                                        }
+                                    </p>
+                                    <p className="text-gray-400 mt-2">
+                                        {filterType === 'global' 
+                                            ? 'Start reading to see your progress here!'
+                                            : 'Try selecting a different classroom or switch to Global view.'
+                                        }
+                                    </p>
                                 </div>
                             )}
-                            {inProgressBooks.map((book) => (
+                            {filteredInProgressBooks.map((book) => (
                                 <div key={`in-progress-${book.id}`} className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200 transform hover:scale-102 transition-all duration-300">
                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                                         <div className="flex items-start space-x-4 mb-4 lg:mb-0">
@@ -504,14 +727,26 @@ const StudentProgressDashboard = () => {
                             ✅ Completed Books
                         </h2>
                         <div className="space-y-6">
-                            {completedBooks.length === 0 && (
+                            {filteredCompletedBooks.length === 0 && (
                                 <div className="text-center py-12">
                                     <div className="text-6xl mb-4">🎯</div>
-                                    <p className="text-gray-500 text-xl">No completed books yet.</p>
-                                    <p className="text-gray-400 mt-2">Finish reading a book to see it here!</p>
+                                    <p className="text-gray-500 text-xl">
+                                        {filterType === 'global' 
+                                            ? 'No completed books yet.'
+                                            : selectedClassroomId 
+                                                ? 'No completed books for this classroom.'
+                                                : 'Please select a classroom to view books.'
+                                        }
+                                    </p>
+                                    <p className="text-gray-400 mt-2">
+                                        {filterType === 'global' 
+                                            ? 'Finish reading a book to see it here!'
+                                            : 'Try selecting a different classroom or switch to Global view.'
+                                        }
+                                    </p>
                                 </div>
                             )}
-                            {completedBooks.map((book) => (
+                            {filteredCompletedBooks.map((book) => (
                                 <div key={`completed-${book.id}`} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 transform hover:scale-102 transition-all duration-300">
                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                                         <div className="flex items-start space-x-4 mb-4 lg:mb-0">
