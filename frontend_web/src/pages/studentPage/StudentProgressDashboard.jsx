@@ -101,6 +101,10 @@ const StudentProgressDashboard = () => {
                 setCompletedBooks(completedBooksRes.data);
                 setInProgressBooks(inProgressBooksRes.data);
                 
+                // Debug: Log the structure of the progress data
+                console.log('Completed books data:', completedBooksRes.data);
+                console.log('In-progress books data:', inProgressBooksRes.data);
+                
                 // Fetch snake game attempts for all books
                 const allBooks = [...completedBooksRes.data, ...inProgressBooksRes.data];
                 const snakeAttemptsData = {};
@@ -258,22 +262,24 @@ const StudentProgressDashboard = () => {
         }
     }, [userId, token]);
 
-    const formatDuration = (minutes, fallbackDuration) => {
-        // If minutes is undefined, try to use fallbackDuration (old field)
-        let mins = minutes;
-        if (typeof mins !== 'number' || isNaN(mins)) {
-            if (typeof fallbackDuration === 'object' && fallbackDuration !== null && 'seconds' in fallbackDuration) {
-                mins = Math.floor(fallbackDuration.seconds / 60);
-            } else if (typeof fallbackDuration === 'number') {
-                mins = Math.floor(fallbackDuration / 60);
-            } else {
-                mins = 0;
-            }
+    const formatDuration = (totalReadingTimeSeconds) => {
+        // Debug: Log the input value
+        console.log('formatDuration input:', totalReadingTimeSeconds, 'type:', typeof totalReadingTimeSeconds);
+        
+        // Handle the case where totalReadingTimeSeconds might be undefined or null
+        if (!totalReadingTimeSeconds || typeof totalReadingTimeSeconds !== 'number' || isNaN(totalReadingTimeSeconds)) {
+            console.log('formatDuration: Using fallback 0h 0m 0s');
+            return '0h 0m 0s';
         }
-        const hours = Math.floor(mins / 60);
-        const remainingMinutes = mins % 60;
-        const seconds = Math.floor((mins % 1) * 60);
-        return `${hours}h ${remainingMinutes}m ${seconds}s`;
+        
+        const totalSeconds = Math.floor(totalReadingTimeSeconds);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        
+        const result = `${hours}h ${minutes}m ${seconds}s`;
+        console.log('formatDuration result:', result);
+        return result;
     };
 
     if (loading) {
@@ -444,7 +450,7 @@ const StudentProgressDashboard = () => {
                                                     </div>
                                                     <div className="flex items-center">
                                                         <span className="text-purple-500 mr-2">⏱️</span>
-                                                        {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                                        {formatDuration(book.totalReadingTimeSeconds)} read
                                                     </div>
                                                 </div>
                                                 
@@ -539,7 +545,7 @@ const StudentProgressDashboard = () => {
                                                     </div>
                                                     <div className="flex items-center">
                                                         <span className="text-purple-500 mr-2">⏱️</span>
-                                                        Total reading time: {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)}
+                                                        Total reading time: {formatDuration(book.totalReadingTimeSeconds)}
                                                     </div>
                                                 </div>
                                                 

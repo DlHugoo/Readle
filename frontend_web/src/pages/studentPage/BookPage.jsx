@@ -48,12 +48,14 @@ const BookPage = () => {
   const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
   const contentRef = useRef(null);
   
-  // Stopwatch timer state
-  const [readingStartTime, setReadingStartTime] = useState(null);
-  const [pausedTime, setPausedTime] = useState(0);
+  // Reading timer state - using raw seconds for backend sync
+  const [totalReadingTimeSeconds, setTotalReadingTimeSeconds] = useState(0); // Total seconds from backend
+  const [lastSyncedTimeSeconds, setLastSyncedTimeSeconds] = useState(0); // Last synced time to backend
+  const [sessionStartTime, setSessionStartTime] = useState(null); // When current session started
   const [isReading, setIsReading] = useState(false);
   const [displayTime, setDisplayTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const intervalRef = useRef(null);
+  const syncIntervalRef = useRef(null); // For periodic backend sync
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -67,27 +69,45 @@ const BookPage = () => {
     }
   }, []);
 
-  // Stopwatch timer functions
+  // Timer utility functions
+  const secondsToDisplay = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return { hours, minutes, seconds };
+  };
+
+  const getCurrentTotalSeconds = () => {
+    if (isReading && sessionStartTime) {
+      const sessionElapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+      return totalReadingTimeSeconds + sessionElapsed;
+    }
+    return totalReadingTimeSeconds;
+  };
+
+  // Timer control functions
   const startReadingTimer = () => {
     if (!isReading) {
       const now = Date.now();
-      setReadingStartTime(now);
+      setSessionStartTime(now);
       setIsReading(true);
+      console.log(`Starting reading timer. Current total time: ${totalReadingTimeSeconds} seconds`);
     }
   };
 
   const pauseReadingTimer = () => {
-    if (isReading && readingStartTime) {
-      const elapsed = Date.now() - readingStartTime;
-      setPausedTime(prev => prev + elapsed);
+    if (isReading && sessionStartTime) {
+      const sessionElapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+      setTotalReadingTimeSeconds(prev => prev + sessionElapsed);
       setIsReading(false);
-      setReadingStartTime(null);
+      setSessionStartTime(null);
     }
   };
 
   const resetReadingTimer = () => {
-    setReadingStartTime(null);
-    setPausedTime(0);
+    setTotalReadingTimeSeconds(0);
+    setLastSyncedTimeSeconds(0);
+    setSessionStartTime(null);
     setIsReading(false);
     setDisplayTime({ hours: 0, minutes: 0, seconds: 0 });
   };
@@ -96,15 +116,8 @@ const BookPage = () => {
   useEffect(() => {
     if (isReading) {
       intervalRef.current = setInterval(() => {
-        if (readingStartTime) {
-          const now = Date.now();
-          const totalElapsed = pausedTime + (now - readingStartTime);
-          const totalSeconds = Math.floor(totalElapsed / 1000);
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const seconds = totalSeconds % 60;
-          setDisplayTime({ hours, minutes, seconds });
-        }
+        const currentTotalSeconds = getCurrentTotalSeconds();
+        setDisplayTime(secondsToDisplay(currentTotalSeconds));
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -119,24 +132,56 @@ const BookPage = () => {
         intervalRef.current = null;
       }
     };
-  }, [isReading, readingStartTime, pausedTime]);
+  }, [isReading, totalReadingTimeSeconds, sessionStartTime]);
+
+  // Periodic backend sync every 5 seconds
+  useEffect(() => {
+    if (isReading && trackerId) {
+      syncIntervalRef.current = setInterval(() => {
+        syncReadingTimeToBackend(currentPageIndex + 1);
+      }, 5000); // Sync every 5 seconds
+    } else {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    };
+  }, [isReading, trackerId, currentPageIndex]);
 
   // Start timer when component mounts and book is loaded
   useEffect(() => {
     if (book && pages.length > 0 && !isReading) {
-      startReadingTimer();
+      // Small delay to ensure reading time is loaded from backend first
+      const timer = setTimeout(() => {
+        startReadingTimer();
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
-  }, [book, pages.length]);
+  }, [book, pages.length, totalReadingTimeSeconds]);
 
   // Pause timer when user navigates away
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = async () => {
       pauseReadingTimer();
+      if (trackerId) {
+        await syncReadingTimeToBackend(currentPageIndex + 1, true);
+      }
     };
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.hidden) {
         pauseReadingTimer();
+        if (trackerId) {
+          await syncReadingTimeToBackend(currentPageIndex + 1, true);
+        }
       } else if (book && pages.length > 0) {
         startReadingTimer();
       }
@@ -149,12 +194,83 @@ const BookPage = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [book, pages.length]);
+  }, [book, pages.length, trackerId, currentPageIndex]);
 
-  // Get total reading time in minutes for API calls
-  const getTotalReadingTimeMinutes = () => {
-    const totalElapsed = pausedTime + (isReading && readingStartTime ? Date.now() - readingStartTime : 0);
-    return Math.floor(totalElapsed / 60000); // Convert to minutes
+  // API sync functions
+  const syncReadingTimeToBackend = async (pageNumber, forceSync = false) => {
+    if (!trackerId) return;
+    
+    try {
+      const token = localStorage.getItem("token");
+      const currentTotalSeconds = getCurrentTotalSeconds();
+      
+      // Calculate incremental time since last sync
+      const incrementalSeconds = currentTotalSeconds - lastSyncedTimeSeconds;
+      
+      // Only sync if there's new time to record (at least 1 second) or if forced
+      if (incrementalSeconds >= 1 || forceSync) {
+        // Convert seconds to fractional minutes to preserve precision
+        const fractionalMinutes = incrementalSeconds / 60;
+        
+        await fetch(
+          getApiUrl(`api/progress/update/${trackerId}` +
+            `?pageNumber=${pageNumber}&readingTimeMinutes=${fractionalMinutes}`),
+          {
+            method: 'PUT',
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+          }
+        );
+        
+        // Update the last synced time
+        setLastSyncedTimeSeconds(currentTotalSeconds);
+        
+        console.log(`Synced incremental reading time: ${incrementalSeconds} seconds (${fractionalMinutes.toFixed(2)} minutes) for page ${pageNumber}`);
+      } else {
+        console.log(`Skipping sync - only ${incrementalSeconds} seconds since last sync`);
+      }
+    } catch (error) {
+      console.error("Error syncing reading time to backend:", error);
+    }
+  };
+
+  const loadReadingTimeFromBackend = async () => {
+    if (!userId || !book?.bookID) {
+      console.log("Cannot load reading time - missing userId or bookID", { userId, bookID: book?.bookID });
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("token");
+      console.log(`Loading reading time for user ${userId}, book ${book.bookID}`);
+      
+      const response = await fetch(
+        getApiUrl(`api/progress/book/${userId}/${book.bookID}`),
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.ok) {
+        const progressData = await response.json();
+        console.log("Progress data received:", progressData);
+        
+        if (progressData && progressData.totalReadingTimeSeconds !== undefined) {
+          console.log(`Setting reading time to ${progressData.totalReadingTimeSeconds} seconds`);
+          setTotalReadingTimeSeconds(progressData.totalReadingTimeSeconds);
+          setLastSyncedTimeSeconds(progressData.totalReadingTimeSeconds);
+          setDisplayTime(secondsToDisplay(progressData.totalReadingTimeSeconds));
+          console.log(`Loaded reading time from backend: ${progressData.totalReadingTimeSeconds} seconds`);
+        } else {
+          console.log("No reading time data found in progress data");
+        }
+      } else {
+        console.log(`Failed to load progress data: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Error loading reading time from backend:", error);
+    }
   };
 
   useEffect(() => {
@@ -190,14 +306,26 @@ const BookPage = () => {
               );
               const progressData = await progressRes.json();
 
-              if (progressData && progressData.lastPageRead) {
-                // Set to last read page (subtract 1 for zero-based index)
-                const lastPage = Math.min(
-                  progressData.lastPageRead - 1,
-                  pagesData.length - 1
-                );
-                setCurrentPageIndex(lastPage);
+              if (progressData) {
+                // Set tracker ID if available
                 if (progressData.id) setTrackerId(progressData.id);
+                
+                // Load saved reading time from backend (always load if available)
+                if (progressData.totalReadingTimeSeconds !== undefined) {
+                  setTotalReadingTimeSeconds(progressData.totalReadingTimeSeconds);
+                  setLastSyncedTimeSeconds(progressData.totalReadingTimeSeconds);
+                  setDisplayTime(secondsToDisplay(progressData.totalReadingTimeSeconds));
+                  console.log(`Loaded reading time from backend: ${progressData.totalReadingTimeSeconds} seconds`);
+                }
+                
+                // Set to last read page if available
+                if (progressData.lastPageRead) {
+                  const lastPage = Math.min(
+                    progressData.lastPageRead - 1,
+                    pagesData.length - 1
+                  );
+                  setCurrentPageIndex(lastPage);
+                }
               }
             } catch (err) {
               // If no progress found or error, default to first page
@@ -303,23 +431,19 @@ const BookPage = () => {
       });
   }, [book, pages]);
 
+  // Load reading time when tracker is available
+  useEffect(() => {
+    if (trackerId && book?.bookID && userId) {
+      loadReadingTimeFromBackend();
+    }
+  }, [trackerId, book?.bookID, userId]);
+
+  // Initial sync when tracker is available (only once)
   useEffect(() => {
     if (trackerId && pages.length > 0) {
-      const token = localStorage.getItem("token");
-      const readingTimeMinutes = getTotalReadingTimeMinutes();
-      axios
-        .put(
-          getApiUrl(`api/progress/update/${trackerId}?pageNumber=${
-            currentPageIndex + 1
-          }&readingTimeMinutes=${readingTimeMinutes}`),
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-        .catch((err) =>
-          console.error("Error updating book progress on first load:", err)
-        );
+      syncReadingTimeToBackend(currentPageIndex + 1, true);
     }
-  }, [trackerId, pages.length, currentPageIndex]);
+  }, [trackerId, pages.length]);
 
   const handleNextPage = async () => {
     if (isPageTransitioning) return;
@@ -346,22 +470,7 @@ const BookPage = () => {
           
           // Update reading progress if we have a tracker
           if (trackerId) {
-            try {
-              await fetch(
-                getApiUrl(`api/progress/update/${trackerId}` +
-                  `?pageNumber=${nextIndex + 1}&readingTimeMinutes=1`),
-                {
-                  method: 'PUT',
-                  headers: { 
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({})
-                }
-              );
-            } catch (updateErr) {
-              console.error("Error updating progress:", updateErr);
-            }
+            await syncReadingTimeToBackend(nextIndex + 1, true);
           }
           
           // Reset transition state after animation
@@ -420,53 +529,31 @@ const BookPage = () => {
 
       // Finally, update reading progress if we have a tracker
       if (trackerId) {
-        try {
-          const readingTimeMinutes = getTotalReadingTimeMinutes();
-          await fetch(
-            getApiUrl(`api/progress/update/${trackerId}` +
-              `?pageNumber=${nextIndex + 1}&readingTimeMinutes=${readingTimeMinutes}`),
-            {
-              method: 'PUT',
-              headers: { 
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({})
-            }
-          );
-        } catch (updateErr) {
-          console.error("Error updating progress:", updateErr);
-        }
+        await syncReadingTimeToBackend(nextIndex + 1, true);
       }
 
       // Reset transition state after animation
       setTimeout(() => setIsPageTransitioning(false), 500);
     } else {
-      // If we *are* on the last page, go to the completion screen
+      // If we *are* on the last page, sync final reading time and go to completion
+      if (trackerId) {
+        await syncReadingTimeToBackend(currentPageIndex + 1, true);
+      }
       navigate(`/book/${bookId}/completion`);
     }
   };
 
-  const handlePreviousPage = () => {
+  const handlePreviousPage = async () => {
     if (isPageTransitioning) return;
 
     setIsPageTransitioning(true);
-    setCurrentPageIndex((prev) => {
-      const prevIndex = Math.max(prev - 1, 0);
-      if (userId && book && trackerId) {
-        const token = localStorage.getItem("token");
-        const pageNumber = prevIndex + 1;
-        const readingTimeMinutes = getTotalReadingTimeMinutes();
-        axios
-          .put(
-            getApiUrl(`api/progress/update/${trackerId}?pageNumber=${pageNumber}&readingTimeMinutes=${readingTimeMinutes}`),
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-          .catch((err) => console.error("Error updating book progress:", err));
-      }
-      return prevIndex;
-    });
+    const prevIndex = Math.max(currentPageIndex - 1, 0);
+    setCurrentPageIndex(prevIndex);
+    
+    // Update reading progress if we have a tracker
+    if (trackerId) {
+      await syncReadingTimeToBackend(prevIndex + 1, true);
+    }
 
     // Reset transition state after animation
     setTimeout(() => setIsPageTransitioning(false), 500);
@@ -936,7 +1023,12 @@ const BookPage = () => {
         <div className="flex gap-4">
           {currentPageIndex === pages.length - 1 && (
             <motion.button
-              onClick={() => navigate(`/book/${bookId}/complete`)}
+              onClick={async () => {
+                if (trackerId) {
+                  await syncReadingTimeToBackend(currentPageIndex + 1, true);
+                }
+                navigate(`/book/${bookId}/complete`);
+              }}
               className="mt-4 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-full shadow-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
