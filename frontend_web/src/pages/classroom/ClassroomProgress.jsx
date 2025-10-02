@@ -181,23 +181,48 @@ const ClassroomProgress = () => {
             }),
           ]);
           
-          // Calculate last activity date
+          // Calculate last activity date with improved validation
           let lastActivityDate = null;
           const inProgressBooks = inProgressBooksRes.data;
           const completedBooks = completedBooksRes.data;
           
-          if (inProgressBooks.length > 0) {
-            lastActivityDate = new Date(Math.max(...inProgressBooks.map(book => new Date(book.lastReadAt))));
-          } else if (completedBooks.length > 0) {
-            lastActivityDate = new Date(Math.max(...completedBooks.map(book => new Date(book.endTime))));
+          // Collect all valid activity dates
+          const activityDates = [];
+          
+          // Add lastReadAt dates from in-progress books
+          inProgressBooks.forEach(book => {
+            if (book.lastReadAt) {
+              const date = new Date(book.lastReadAt);
+              if (!isNaN(date.getTime())) { // Validate date
+                activityDates.push(date);
+              }
+            }
+          });
+          
+          // Add endTime dates from completed books
+          completedBooks.forEach(book => {
+            if (book.endTime) {
+              const date = new Date(book.endTime);
+              if (!isNaN(date.getTime())) { // Validate date
+                activityDates.push(date);
+              }
+            }
+          });
+          
+          // Find the most recent activity date
+          if (activityDates.length > 0) {
+            lastActivityDate = new Date(Math.max(...activityDates));
+            console.log(`Last activity date for user ${userId}:`, lastActivityDate, `(from ${activityDates.length} activities)`);
+          } else {
+            console.log(`No valid activity dates found for user ${userId}`);
           }
           
           // Calculate total reading time across all books
-          const totalReadingTimeMinutes = [...inProgressBooks, ...completedBooks].reduce((total, book) => {
-            const minutes = typeof book.totalReadingTimeMinutes === 'number' 
-              ? book.totalReadingTimeMinutes 
-              : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
-            return total + minutes;
+          const totalReadingTimeSeconds = [...inProgressBooks, ...completedBooks].reduce((total, book) => {
+            const seconds = typeof book.totalReadingTimeSeconds === 'number' 
+              ? book.totalReadingTimeSeconds 
+              : (book.totalReadingTime?.seconds ? book.totalReadingTime.seconds : 0);
+            return total + seconds;
           }, 0);
           
           // Fetch snake game attempts and SSA attempts for all books
@@ -326,7 +351,7 @@ const ClassroomProgress = () => {
               completedBooks: completedBooks,
               inProgressBooks: inProgressBooks,
               lastActivityDate: lastActivityDate,
-              totalReadingTimeMinutes: totalReadingTimeMinutes,
+              totalReadingTimeSeconds: totalReadingTimeSeconds,
               avgComprehensionScore: avgComprehensionScore,
               status: status,
               snakeAttemptsData: snakeAttemptsData,
@@ -344,7 +369,7 @@ const ClassroomProgress = () => {
               completedBooks: [],
               inProgressBooks: [],
               lastActivityDate: null,
-              totalReadingTimeMinutes: 0,
+              totalReadingTimeSeconds: 0,
               avgComprehensionScore: 0,
               status: 'Unknown'
             } 
@@ -390,9 +415,9 @@ const ClassroomProgress = () => {
       return total + (student.progressData?.completedCount || 0);
     }, 0);
     
-    // Average reading time per student (in minutes)
+    // Average reading time per student (in seconds)
     const totalReadingTime = studentsWithProgress.reduce((total, student) => {
-      return total + (student.progressData?.totalReadingTimeMinutes || 0);
+      return total + (student.progressData?.totalReadingTimeSeconds || 0);
     }, 0);
     const averageReadingTime = studentsWithProgress.length > 0 
       ? Math.round(totalReadingTime / studentsWithProgress.length) 
@@ -417,12 +442,25 @@ const ClassroomProgress = () => {
     });
   };
   
-  // Format time function (converts minutes to hours and minutes)
-  const formatTime = (minutes) => {
-    if (!minutes) return '0h 0m';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+  // Format time function (converts seconds to hours, minutes, and seconds)
+  const formatTime = (totalReadingTimeSeconds) => {
+    // Debug: Log the input value
+    console.log('formatTime input:', totalReadingTimeSeconds, 'type:', typeof totalReadingTimeSeconds);
+    
+    // Handle the case where totalReadingTimeSeconds might be undefined or null
+    if (!totalReadingTimeSeconds || typeof totalReadingTimeSeconds !== 'number' || isNaN(totalReadingTimeSeconds)) {
+      console.log('formatTime: Using fallback 0h 0m 0s');
+      return '0h 0m 0s';
+    }
+    
+    const totalSeconds = Math.floor(totalReadingTimeSeconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    const result = `${hours}h ${minutes}m ${seconds}s`;
+    console.log('formatTime result:', result);
+    return result;
   };
   
   // Filter students based on selected filters
@@ -506,11 +544,11 @@ const filteredStudents = progressData.map(student => {
       inProgressBooks: filteredInProgressBooks,
       completedCount: filteredCompletedBooks.length,
       inProgressCount: filteredInProgressBooks.length,
-      totalReadingTimeMinutes: allClassroomBooks.reduce((total, book) => {
-        const minutes = typeof book.totalReadingTimeMinutes === 'number'
-          ? book.totalReadingTimeMinutes
-          : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
-        return total + minutes;
+      totalReadingTimeSeconds: allClassroomBooks.reduce((total, book) => {
+        const seconds = typeof book.totalReadingTimeSeconds === 'number'
+          ? book.totalReadingTimeSeconds
+          : (book.totalReadingTime?.seconds ? book.totalReadingTime.seconds : 0);
+        return total + seconds;
       }, 0),
       avgComprehensionScore: totalActivities > 0 ? Math.round(totalScore / totalActivities) : 0
     };
@@ -575,7 +613,7 @@ const filteredStudents = progressData.map(student => {
 
     // Create CSV rows from filtered students data
     const csvRows = filteredStudents.map(student => {
-      const readingTime = student.progressData?.totalReadingTimeMinutes || 0;
+      const readingTime = student.progressData?.totalReadingTimeSeconds || 0;
       const formattedTime = formatTime(readingTime);
       const lastActivity = student.progressData?.lastActivityDate 
         ? new Date(student.progressData.lastActivityDate).toLocaleDateString()
@@ -983,7 +1021,7 @@ const filteredStudents = progressData.map(student => {
                                 : 'Never'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {formatTime(student.progressData?.totalReadingTimeMinutes || 0)}
+                              {formatTime(student.progressData?.totalReadingTimeSeconds || 0)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">

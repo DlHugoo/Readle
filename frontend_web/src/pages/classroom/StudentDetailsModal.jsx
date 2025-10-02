@@ -95,7 +95,7 @@ const StudentDetailsModal = ({
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-500">Total Reading Time</p>
-                <p className="text-xl font-bold text-green-600">{formatTime(selectedStudent.progressData?.totalReadingTimeMinutes || 0)}</p>
+                <p className="text-xl font-bold text-green-600">{formatTime(selectedStudent.progressData?.totalReadingTimeSeconds || 0)}</p>
               </div>
             </div>
           </div>
@@ -133,8 +133,7 @@ const StudentDetailsModal = ({
                             {book.endTime ? new Date(book.endTime).toLocaleDateString() : 'N/A'}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
-                            {formatTime(book.totalReadingTimeMinutes || 
-                              (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0))}
+                            {formatTime(book.totalReadingTimeSeconds || 0)}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
                             {snakeAttempts > 0 ? (
@@ -202,8 +201,7 @@ const StudentDetailsModal = ({
                             {book.lastReadAt ? new Date(book.lastReadAt).toLocaleDateString() : 'N/A'}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
-                            {formatTime(book.totalReadingTimeMinutes || 
-                              (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0))}
+                            {formatTime(book.totalReadingTimeSeconds || 0)}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
                             <div className="flex items-center">
