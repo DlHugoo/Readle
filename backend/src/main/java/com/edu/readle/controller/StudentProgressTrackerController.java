@@ -37,8 +37,10 @@ public class StudentProgressTrackerController {
     public ResponseEntity<StudentProgressDTO> updateReadingProgress(
             @PathVariable Long trackerId,
             @RequestParam int pageNumber,
-            @RequestParam long readingTimeMinutes) {
-        Duration readingTime = Duration.ofMinutes(readingTimeMinutes);
+            @RequestParam double readingTimeMinutes) {
+        // Convert fractional minutes to seconds to preserve precision
+        long totalSeconds = Math.round(readingTimeMinutes * 60);
+        Duration readingTime = Duration.ofSeconds(totalSeconds);
         return ResponseEntity.ok(progressTrackerService.updateReadingProgress(trackerId, pageNumber, readingTime));
     }
 
