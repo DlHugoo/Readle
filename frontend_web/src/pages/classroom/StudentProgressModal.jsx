@@ -38,18 +38,34 @@ const StudentProgressModal = ({
     try {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
-      const axiosOptions = { headers, timeout: 10000 };
+      const axiosOptions = { 
+        headers, 
+        timeout: 10000 // 10 seconds timeout
+      };
 
-      const [allBadgesRes, userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/badges`, axiosOptions),
+      // First, refresh all badge progress to ensure we have the latest data
+      try {
+        await axios.post(`${API_BASE_URL}/api/badges/user/${selectedStudent.id}/check-all`, {}, axiosOptions);
+        console.log("Refreshed badge progress for user:", selectedStudent.id);
+      } catch (refreshErr) {
+        console.warn("Could not refresh badge progress:", refreshErr);
+        // Continue with normal fetch even if refresh fails
+      }
+
+      // Then fetch all available badges
+      const allBadgesRes = await axios.get(`${API_BASE_URL}/api/badges`, axiosOptions);
+      const availableBadges = allBadgesRes.data || [];
+
+      // Then fetch user-specific badge progress
+      const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/badges/user/${selectedStudent.id}`, axiosOptions),
         axios.get(`${API_BASE_URL}/api/badges/user/${selectedStudent.id}/earned`, axiosOptions),
         axios.get(`${API_BASE_URL}/api/badges/user/${selectedStudent.id}/in-progress`, axiosOptions)
       ]);
 
-      const availableBadges = allBadgesRes.data || [];
       const userBadges = userBadgesRes.data || [];
       
+      // Create a map of badge IDs that the user already has progress on
       const userBadgeMap = new Map();
       userBadges.forEach(badge => {
         if (badge.badge && badge.badge.id) {
@@ -57,10 +73,14 @@ const StudentProgressModal = ({
         }
       });
 
+      // Create a complete list of all badges, including ones the user hasn't started yet
       const completeBadgesList = availableBadges.map(badge => {
+        // If user already has this badge in their progress, use that
         if (userBadgeMap.has(badge.id)) {
           return userBadgeMap.get(badge.id);
         }
+        
+        // Otherwise create a placeholder badge with 0 progress
         return {
           id: `placeholder-${badge.id}`,
           badge: badge,
@@ -79,8 +99,18 @@ const StudentProgressModal = ({
       });
       setBadgesError(null);
     } catch (err) {
-      console.error("Error fetching badges:", err);
-      setBadgesError("Failed to load badges. Please try again later.");
+      console.error("Error fetching badges:", err.response || err);
+      let errorMessage = "Failed to load badges. Please try again later.";
+      
+      if (err.response) {
+        errorMessage = `Server error: ${err.response.status} - ${err.response.data.message || err.response.statusText}`;
+      } else if (err.request) {
+        errorMessage = "No response from server. Please check your connection.";
+      } else {
+        errorMessage = `Error: ${err.message}`;
+      }
+      
+      setBadgesError(errorMessage);
     } finally {
       setBadgesLoading(false);
     }
