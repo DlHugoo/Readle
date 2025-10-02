@@ -56,6 +56,8 @@ const BookPage = () => {
   const [displayTime, setDisplayTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const intervalRef = useRef(null);
   const syncIntervalRef = useRef(null); // For periodic backend sync
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now()); // Track user activity
+  const lastSyncTimeRef = useRef(0); // Throttle sync calls
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -134,12 +136,22 @@ const BookPage = () => {
     };
   }, [isReading, totalReadingTimeSeconds, sessionStartTime]);
 
-  // Periodic backend sync every 5 seconds
+  // Smart periodic backend sync - less frequent but more efficient
   useEffect(() => {
     if (isReading && trackerId) {
       syncIntervalRef.current = setInterval(() => {
-        syncReadingTimeToBackend(currentPageIndex + 1);
-      }, 5000); // Sync every 5 seconds
+        const currentTime = Date.now();
+        const timeSinceLastActivity = currentTime - lastActivityTime;
+        const timeSinceLastSync = getCurrentTotalSeconds() - lastSyncedTimeSeconds;
+        
+        // Only sync if:
+        // 1. At least 30 seconds have passed since last sync, OR
+        // 2. User has been inactive for more than 2 minutes (to save progress)
+        if (timeSinceLastSync >= 30 || timeSinceLastActivity > 120000) {
+          syncReadingTimeToBackend(currentPageIndex + 1);
+          setLastActivityTime(currentTime);
+        }
+      }, 30000); // Check every 30 seconds instead of 5
     } else {
       if (syncIntervalRef.current) {
         clearInterval(syncIntervalRef.current);
@@ -153,7 +165,7 @@ const BookPage = () => {
         syncIntervalRef.current = null;
       }
     };
-  }, [isReading, trackerId, currentPageIndex]);
+  }, [isReading, trackerId, currentPageIndex, lastActivityTime]);
 
   // Start timer when component mounts and book is loaded
   useEffect(() => {
@@ -187,18 +199,34 @@ const BookPage = () => {
       }
     };
 
+    // Final sync when component unmounts
+    const handleUnmount = async () => {
+      if (trackerId) {
+        await syncReadingTimeToBackend(currentPageIndex + 1, true);
+      }
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
+    
+    // Cleanup function runs on unmount
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      handleUnmount();
     };
   }, [book, pages.length, trackerId, currentPageIndex]);
 
   // API sync functions
   const syncReadingTimeToBackend = async (pageNumber, forceSync = false) => {
     if (!trackerId) return;
+    
+    // Throttle sync calls - prevent rapid successive calls
+    const now = Date.now();
+    if (!forceSync && now - lastSyncTimeRef.current < 5000) {
+      console.log("Throttling sync call - too soon since last sync");
+      return;
+    }
     
     try {
       const token = localStorage.getItem("token");
@@ -225,8 +253,9 @@ const BookPage = () => {
           }
         );
         
-        // Update the last synced time
+        // Update the last synced time and throttle timestamp
         setLastSyncedTimeSeconds(currentTotalSeconds);
+        lastSyncTimeRef.current = now;
         
         console.log(`Synced incremental reading time: ${incrementalSeconds} seconds (${fractionalMinutes.toFixed(2)} minutes) for page ${pageNumber}`);
       } else {
@@ -594,6 +623,26 @@ const BookPage = () => {
         return "text-lg";
     }
   };
+
+  // Track user activity for smart sync
+  useEffect(() => {
+    const updateActivity = () => {
+      setLastActivityTime(Date.now());
+    };
+
+    // Track various user activities
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    events.forEach(event => {
+      document.addEventListener(event, updateActivity, true);
+    });
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, updateActivity, true);
+      });
+    };
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
