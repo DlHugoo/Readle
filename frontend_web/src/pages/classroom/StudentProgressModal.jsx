@@ -116,20 +116,24 @@ const StudentProgressModal = ({
   };
 
   // Helper function to format reading time
-  const formatDuration = (minutes, fallbackDuration) => {
-    let mins = minutes;
-    if (typeof mins !== 'number' || isNaN(mins)) {
-      if (typeof fallbackDuration === 'object' && fallbackDuration !== null && 'seconds' in fallbackDuration) {
-        mins = Math.floor(fallbackDuration.seconds / 60);
-      } else if (typeof fallbackDuration === 'number') {
-        mins = Math.floor(fallbackDuration / 60);
-      } else {
-        mins = 0;
-      }
+  const formatDuration = (totalReadingTimeSeconds) => {
+    // Debug: Log the input value
+    console.log('formatDuration input:', totalReadingTimeSeconds, 'type:', typeof totalReadingTimeSeconds);
+    
+    // Handle the case where totalReadingTimeSeconds might be undefined or null
+    if (!totalReadingTimeSeconds || typeof totalReadingTimeSeconds !== 'number' || isNaN(totalReadingTimeSeconds)) {
+      console.log('formatDuration: Using fallback 0h 0m 0s');
+      return '0h 0m 0s';
     }
-    const hours = Math.floor(mins / 60);
-    const remainingMinutes = mins % 60;
-    return `${hours}h ${remainingMinutes}m`;
+    
+    const totalSeconds = Math.floor(totalReadingTimeSeconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    const result = `${hours}h ${minutes}m ${seconds}s`;
+    console.log('formatDuration result:', result);
+    return result;
   };
 
   // Functions to calculate scores based on attempts
@@ -322,7 +326,8 @@ const StudentProgressModal = ({
                               <h3 className="font-semibold text-gray-800">{book.book.title}</h3>
                               <div className="text-sm text-gray-500 mt-1">
                                 Last read: {book.lastReadAt ? new Date(book.lastReadAt).toLocaleDateString() : 'Never'}<br />
-                                Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                Page {book.lastPageRead} of {book.book.pageIds ? book.book.pageIds.length : 1}<br />
+                                Total reading time: {formatDuration(book.totalReadingTimeSeconds)}
                                 {snakeGameAttempts && snakeGameAttempts[book.book.bookID] > 0 && (
                                   <div className="mt-1 text-green-600">
                                     <span role="img" aria-label="snake">🐍</span> Snake Game Score: {calculateSnakeGameScore(snakeGameAttempts[book.book.bookID])} points
@@ -385,7 +390,8 @@ const StudentProgressModal = ({
                               <h3 className="font-semibold text-gray-800">{book.book.title}</h3>
                               <div className="text-sm text-gray-500 mt-1">
                                 Completed on: {book.endTime ? new Date(book.endTime).toLocaleDateString() : 'Unknown'}<br />
-                                Total pages: {book.book.pageIds ? book.book.pageIds.length : 1} • {formatDuration(book.totalReadingTimeMinutes, book.totalReadingTime)} read
+                                Total pages: {book.book.pageIds ? book.book.pageIds.length : 1}<br />
+                                Total reading time: {formatDuration(book.totalReadingTimeSeconds)}
                               </div>
                             </div>
                           </div>

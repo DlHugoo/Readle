@@ -175,11 +175,11 @@ const ClassroomVisualization = () => {
             }
             
             // Calculate total reading time across all books
-            const totalReadingTimeMinutes = [...inProgressBooks, ...completedBooks].reduce((total, book) => {
-              const minutes = typeof book.totalReadingTimeMinutes === 'number' 
-                ? book.totalReadingTimeMinutes 
-                : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
-              return total + minutes;
+            const totalReadingTimeSeconds = [...inProgressBooks, ...completedBooks].reduce((total, book) => {
+              const seconds = typeof book.totalReadingTimeSeconds === 'number' 
+                ? book.totalReadingTimeSeconds 
+                : (book.totalReadingTime?.seconds ? book.totalReadingTime.seconds : 0);
+              return total + seconds;
             }, 0);
             
             // Fetch snake game attempts and SSA attempts for all books
@@ -309,7 +309,7 @@ const ClassroomVisualization = () => {
                 completedBooks: completedBooks,
                 inProgressBooks: inProgressBooks,
                 lastActivityDate: lastActivityDate,
-                totalReadingTimeMinutes: totalReadingTimeMinutes,
+                totalReadingTimeSeconds: totalReadingTimeSeconds,
                 avgComprehensionScore: avgComprehensionScore,
                 status: status,
                 snakeAttemptsData: snakeAttemptsData,
@@ -327,7 +327,7 @@ const ClassroomVisualization = () => {
                 completedBooks: [],
                 inProgressBooks: [],
                 lastActivityDate: null,
-                totalReadingTimeMinutes: 0,
+                totalReadingTimeSeconds: 0,
                 avgComprehensionScore: 0,
                 status: 'Unknown'
               } 
@@ -373,11 +373,18 @@ const ClassroomVisualization = () => {
   };
   
   // Helper function to format time
-  const formatTime = (minutes) => {
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  const formatTime = (totalReadingTimeSeconds) => {
+    // Handle the case where totalReadingTimeSeconds might be undefined or null
+    if (!totalReadingTimeSeconds || typeof totalReadingTimeSeconds !== 'number' || isNaN(totalReadingTimeSeconds)) {
+      return '0h 0m 0s';
+    }
+    
+    const totalSeconds = Math.floor(totalReadingTimeSeconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours}h ${minutes}m ${seconds}s`;
   };
   
  // Filter student data based on showOnlyClassroomBooks
@@ -434,11 +441,11 @@ const ClassroomVisualization = () => {
         inProgressBooks: filteredInProgressBooks,
         completedCount: filteredCompletedBooks.length,
         inProgressCount: filteredInProgressBooks.length,
-        totalReadingTimeMinutes: allClassroomBooks.reduce((total, book) => {
-          const minutes = typeof book.totalReadingTimeMinutes === 'number'
-            ? book.totalReadingTimeMinutes
-            : (book.totalReadingTime?.seconds ? Math.floor(book.totalReadingTime.seconds / 60) : 0);
-          return total + minutes;
+        totalReadingTimeSeconds: allClassroomBooks.reduce((total, book) => {
+          const seconds = typeof book.totalReadingTimeSeconds === 'number'
+            ? book.totalReadingTimeSeconds
+            : (book.totalReadingTime?.seconds ? book.totalReadingTime.seconds : 0);
+          return total + seconds;
         }, 0),
         avgComprehensionScore: totalActivities > 0 ? Math.round(totalScore / totalActivities) : 0
       }
@@ -456,7 +463,7 @@ const ClassroomVisualization = () => {
   const prepareReadingTimeData = () => {
     return filteredProgressData.map(student => ({
       name: `${student.firstName} ${student.lastName}`,
-      minutes: student.progressData?.totalReadingTimeMinutes || 0
+      seconds: student.progressData?.totalReadingTimeSeconds || 0
     }));
   };
   
@@ -483,23 +490,49 @@ const ClassroomVisualization = () => {
   const prepareReadingTimeTrendData = () => {
     const timeData = filteredProgressData.map(student => {
       const books = [...(student.progressData?.completedBooks || []), ...(student.progressData?.inProgressBooks || [])];
-      return books.map(book => ({
-        name: `${student.firstName} ${student.lastName}`,
-        date: new Date(book.lastReadAt || book.endTime).toLocaleDateString(),
-        minutes: book.totalReadingTimeMinutes || Math.floor((book.totalReadingTime?.seconds || 0) / 60)
-      }));
+      return books.map(book => {
+        const readingDate = book.lastReadAt || book.endTime;
+        if (!readingDate) return null;
+        
+        return {
+          name: `${student.firstName} ${student.lastName}`,
+          date: new Date(readingDate).toLocaleDateString(),
+          seconds: book.totalReadingTimeSeconds || (book.totalReadingTime?.seconds || 0),
+          minutes: Math.round((book.totalReadingTimeSeconds || (book.totalReadingTime?.seconds || 0)) / 60)
+        };
+      }).filter(item => item !== null); // Remove null entries
     }).flat();
 
-    // Sort by date
-    timeData.sort((a, b) => new Date(a.date) - new Date(b.date));
-    return timeData;
+    // Sort by date and group by date to aggregate reading time
+    const groupedData = {};
+    timeData.forEach(item => {
+      if (!groupedData[item.date]) {
+        groupedData[item.date] = {
+          date: item.date,
+          totalMinutes: 0,
+          students: new Set()
+        };
+      }
+      groupedData[item.date].totalMinutes += item.minutes;
+      groupedData[item.date].students.add(item.name);
+    });
+
+    // Convert to array and sort by date
+    const result = Object.values(groupedData).map(item => ({
+      date: item.date,
+      minutes: item.totalMinutes,
+      studentCount: item.students.size
+    }));
+
+    result.sort((a, b) => new Date(a.date) - new Date(b.date));
+    return result;
   };
 
   // Prepare comprehension vs reading time data
   const prepareComprehensionVsTimeData = () => {
     return filteredProgressData.map(student => ({
       name: `${student.firstName} ${student.lastName}`,
-      readingTime: student.progressData?.totalReadingTimeMinutes || 0,
+      readingTime: student.progressData?.totalReadingTimeSeconds || 0,
       comprehensionScore: student.progressData?.avgComprehensionScore || 0
     }));
   };
@@ -757,7 +790,7 @@ const ClassroomVisualization = () => {
                         <YAxis />
                         <Tooltip formatter={(value) => [formatTime(value), 'Reading Time']} />
                         <Legend />
-                        <Bar dataKey="minutes" name="Reading Time (minutes)" fill="#FF5722" />
+                        <Bar dataKey="seconds" name="Reading Time (seconds)" fill="#FF5722" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -772,30 +805,47 @@ const ClassroomVisualization = () => {
                     <h2 className="text-lg font-semibold">Reading Time Trends</h2>
                   </div>
                   <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={prepareReadingTimeTrendData()}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="date" 
-                          angle={-45} 
-                          textAnchor="end"
-                          height={60}
-                          interval={0}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
-                        <Tooltip />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="minutes" 
-                          name="Reading Time" 
-                          stroke="#8884d8" 
-                          activeDot={{ r: 8 }} 
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    {prepareReadingTimeTrendData().length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="text-gray-400 mb-2">
+                            <Activity size={48} className="mx-auto" />
+                          </div>
+                          <p className="text-gray-500 text-lg">No reading activity data available</p>
+                          <p className="text-gray-400 text-sm mt-1">Students need to start reading books to see trends</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={prepareReadingTimeTrendData()}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="date" 
+                            angle={-45} 
+                            textAnchor="end"
+                            height={60}
+                            interval={0}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
+                          <Tooltip 
+                            formatter={(value, name) => [`${value} minutes`, 'Total Reading Time']}
+                            labelFormatter={(label) => `Date: ${label}`}
+                          />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="minutes" 
+                            name="Total Reading Time (minutes)" 
+                            stroke="#8884d8" 
+                            strokeWidth={2}
+                            activeDot={{ r: 6, fill: '#8884d8' }} 
+                            dot={{ fill: '#8884d8', strokeWidth: 2, r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
                 </div>
 
@@ -893,7 +943,7 @@ const ClassroomVisualization = () => {
                           name: `${student.firstName} ${student.lastName}`,
                           comprehension: student.progressData.avgComprehensionScore || 0,
                           booksRead: student.progressData.completedCount || 0,
-                          readingTime: Math.min(100, (student.progressData.totalReadingTimeMinutes || 0) / 10),
+                          readingTime: Math.min(100, (student.progressData.totalReadingTimeSeconds || 0) / 600),
                           activity: student.progressData.lastActivityDate 
                             ? 100 - Math.min(100, Math.floor((new Date() - new Date(student.progressData.lastActivityDate)) / (1000 * 60 * 60 * 24)) * 5)
                             : 0
