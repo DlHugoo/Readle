@@ -15,6 +15,7 @@ const StudentBadgeDashboard = () => {
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [inProgressBadges, setInProgressBadges] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Get user ID from token
   useEffect(() => {
@@ -24,17 +25,31 @@ const StudentBadgeDashboard = () => {
         const decoded = jwtDecode(token);
         console.log("Decoded token:", decoded);
         
-        // Use uid from the token (not userId)
-        setUserId(decoded.uid);
+        // Use userID or id from the token (consistent with other components)
+        const userId = decoded.userID || decoded.id;
+        setUserId(userId);
         
-        // If uid is not available in the token, log an error
-        if (!decoded.uid) {
-          console.error("No uid found in token:", decoded);
-          setError("User ID not found in authentication token");
+        // If userID is not available in the token, try localStorage as fallback
+        if (!userId) {
+          const fallbackUserId = localStorage.getItem("userId");
+          if (fallbackUserId) {
+            console.log("Using fallback userId from localStorage:", fallbackUserId);
+            setUserId(fallbackUserId);
+          } else {
+            console.error("No userID found in token or localStorage:", decoded);
+            setError("User ID not found in authentication token");
+          }
         }
       } catch (e) {
         console.error("Failed to decode token", e);
-        setError("Authentication error. Please log in again.");
+        // Try localStorage as fallback
+        const fallbackUserId = localStorage.getItem("userId");
+        if (fallbackUserId) {
+          console.log("Using fallback userId from localStorage after token decode error:", fallbackUserId);
+          setUserId(fallbackUserId);
+        } else {
+          setError("Authentication error. Please log in again.");
+        }
       }
     } else {
       setError("Please log in to view your badges");
@@ -60,7 +75,16 @@ const StudentBadgeDashboard = () => {
           timeout: 10000 // 10 seconds timeout
         };
         
-        // First fetch all available badges
+        // First, refresh all badge progress to ensure we have the latest data
+        try {
+          await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, axiosOptions);
+          console.log("Refreshed badge progress for user:", userId);
+        } catch (refreshErr) {
+          console.warn("Could not refresh badge progress:", refreshErr);
+          // Continue with normal fetch even if refresh fails
+        }
+        
+        // Then fetch all available badges
         const allBadgesRes = await axios.get(`${API_BASE_URL}/api/badges`, axiosOptions);
         const availableBadges = allBadgesRes.data || [];
         
@@ -126,6 +150,109 @@ const StudentBadgeDashboard = () => {
       fetchBadges();
     }
   }, [userId]);
+
+  // Auto-refresh badges every 30 seconds to keep data current
+  useEffect(() => {
+    if (!userId) return;
+    
+    const refreshInterval = setInterval(() => {
+      console.log("Auto-refreshing badge data...");
+      // Trigger a silent refresh
+      const refreshBadges = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const headers = { Authorization: `Bearer ${token}` };
+          
+          // Refresh badge progress
+          await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, { headers });
+          
+          // Fetch updated badge data
+          const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
+            axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, { headers }),
+            axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, { headers }),
+            axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, { headers })
+          ]);
+          
+          const userBadges = userBadgesRes.data || [];
+          setEarnedBadges(earnedBadgesRes.data || []);
+          setInProgressBadges(inProgressBadgesRes.data || []);
+          
+          // Update all badges list
+          const userBadgeMap = new Map();
+          userBadges.forEach(badge => {
+            if (badge.badge && badge.badge.id) {
+              userBadgeMap.set(badge.badge.id, badge);
+            }
+          });
+          
+          setAllBadges(prevBadges => {
+            return prevBadges.map(badge => {
+              if (userBadgeMap.has(badge.badge.id)) {
+                return userBadgeMap.get(badge.badge.id);
+              }
+              return badge;
+            });
+          });
+          
+          console.log("Badge data refreshed successfully");
+        } catch (err) {
+          console.warn("Failed to refresh badge data:", err);
+        }
+      };
+      
+      refreshBadges();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(refreshInterval);
+  }, [userId]);
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    if (!userId || refreshing) return;
+    
+    setRefreshing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      // Refresh badge progress
+      await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, { headers });
+      
+      // Fetch updated badge data
+      const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, { headers }),
+        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, { headers }),
+        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, { headers })
+      ]);
+      
+      const userBadges = userBadgesRes.data || [];
+      setEarnedBadges(earnedBadgesRes.data || []);
+      setInProgressBadges(inProgressBadgesRes.data || []);
+      
+      // Update all badges list
+      const userBadgeMap = new Map();
+      userBadges.forEach(badge => {
+        if (badge.badge && badge.badge.id) {
+          userBadgeMap.set(badge.badge.id, badge);
+        }
+      });
+      
+      setAllBadges(prevBadges => {
+        return prevBadges.map(badge => {
+          if (userBadgeMap.has(badge.badge.id)) {
+            return userBadgeMap.get(badge.badge.id);
+          }
+          return badge;
+        });
+      });
+      
+      console.log("Badge data manually refreshed successfully");
+    } catch (err) {
+      console.error("Failed to manually refresh badge data:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const getBadgeImage = (badge) => {
     if (badge && badge.badge && badge.badge.imageUrl) {
@@ -222,7 +349,20 @@ const StudentBadgeDashboard = () => {
     <>
       <StudentNavbar />
       <div className="max-w-5xl mx-auto mt-8 mb-8 px-4">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">Achievements</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Achievements</h1>
+          <button
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              refreshing 
+                ? 'bg-gray-400 text-white cursor-not-allowed' 
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+          >
+            {refreshing ? 'Refreshing...' : '🔄 Refresh Progress'}
+          </button>
+        </div>
 
         <div className="flex justify-center mb-6">
           <button
