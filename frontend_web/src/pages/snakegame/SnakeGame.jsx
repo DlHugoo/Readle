@@ -566,16 +566,18 @@ const resetGame = () => {
           <div className="lg:w-2/3">
             <div className="bg-white rounded-2xl shadow-lg p-6">
               {/* Current Question Display */}
-              {gameStarted && questions.length > 0 && currentIndex < questions.length && (
+              {questions.length > 0 && (
                 <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                    Question {currentIndex + 1} of {questions.length}
+                    {gameWon ? `Final Question ${questions.length} of ${questions.length}` : `Question ${currentIndex + 1} of ${questions.length}`}
                   </h3>
                   <p className="text-gray-700 font-medium">
-                    {questions[currentIndex]?.text}
+                    {gameWon ? questions[questions.length - 1]?.text : questions[currentIndex]?.text}
                   </p>
                   <p className="text-sm text-blue-600 mt-2">
-                    Find the correct answer on the game board!
+                    {gameWon ? "Congratulations! You completed all questions!" : 
+                     gameStarted ? "Find the correct answer on the game board!" : 
+                     "Get ready to find the correct answer!"}
                   </p>
                 </div>
               )}
