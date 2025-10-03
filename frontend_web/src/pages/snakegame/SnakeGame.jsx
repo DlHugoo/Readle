@@ -462,12 +462,6 @@ const resetGame = () => {
               >
                 {isCreatingAttempt ? 'Starting...' : 'Start Game'}
               </button>
-              <button
-                onClick={() => navigate(`/book/${bookId}/complete`)}
-                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
-              >
-                Back to Book
-              </button>
             </div>
           </div>
         </div>
@@ -486,20 +480,22 @@ const resetGame = () => {
                 : `You made it to question ${currentIndex + 1} of ${sequence.length}`}
             </p>
             <div className="flex flex-col space-y-3">
-              <button
-                onClick={resetGame}
-                className={`px-6 py-3 rounded-lg font-bold text-white ${
-                  gameWon ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
-                } transition-colors`}
-              >
-                Play Again
-              </button>
-              <button
-                onClick={() => navigate(`/book/${bookId}/complete`)}
-                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
-              >
-                Back to Book
-              </button>
+              {!gameWon && (
+                <button
+                  onClick={resetGame}
+                  className="px-6 py-3 rounded-lg font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
+                >
+                  Play Again
+                </button>
+              )}
+              {gameWon && (
+                <button
+                  onClick={() => navigate(`/book/${bookId}/complete`)}
+                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition-colors"
+                >
+                  Back to Book
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -569,6 +565,21 @@ const resetGame = () => {
           {/* Right side - Game board */}
           <div className="lg:w-2/3">
             <div className="bg-white rounded-2xl shadow-lg p-6">
+              {/* Current Question Display */}
+              {gameStarted && questions.length > 0 && currentIndex < questions.length && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                    Question {currentIndex + 1} of {questions.length}
+                  </h3>
+                  <p className="text-gray-700 font-medium">
+                    {questions[currentIndex]?.text}
+                  </p>
+                  <p className="text-sm text-blue-600 mt-2">
+                    Find the correct answer on the game board!
+                  </p>
+                </div>
+              )}
+              
               <div
                 ref={gridContainerRef}
                 className="mx-auto bg-gray-100 rounded-xl shadow-inner overflow-hidden"
