@@ -486,54 +486,144 @@ const ClassroomVisualization = () => {
     return Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
   };
   
-  // Prepare reading time trend data
-  const prepareReadingTimeTrendData = () => {
-    const timeData = filteredProgressData.map(student => {
-      const books = [...(student.progressData?.completedBooks || []), ...(student.progressData?.inProgressBooks || [])];
-      return books.map(book => {
-        const readingDate = book.lastReadAt || book.endTime;
-        if (!readingDate) return null;
-        
-        return {
-          name: `${student.firstName} ${student.lastName}`,
-          date: new Date(readingDate).toLocaleDateString(),
-          seconds: book.totalReadingTimeSeconds || (book.totalReadingTime?.seconds || 0),
-          minutes: Math.round((book.totalReadingTimeSeconds || (book.totalReadingTime?.seconds || 0)) / 60)
-        };
-      }).filter(item => item !== null); // Remove null entries
-    }).flat();
-
-    // Sort by date and group by date to aggregate reading time
-    const groupedData = {};
-    timeData.forEach(item => {
-      if (!groupedData[item.date]) {
-        groupedData[item.date] = {
-          date: item.date,
-          totalMinutes: 0,
-          students: new Set()
-        };
-      }
-      groupedData[item.date].totalMinutes += item.minutes;
-      groupedData[item.date].students.add(item.name);
+  // Prepare book engagement metrics
+  const prepareBookEngagementData = () => {
+    const engagementData = [];
+    
+    // Get all unique books from all students
+    const allBooks = new Set();
+    filteredProgressData.forEach(student => {
+      if (!student.progressData) return;
+      const books = [...(student.progressData.completedBooks || []), ...(student.progressData.inProgressBooks || [])];
+      books.forEach(book => allBooks.add(book.book.bookID));
     });
-
-    // Convert to array and sort by date
-    const result = Object.values(groupedData).map(item => ({
-      date: item.date,
-      minutes: item.totalMinutes,
-      studentCount: item.students.size
-    }));
-
-    result.sort((a, b) => new Date(a.date) - new Date(b.date));
-    return result;
+    
+    // Calculate engagement metrics for each book
+    Array.from(allBooks).forEach(bookId => {
+      let totalStudents = 0;
+      let studentsWithActivities = 0;
+      let totalActivities = 0;
+      let totalReadingTime = 0;
+      let bookTitle = '';
+      
+      filteredProgressData.forEach(student => {
+        if (!student.progressData) return;
+        
+        const books = [...(student.progressData.completedBooks || []), ...(student.progressData.inProgressBooks || [])];
+        const studentBook = books.find(book => book.book.bookID === bookId);
+        
+        if (studentBook) {
+          totalStudents++;
+          bookTitle = studentBook.book.title;
+          
+          const snakeAttempts = student.progressData.snakeAttemptsData[bookId] || 0;
+          const ssaAttempts = student.progressData.ssaAttemptsData[bookId] || 0;
+          const predictionAttempts = student.progressData.predictionAttemptsData[bookId] || 0;
+          
+          const studentActivities = snakeAttempts + ssaAttempts + predictionAttempts;
+          if (studentActivities > 0) {
+            studentsWithActivities++;
+            totalActivities += studentActivities;
+          }
+          
+          const readingTime = studentBook.totalReadingTimeSeconds || (studentBook.totalReadingTime?.seconds || 0);
+          totalReadingTime += readingTime;
+        }
+      });
+      
+      if (totalStudents > 0) {
+        engagementData.push({
+          bookTitle: bookTitle.length > 20 ? bookTitle.substring(0, 20) + '...' : bookTitle,
+          totalStudents: totalStudents,
+          studentsWithActivities: studentsWithActivities,
+          engagementRate: Math.round((studentsWithActivities / totalStudents) * 100),
+          avgActivitiesPerStudent: studentsWithActivities > 0 ? Math.round(totalActivities / studentsWithActivities) : 0,
+          avgReadingTime: Math.round(totalReadingTime / totalStudents / 60) // Convert to minutes
+        });
+      }
+    });
+    
+    return engagementData.sort((a, b) => b.engagementRate - a.engagementRate);
   };
 
-  // Prepare comprehension vs reading time data
-  const prepareComprehensionVsTimeData = () => {
-    return filteredProgressData.map(student => ({
-      name: `${student.firstName} ${student.lastName}`,
-      readingTime: student.progressData?.totalReadingTimeSeconds || 0,
-      comprehensionScore: student.progressData?.avgComprehensionScore || 0
+  // Prepare student book usage statistics
+  const prepareStudentBookUsageData = () => {
+    return filteredProgressData.map(student => {
+      if (!student.progressData) {
+        return {
+          name: `${student.firstName} ${student.lastName}`,
+          booksStarted: 0,
+          booksCompleted: 0,
+          totalReadingTime: 0,
+          avgScore: 0
+        };
+      }
+      
+      const booksStarted = (student.progressData.completedCount || 0) + (student.progressData.inProgressCount || 0);
+      const booksCompleted = student.progressData.completedCount || 0;
+      const totalReadingTime = Math.round((student.progressData.totalReadingTimeSeconds || 0) / 60); // Convert to minutes
+      const avgScore = student.progressData.avgComprehensionScore || 0;
+      
+      return {
+        name: `${student.firstName} ${student.lastName}`,
+        booksStarted: booksStarted,
+        booksCompleted: booksCompleted,
+        totalReadingTime: totalReadingTime,
+        avgScore: avgScore,
+        completionRate: booksStarted > 0 ? Math.round((booksCompleted / booksStarted) * 100) : 0
+      };
+    });
+  };
+
+  // Prepare book completion rates by book
+  const prepareBookCompletionData = () => {
+    const bookData = {};
+    
+    filteredProgressData.forEach(student => {
+      if (!student.progressData) return;
+      
+      const books = [...(student.progressData.completedBooks || []), ...(student.progressData.inProgressBooks || [])];
+      
+      books.forEach(book => {
+        const bookId = book.book.bookID;
+        const bookTitle = book.book.title;
+        
+        if (!bookData[bookId]) {
+          bookData[bookId] = {
+            bookTitle: bookTitle,
+            totalStudents: 0,
+            completedStudents: 0,
+            inProgressStudents: 0,
+            avgReadingTime: 0,
+            totalReadingTime: 0
+          };
+        }
+        
+        bookData[bookId].totalStudents++;
+        
+        // Check if book is completed or in progress
+        const isCompleted = student.progressData.completedBooks?.some(completedBook => 
+          completedBook.book.bookID === bookId
+        );
+        
+        if (isCompleted) {
+          bookData[bookId].completedStudents++;
+        } else {
+          bookData[bookId].inProgressStudents++;
+        }
+        
+        // Add reading time
+        const readingTime = book.totalReadingTimeSeconds || (book.totalReadingTime?.seconds || 0);
+        bookData[bookId].totalReadingTime += readingTime;
+      });
+    });
+    
+    return Object.values(bookData).map(book => ({
+      bookTitle: book.bookTitle.length > 25 ? book.bookTitle.substring(0, 25) + '...' : book.bookTitle,
+      completed: book.completedStudents,
+      inProgress: book.inProgressStudents,
+      completionRate: book.totalStudents > 0 ? Math.round((book.completedStudents / book.totalStudents) * 100) : 0,
+      avgReadingTime: book.totalStudents > 0 ? Math.round(book.totalReadingTime / book.totalStudents / 60) : 0 // Convert to minutes
     }));
   };
 
@@ -546,12 +636,32 @@ const ClassroomVisualization = () => {
     return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b) / scores.length) : 0;
   };
 
-  // Colors for charts
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  // Enhanced color palette for better readability
+  const COLORS = {
+    primary: '#3B82F6',      // Blue
+    success: '#10B981',      // Green
+    warning: '#F59E0B',      // Orange
+    danger: '#EF4444',       // Red
+    info: '#06B6D4',         // Cyan
+    purple: '#8B5CF6',       // Purple
+    pink: '#EC4899',         // Pink
+    indigo: '#6366F1'        // Indigo
+  };
+  
+  const CHART_COLORS = {
+    booksStarted: '#3B82F6',     // Blue
+    booksCompleted: '#10B981',   // Green
+    inProgress: '#F59E0B',       // Orange
+    completed: '#10B981',        // Green
+    engagementRate: '#8B5CF6',  // Purple
+    comprehension: '#06B6D4',    // Cyan
+    readingTime: '#EC4899'       // Pink
+  };
+  
   const STATUS_COLORS = {
-    'On Track': '#4CAF50',
-    'Needs Attention': '#FF5722',
-    'Unknown': '#9E9E9E'
+    'On Track': '#10B981',
+    'Needs Attention': '#EF4444',
+    'Unknown': '#6B7280'
   };
 
   return (
@@ -638,50 +748,58 @@ const ClassroomVisualization = () => {
             </div>
           )}
           
-          {/* Simplified Loading indicator */}
+          {/* Simple Loading indicator */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/50">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/50">
                 <div className="flex flex-col items-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-3 border-purple-200 border-t-purple-600 mb-4"></div>
-                  <p className="text-lg font-semibold text-gray-700">Loading visualization data...</p>
-                  <p className="text-sm text-gray-500 mt-1">Please wait while we prepare your analytics</p>
+                  <div className="relative mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                      <BarChart2 size={24} className="text-white" />
+                    </div>
+                    <div className="absolute -inset-1 border-2 border-blue-200 rounded-full animate-spin"></div>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">Loading Analytics</h3>
+                  <p className="text-gray-600 text-center">Preparing your classroom data visualization...</p>
                 </div>
               </div>
             </div>
           ) : (
             <>
-              {/* Enhanced Book Filter Toggle */}
-              <div className="mb-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 relative overflow-hidden">
+              {/* Sticky Data Filter Toggle */}
+              <div className="sticky top-20 z-50 mb-8 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 p-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <Activity size={16} className="text-white" />
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <Activity size={20} className="text-white" />
                       </div>
-                      <span className="font-semibold text-gray-800">Data Filter:</span>
+                      <div>
+                        <span className="font-bold text-gray-800 text-lg">Data Filter</span>
+                        <p className="text-sm text-gray-600">Choose which books to include in the analysis</p>
+                      </div>
                     </div>
-                    <div className="flex bg-white/50 backdrop-blur-sm rounded-xl p-1 border border-white/50">
+                    <div className="flex bg-white/70 backdrop-blur-sm rounded-xl p-1 border border-white/50 shadow-lg">
                       <button
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ease-out ${
+                        className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ease-out ${
                           !showOnlyClassroomBooks 
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg' 
-                            : 'text-gray-700 hover:bg-white/50'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105' 
+                            : 'text-gray-700 hover:bg-white/60 hover:scale-105'
                         }`}
                         onClick={() => setShowOnlyClassroomBooks(false)}
                       >
-                        All Books (Classroom + OOB)
+                        📚 All Books (Classroom + OOB)
                       </button>
                       <button
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ease-out ${
+                        className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ease-out ${
                           showOnlyClassroomBooks 
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg' 
-                            : 'text-gray-700 hover:bg-white/50'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105' 
+                            : 'text-gray-700 hover:bg-white/60 hover:scale-105'
                         }`}
                         onClick={() => setShowOnlyClassroomBooks(true)}
                       >
-                        Classroom Books Only
+                        🏫 Classroom Books Only
                       </button>
                     </div>
                   </div>
@@ -691,275 +809,528 @@ const ClassroomVisualization = () => {
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Comprehension Scores Chart */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-blue-100 p-2 rounded-full mr-3">
-                      <BarChart2 size={20} className="text-blue-600" />
+                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                        <BarChart2 size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-800">Comprehension Scores</h2>
+                        <p className="text-sm text-gray-600">Reading comprehension performance by student</p>
+                      </div>
                     </div>
-                    <h2 className="text-lg font-semibold">Comprehension Scores</h2>
-                  </div>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={prepareComprehensionScoreData()}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
-                          angle={-45} 
-                          textAnchor="end" 
-                          height={70}
-                          interval={0}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis domain={[0, 100]} />
-                        <Tooltip formatter={(value) => [`${value}%`, 'Score']} />
-                        <Legend />
-                        <Bar dataKey="score" name="Comprehension Score" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={prepareComprehensionScoreData()}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={80}
+                            interval={0}
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <YAxis 
+                            domain={[0, 100]} 
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                              fontSize: '14px'
+                            }}
+                            formatter={(value) => [`${value}%`, '🧠 Comprehension Score']} 
+                          />
+                          <Legend 
+                            wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }}
+                          />
+                          <Bar 
+                            dataKey="score" 
+                            name="Comprehension Score" 
+                            fill={CHART_COLORS.comprehension}
+                            radius={[4, 4, 0, 0]}
+                            stroke={CHART_COLORS.comprehension}
+                            strokeWidth={1}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
 
-                {/* Comprehension vs Reading Time Scatter Plot */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-indigo-100 p-2 rounded-full mr-3">
-                      <Activity size={20} className="text-indigo-600" />
+                {/* Student Book Usage Statistics */}
+                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                        <BookOpen size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-800">Student Book Usage</h2>
+                        <p className="text-sm text-gray-600">Books started vs completed by each student</p>
+                      </div>
                     </div>
-                    <h2 className="text-lg font-semibold">Comprehension Score vs Reading Time</h2>
-                  </div>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart
-                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                        <CartesianGrid />
-                        <XAxis
-                          type="number"
-                          dataKey="readingTime"
-                          name="Reading Time"
-                          label={{ value: 'Total Reading Time (minutes)', position: 'bottom' }}
-                        />
-                        <YAxis
-                          type="number"
-                          dataKey="comprehensionScore"
-                          name="Comprehension Score"
-                          label={{ value: 'Comprehension Score', angle: -90, position: 'insideLeft' }}
-                        />
-                        <Tooltip
-                          cursor={{ strokeDasharray: '3 3' }}
-                          formatter={(value, name, props) => [
-                            `${value}${name === 'Reading Time' ? ' minutes' : '%'}`,
-                            `${props.payload.name} - ${name}`
-                          ]}
-                        />
-                        <Scatter
-                          name="Students"
-                          data={prepareComprehensionVsTimeData()}
-                          fill="#8884d8"
-                        />
-                      </ScatterChart>
-                    </ResponsiveContainer>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={prepareStudentBookUsageData()}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={80}
+                            interval={0}
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                              fontSize: '14px'
+                            }}
+                            formatter={(value, name) => [
+                              name === 'completionRate' ? `${value}%` : value,
+                              name === 'booksStarted' ? '📚 Books Started' : 
+                              name === 'booksCompleted' ? '✅ Books Completed' : 
+                              name === 'totalReadingTime' ? '⏱️ Reading Time (min)' : 
+                              name === 'completionRate' ? '📊 Completion Rate' : name
+                            ]}
+                          />
+                          <Legend 
+                            wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }}
+                          />
+                          <Bar 
+                            dataKey="booksStarted" 
+                            name="Books Started" 
+                            fill={CHART_COLORS.booksStarted}
+                            radius={[4, 4, 0, 0]}
+                            stroke={CHART_COLORS.booksStarted}
+                            strokeWidth={1}
+                          />
+                          <Bar 
+                            dataKey="booksCompleted" 
+                            name="Books Completed" 
+                            fill={CHART_COLORS.booksCompleted}
+                            radius={[4, 4, 0, 0]}
+                            stroke={CHART_COLORS.booksCompleted}
+                            strokeWidth={1}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
 
                 {/* Reading Time Chart */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-purple-100 p-2 rounded-full mr-3">
-                      <Clock size={20} className="text-purple-600" />
+                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-purple-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                        <Clock size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-800">Reading Time</h2>
+                        <p className="text-sm text-gray-600">Total reading time spent by each student</p>
+                      </div>
                     </div>
-                    <h2 className="text-lg font-semibold">Reading Time</h2>
-                  </div>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={prepareReadingTimeData()}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
-                          angle={-45} 
-                          textAnchor="end" 
-                          height={70}
-                          interval={0}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [formatTime(value), 'Reading Time']} />
-                        <Legend />
-                        <Bar dataKey="seconds" name="Reading Time (seconds)" fill="#FF5722" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={prepareReadingTimeData()}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={80}
+                            interval={0}
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                              fontSize: '14px'
+                            }}
+                            formatter={(value) => [formatTime(value), '⏱️ Reading Time']} 
+                          />
+                          <Legend 
+                            wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }}
+                          />
+                          <Bar 
+                            dataKey="seconds" 
+                            name="Reading Time" 
+                            fill={CHART_COLORS.readingTime}
+                            radius={[4, 4, 0, 0]}
+                            stroke={CHART_COLORS.readingTime}
+                            strokeWidth={1}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
 
-                {/* Reading Time Trend Line Chart */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-teal-100 p-2 rounded-full mr-3">
-                      <Activity size={20} className="text-teal-600" />
-                    </div>
-                    <h2 className="text-lg font-semibold">Reading Time Trends</h2>
-                  </div>
-                  <div className="h-80">
-                    {prepareReadingTimeTrendData().length === 0 ? (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                          <div className="text-gray-400 mb-2">
-                            <Activity size={48} className="mx-auto" />
-                          </div>
-                          <p className="text-gray-500 text-lg">No reading activity data available</p>
-                          <p className="text-gray-400 text-sm mt-1">Students need to start reading books to see trends</p>
-                        </div>
+                {/* Book Engagement Metrics */}
+                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                        <Activity size={24} className="text-white" />
                       </div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={prepareReadingTimeTrendData()}
-                          margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="date" 
-                            angle={-45} 
-                            textAnchor="end"
-                            height={60}
-                            interval={0}
-                            tick={{ fontSize: 12 }}
-                          />
-                          <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
-                          <Tooltip 
-                            formatter={(value, name) => [`${value} minutes`, 'Total Reading Time']}
-                            labelFormatter={(label) => `Date: ${label}`}
-                          />
-                          <Legend />
-                          <Line 
-                            type="monotone" 
-                            dataKey="minutes" 
-                            name="Total Reading Time (minutes)" 
-                            stroke="#8884d8" 
-                            strokeWidth={2}
-                            activeDot={{ r: 6, fill: '#8884d8' }} 
-                            dot={{ fill: '#8884d8', strokeWidth: 2, r: 4 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    )}
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-800">Book Engagement Metrics</h2>
+                        <p className="text-sm text-gray-600">How actively students engage with each book</p>
+                      </div>
+                    </div>
+                    <div className="h-80">
+                      {prepareBookEngagementData().length === 0 ? (
+                        <div className="flex items-center justify-center h-full">
+                          <div className="text-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <BookOpen size={32} className="text-purple-500" />
+                            </div>
+                            <p className="text-gray-600 text-lg font-medium">No engagement data available</p>
+                            <p className="text-gray-500 text-sm mt-1">Students need to start reading books to see engagement metrics</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={prepareBookEngagementData()}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                            <XAxis 
+                              dataKey="bookTitle" 
+                              angle={-45} 
+                              textAnchor="end" 
+                              height={80}
+                              interval={0}
+                              tick={{ fontSize: 12, fill: '#6B7280' }}
+                              axisLine={{ stroke: '#D1D5DB' }}
+                            />
+                            <YAxis 
+                              domain={[0, 100]} 
+                              tick={{ fontSize: 12, fill: '#6B7280' }}
+                              axisLine={{ stroke: '#D1D5DB' }}
+                            />
+                            <Tooltip 
+                              contentStyle={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                                fontSize: '14px'
+                              }}
+                              formatter={(value, name) => [
+                                name === 'engagementRate' ? `${value}%` : value,
+                                name === 'engagementRate' ? '🎯 Engagement Rate' : 
+                                name === 'avgActivitiesPerStudent' ? '🎮 Avg Activities/Student' : 
+                                name === 'avgReadingTime' ? '⏱️ Avg Reading Time (min)' : name
+                              ]}
+                            />
+                            <Legend 
+                              wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }}
+                            />
+                            <Bar 
+                              dataKey="engagementRate" 
+                              name="Engagement Rate (%)" 
+                              fill={CHART_COLORS.engagementRate}
+                              radius={[4, 4, 0, 0]}
+                              stroke={CHART_COLORS.engagementRate}
+                              strokeWidth={1}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Books Read Chart */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-green-100 p-2 rounded-full mr-3">
-                      <BookOpen size={20} className="text-green-600" />
+                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                        <BookOpen size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-800">Books Read</h2>
+                        <p className="text-sm text-gray-600">Completed vs in-progress books by student</p>
+                      </div>
                     </div>
-                    <h2 className="text-lg font-semibold">Books Read</h2>
-                  </div>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={prepareBooksReadData()}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-                        stackOffset="none"
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
-                          angle={-45} 
-                          textAnchor="end" 
-                          height={70}
-                          interval={0}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value, name) => [value, name === 'completed' ? 'Completed Books' : 'Books in Progress']}
-                        />
-                        <Legend />
-                        <Bar dataKey="completed" name="Completed" fill="#4CAF50" stackId="a" />
-                        <Bar dataKey="inProgress" name="In Progress" fill="#FFC107" stackId="a" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={prepareBooksReadData()}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                          stackOffset="none"
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={80}
+                            interval={0}
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                              fontSize: '14px'
+                            }}
+                            formatter={(value, name) => {
+                              if (name === 'completed') {
+                                return [`${value}`, '✅ Completed Books'];
+                              } else if (name === 'inProgress') {
+                                return [`${value}`, '🔄 Books in Progress'];
+                              }
+                              return [`${value}`, name];
+                            }}
+                          />
+                          <Legend 
+                            wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }}
+                          />
+                          <Bar 
+                            dataKey="completed" 
+                            name="Completed" 
+                            fill={CHART_COLORS.completed}
+                            stackId="a" 
+                            radius={[4, 4, 0, 0]}
+                            stroke={CHART_COLORS.completed}
+                            strokeWidth={1}
+                          />
+                          <Bar 
+                            dataKey="inProgress" 
+                            name="In Progress" 
+                            fill={CHART_COLORS.inProgress}
+                            stackId="a" 
+                            radius={[0, 0, 4, 4]}
+                            stroke={CHART_COLORS.inProgress}
+                            strokeWidth={1}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
   
                 {/* Status Distribution Pie Chart */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-yellow-100 p-2 rounded-full mr-3">
-                      <PieChart size={20} className="text-yellow-600" />
+                <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                        <PieChart size={24} className="text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-800">Student Status Distribution</h2>
+                        <p className="text-sm text-gray-600">Overview of student progress status</p>
+                      </div>
                     </div>
-                    <h2 className="text-lg font-semibold">Student Status Distribution</h2>
-                  </div>
-                  <div className="h-80 flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RePieChart>
-                        <Pie
-                          data={prepareStatusDistributionData()}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={true}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {prepareStatusDistributionData().map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]} 
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value, name, props) => [value, 'Students']} />
-                        <Legend />
-                      </RePieChart>
-                    </ResponsiveContainer>
+                    <div className="h-80 flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RePieChart>
+                          <Pie
+                            data={prepareStatusDistributionData()}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={true}
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            stroke="#fff"
+                            strokeWidth={2}
+                          >
+                            {prepareStatusDistributionData().map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]} 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                              fontSize: '14px'
+                            }}
+                            formatter={(value, name, props) => [
+                              `${value} students`, 
+                              '👥 Students'
+                            ]} 
+                          />
+                          <Legend 
+                            wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }}
+                          />
+                        </RePieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              {/* Student Performance Radar Chart */}
-              <div className="bg-white p-6 rounded-lg shadow mb-8">
-                <div className="flex items-center mb-4">
-                  <div className="bg-indigo-100 p-2 rounded-full mr-3">
-                    <Activity size={20} className="text-indigo-600" />
+              {/* Book Completion Rates */}
+              <div className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/50 relative overflow-hidden mb-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-orange-500/5"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                      <BookOpen size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">Book Completion Rates</h2>
+                      <p className="text-sm text-gray-600">How many students completed vs are still reading each book</p>
+                    </div>
                   </div>
-                  <h2 className="text-lg font-semibold">Top 5 Student Performance Overview</h2>
-                </div>
-                <div className="h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart 
-                      cx="50%" 
-                      cy="50%" 
-                      outerRadius="80%" 
-                      data={filteredProgressData
-                        .filter(student => student.progressData)
-                        .sort((a, b) => (b.progressData.avgComprehensionScore || 0) - (a.progressData.avgComprehensionScore || 0))
-                        .slice(0, 5)
-                        .map(student => ({
-                          name: `${student.firstName} ${student.lastName}`,
-                          comprehension: student.progressData.avgComprehensionScore || 0,
-                          booksRead: student.progressData.completedCount || 0,
-                          readingTime: Math.min(100, (student.progressData.totalReadingTimeSeconds || 0) / 600),
-                          activity: student.progressData.lastActivityDate 
-                            ? 100 - Math.min(100, Math.floor((new Date() - new Date(student.progressData.lastActivityDate)) / (1000 * 60 * 60 * 24)) * 5)
-                            : 0
-                        }))}
-                    >
-                      <PolarGrid />
-                      <PolarAngleAxis dataKey="name" />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                      <Radar name="Comprehension" dataKey="comprehension" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                      <Radar name="Books Read" dataKey="booksRead" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                      <Radar name="Reading Time" dataKey="readingTime" stroke="#ffc658" fill="#ffc658" fillOpacity={0.6} />
-                      <Radar name="Recent Activity" dataKey="activity" stroke="#ff8042" fill="#ff8042" fillOpacity={0.6} />
-                      <Legend />
-                      <Tooltip />
-                    </RadarChart>
-                  </ResponsiveContainer>
+                  <div className="h-96">
+                    {prepareBookCompletionData().length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <BookOpen size={32} className="text-green-500" />
+                          </div>
+                          <p className="text-gray-600 text-lg font-medium">No completion data available</p>
+                          <p className="text-gray-500 text-sm mt-1">Students need to start reading books to see completion rates</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={prepareBookCompletionData()}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis 
+                            dataKey="bookTitle" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={80}
+                            interval={0}
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            axisLine={{ stroke: '#D1D5DB' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                              fontSize: '14px'
+                            }}
+                            formatter={(value, name) => [
+                              name === 'completionRate' ? `${value}%` : value,
+                              name === 'completed' ? '✅ Students Completed' : 
+                              name === 'inProgress' ? '🔄 Students In Progress' : 
+                              name === 'completionRate' ? '📊 Completion Rate' : 
+                              name === 'avgReadingTime' ? '⏱️ Avg Reading Time (min)' : name
+                            ]}
+                          />
+                          <Legend 
+                            wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }}
+                          />
+                          <Bar 
+                            dataKey="completed" 
+                            name="Completed" 
+                            fill={CHART_COLORS.completed}
+                            radius={[4, 4, 0, 0]}
+                            stroke={CHART_COLORS.completed}
+                            strokeWidth={1}
+                          />
+                          <Bar 
+                            dataKey="inProgress" 
+                            name="In Progress" 
+                            fill={CHART_COLORS.inProgress}
+                            radius={[4, 4, 0, 0]}
+                            stroke={CHART_COLORS.inProgress}
+                            strokeWidth={1}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 text-center border border-green-200">
+                      <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span className="text-white font-bold text-lg">✓</span>
+                      </div>
+                      <div className="text-3xl font-bold text-green-700 mb-1">
+                        {prepareBookCompletionData().reduce((sum, book) => sum + book.completed, 0)}
+                      </div>
+                      <div className="text-sm font-medium text-green-600">Total Books Completed</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 text-center border border-orange-200">
+                      <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span className="text-white font-bold text-lg">⏳</span>
+                      </div>
+                      <div className="text-3xl font-bold text-orange-700 mb-1">
+                        {prepareBookCompletionData().reduce((sum, book) => sum + book.inProgress, 0)}
+                      </div>
+                      <div className="text-sm font-medium text-orange-600">Books In Progress</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center border border-blue-200">
+                      <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span className="text-white font-bold text-lg">%</span>
+                      </div>
+                      <div className="text-3xl font-bold text-blue-700 mb-1">
+                        {prepareBookCompletionData().length > 0 
+                          ? Math.round(prepareBookCompletionData().reduce((sum, book) => sum + book.completionRate, 0) / prepareBookCompletionData().length)
+                          : 0}%
+                      </div>
+                      <div className="text-sm font-medium text-blue-600">Average Completion Rate</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </>
