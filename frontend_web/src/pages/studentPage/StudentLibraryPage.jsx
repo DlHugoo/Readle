@@ -299,12 +299,7 @@ const StudentLibraryPage = () => {
 
   const renderSkeletonCard = () => (
     <div className="animate-pulse">
-      <div className="bg-gray-200 rounded-lg aspect-[2/3] mb-2"></div>
-      <div className="flex justify-center space-x-1">
-        <div className="w-4 h-4 bg-gray-200 rounded-full"></div>
-        <div className="w-4 h-4 bg-gray-200 rounded-full"></div>
-        <div className="w-4 h-4 bg-gray-200 rounded-full"></div>
-      </div>
+      <div className="bg-gray-200 rounded-2xl aspect-[3/4]"></div>
     </div>
   );
 
