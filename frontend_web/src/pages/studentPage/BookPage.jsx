@@ -47,6 +47,7 @@ const BookPage = () => {
   const [showProgress, setShowProgress] = useState(true);
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
   const contentRef = useRef(null);
 
   // Reading timer state - using raw seconds for backend sync
@@ -727,6 +728,13 @@ const BookPage = () => {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentPageIndex, pages.length, isFocusMode]);
 
+  // Reset image loading state when page changes
+  useEffect(() => {
+    if (pages[currentPageIndex]?.imageURL) {
+      setImageLoading(true);
+    }
+  }, [currentPageIndex, pages]);
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -1058,14 +1066,49 @@ const BookPage = () => {
               {hasContent ? (
                 <>
                   {currentPage?.imageURL && (
-                    <motion.img
-                      src={getImageURL(currentPage.imageURL)}
-                      alt="Book Page"
-                      className="rounded-xl max-h-[500px] object-contain mb-8"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.5 }}
-                    />
+                    <div className="relative w-full max-w-2xl mb-8">
+                      {/* Skeleton Loader */}
+                      {imageLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl animate-pulse">
+                          <div className="flex flex-col items-center space-y-4">
+                            <svg
+                              className="w-16 h-16 text-gray-300"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <div className="text-gray-400 text-sm">
+                              Loading image...
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actual Image with Container */}
+                      <motion.div
+                        className="min-h-[400px] flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.5 }}
+                      >
+                        <img
+                          src={getImageURL(currentPage.imageURL)}
+                          alt="Book Page"
+                          className="rounded-xl max-h-[500px] w-full object-contain"
+                          onLoadStart={() => setImageLoading(true)}
+                          onLoad={() => setImageLoading(false)}
+                          onError={() => setImageLoading(false)}
+                          style={{ display: imageLoading ? "none" : "block" }}
+                        />
+                      </motion.div>
+                    </div>
                   )}
 
                   <motion.div
