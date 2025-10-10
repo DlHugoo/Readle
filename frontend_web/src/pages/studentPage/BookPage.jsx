@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import noContentImage from "../../assets/no-content.png";
 import StoryProgressIndicator from "../../components/StoryProgressIndicator";
 import VocabularyHighlighter from "../../components/VocabularyHighlighter";
+import BookLoader from "../../components/BookLoader";
 import { jwtDecode } from "jwt-decode";
 import { getImageUrl, getApiUrl } from "../../utils/apiConfig";
 import {
@@ -46,14 +47,19 @@ const BookPage = () => {
   const [showProgress, setShowProgress] = useState(true);
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
   const contentRef = useRef(null);
-  
+
   // Reading timer state - using raw seconds for backend sync
   const [totalReadingTimeSeconds, setTotalReadingTimeSeconds] = useState(0); // Total seconds from backend
   const [lastSyncedTimeSeconds, setLastSyncedTimeSeconds] = useState(0); // Last synced time to backend
   const [sessionStartTime, setSessionStartTime] = useState(null); // When current session started
   const [isReading, setIsReading] = useState(false);
-  const [displayTime, setDisplayTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [displayTime, setDisplayTime] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const intervalRef = useRef(null);
   const syncIntervalRef = useRef(null); // For periodic backend sync
   const [lastActivityTime, setLastActivityTime] = useState(Date.now()); // Track user activity
@@ -93,14 +99,16 @@ const BookPage = () => {
       const now = Date.now();
       setSessionStartTime(now);
       setIsReading(true);
-      console.log(`Starting reading timer. Current total time: ${totalReadingTimeSeconds} seconds`);
+      console.log(
+        `Starting reading timer. Current total time: ${totalReadingTimeSeconds} seconds`
+      );
     }
   };
 
   const pauseReadingTimer = () => {
     if (isReading && sessionStartTime) {
       const sessionElapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-      setTotalReadingTimeSeconds(prev => prev + sessionElapsed);
+      setTotalReadingTimeSeconds((prev) => prev + sessionElapsed);
       setIsReading(false);
       setSessionStartTime(null);
     }
@@ -142,8 +150,9 @@ const BookPage = () => {
       syncIntervalRef.current = setInterval(() => {
         const currentTime = Date.now();
         const timeSinceLastActivity = currentTime - lastActivityTime;
-        const timeSinceLastSync = getCurrentTotalSeconds() - lastSyncedTimeSeconds;
-        
+        const timeSinceLastSync =
+          getCurrentTotalSeconds() - lastSyncedTimeSeconds;
+
         // Only sync if:
         // 1. At least 30 seconds have passed since last sync, OR
         // 2. User has been inactive for more than 2 minutes (to save progress)
@@ -174,7 +183,7 @@ const BookPage = () => {
       const timer = setTimeout(() => {
         startReadingTimer();
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
   }, [book, pages.length, totalReadingTimeSeconds]);
@@ -206,13 +215,13 @@ const BookPage = () => {
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     // Cleanup function runs on unmount
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       handleUnmount();
     };
   }, [book, pages.length, trackerId, currentPageIndex]);
@@ -220,46 +229,54 @@ const BookPage = () => {
   // API sync functions
   const syncReadingTimeToBackend = async (pageNumber, forceSync = false) => {
     if (!trackerId) return;
-    
+
     // Throttle sync calls - prevent rapid successive calls
     const now = Date.now();
     if (!forceSync && now - lastSyncTimeRef.current < 5000) {
       console.log("Throttling sync call - too soon since last sync");
       return;
     }
-    
+
     try {
       const token = localStorage.getItem("token");
       const currentTotalSeconds = getCurrentTotalSeconds();
-      
+
       // Calculate incremental time since last sync
       const incrementalSeconds = currentTotalSeconds - lastSyncedTimeSeconds;
-      
+
       // Only sync if there's new time to record (at least 1 second) or if forced
       if (incrementalSeconds >= 1 || forceSync) {
         // Convert seconds to fractional minutes to preserve precision
         const fractionalMinutes = incrementalSeconds / 60;
-        
+
         await fetch(
-          getApiUrl(`api/progress/update/${trackerId}` +
-            `?pageNumber=${pageNumber}&readingTimeMinutes=${fractionalMinutes}`),
+          getApiUrl(
+            `api/progress/update/${trackerId}` +
+              `?pageNumber=${pageNumber}&readingTimeMinutes=${fractionalMinutes}`
+          ),
           {
-            method: 'PUT',
-            headers: { 
+            method: "PUT",
+            headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify({})
+            body: JSON.stringify({}),
           }
         );
-        
+
         // Update the last synced time and throttle timestamp
         setLastSyncedTimeSeconds(currentTotalSeconds);
         lastSyncTimeRef.current = now;
-        
-        console.log(`Synced incremental reading time: ${incrementalSeconds} seconds (${fractionalMinutes.toFixed(2)} minutes) for page ${pageNumber}`);
+
+        console.log(
+          `Synced incremental reading time: ${incrementalSeconds} seconds (${fractionalMinutes.toFixed(
+            2
+          )} minutes) for page ${pageNumber}`
+        );
       } else {
-        console.log(`Skipping sync - only ${incrementalSeconds} seconds since last sync`);
+        console.log(
+          `Skipping sync - only ${incrementalSeconds} seconds since last sync`
+        );
       }
     } catch (error) {
       console.error("Error syncing reading time to backend:", error);
@@ -268,34 +285,50 @@ const BookPage = () => {
 
   const loadReadingTimeFromBackend = async () => {
     if (!userId || !book?.bookID) {
-      console.log("Cannot load reading time - missing userId or bookID", { userId, bookID: book?.bookID });
+      console.log("Cannot load reading time - missing userId or bookID", {
+        userId,
+        bookID: book?.bookID,
+      });
       return;
     }
-    
+
     try {
       const token = localStorage.getItem("token");
-      console.log(`Loading reading time for user ${userId}, book ${book.bookID}`);
-      
+      console.log(
+        `Loading reading time for user ${userId}, book ${book.bookID}`
+      );
+
       const response = await fetch(
         getApiUrl(`api/progress/book/${userId}/${book.bookID}`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       if (response.ok) {
         const progressData = await response.json();
         console.log("Progress data received:", progressData);
-        
-        if (progressData && progressData.totalReadingTimeSeconds !== undefined) {
-          console.log(`Setting reading time to ${progressData.totalReadingTimeSeconds} seconds`);
+
+        if (
+          progressData &&
+          progressData.totalReadingTimeSeconds !== undefined
+        ) {
+          console.log(
+            `Setting reading time to ${progressData.totalReadingTimeSeconds} seconds`
+          );
           setTotalReadingTimeSeconds(progressData.totalReadingTimeSeconds);
           setLastSyncedTimeSeconds(progressData.totalReadingTimeSeconds);
-          setDisplayTime(secondsToDisplay(progressData.totalReadingTimeSeconds));
-          console.log(`Loaded reading time from backend: ${progressData.totalReadingTimeSeconds} seconds`);
+          setDisplayTime(
+            secondsToDisplay(progressData.totalReadingTimeSeconds)
+          );
+          console.log(
+            `Loaded reading time from backend: ${progressData.totalReadingTimeSeconds} seconds`
+          );
         } else {
           console.log("No reading time data found in progress data");
         }
       } else {
-        console.log(`Failed to load progress data: ${response.status} ${response.statusText}`);
+        console.log(
+          `Failed to load progress data: ${response.status} ${response.statusText}`
+        );
       }
     } catch (error) {
       console.error("Error loading reading time from backend:", error);
@@ -330,7 +363,9 @@ const BookPage = () => {
             const token = localStorage.getItem("token");
             try {
               const progressRes = await fetch(
-                getApiUrl(`api/progress/book/${storedUserId}/${bookData.bookID}`),
+                getApiUrl(
+                  `api/progress/book/${storedUserId}/${bookData.bookID}`
+                ),
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               const progressData = await progressRes.json();
@@ -338,15 +373,23 @@ const BookPage = () => {
               if (progressData) {
                 // Set tracker ID if available
                 if (progressData.id) setTrackerId(progressData.id);
-                
+
                 // Load saved reading time from backend (always load if available)
                 if (progressData.totalReadingTimeSeconds !== undefined) {
-                  setTotalReadingTimeSeconds(progressData.totalReadingTimeSeconds);
-                  setLastSyncedTimeSeconds(progressData.totalReadingTimeSeconds);
-                  setDisplayTime(secondsToDisplay(progressData.totalReadingTimeSeconds));
-                  console.log(`Loaded reading time from backend: ${progressData.totalReadingTimeSeconds} seconds`);
+                  setTotalReadingTimeSeconds(
+                    progressData.totalReadingTimeSeconds
+                  );
+                  setLastSyncedTimeSeconds(
+                    progressData.totalReadingTimeSeconds
+                  );
+                  setDisplayTime(
+                    secondsToDisplay(progressData.totalReadingTimeSeconds)
+                  );
+                  console.log(
+                    `Loaded reading time from backend: ${progressData.totalReadingTimeSeconds} seconds`
+                  );
                 }
-                
+
                 // Set to last read page if available
                 if (progressData.lastPageRead) {
                   const lastPage = Math.min(
@@ -404,10 +447,9 @@ const BookPage = () => {
 
     // First try to get existing progress
     axios
-      .get(
-        getApiUrl(`api/progress/book/${storedUserId}/${book.bookID}`),
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
+      .get(getApiUrl(`api/progress/book/${storedUserId}/${book.bookID}`), {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       .then((res) => {
         if (res.data?.id) {
           console.log("Found existing progress tracker with ID:", res.data.id);
@@ -490,23 +532,23 @@ const BookPage = () => {
           getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         // Handle 404 response (no checkpoint found)
         if (checkpointRes.status === 404) {
           // No checkpoint for this book, continue with normal page navigation
           const nextIndex = currentPageIndex + 1;
           setCurrentPageIndex(nextIndex);
-          
+
           // Update reading progress if we have a tracker
           if (trackerId) {
             await syncReadingTimeToBackend(nextIndex + 1, true);
           }
-          
+
           // Reset transition state after animation
           setTimeout(() => setIsPageTransitioning(false), 500);
           return;
         }
-        
+
         const checkpoint = await checkpointRes.json();
         console.log("Prediction checkpoint found:", checkpoint);
         console.log("Current page index:", currentPageIndex);
@@ -517,16 +559,27 @@ const BookPage = () => {
           const checkpointId = checkpoint.id;
 
           // 3) Ask how many times the user has tried this checkpoint
-          console.log("Checking attempt count for user:", userId, "checkpoint:", checkpointId);
+          console.log(
+            "Checking attempt count for user:",
+            userId,
+            "checkpoint:",
+            checkpointId
+          );
           const attemptRes = await fetch(
-            getApiUrl(`api/prediction-checkpoint-attempts/user/${userId}` +
-              `/checkpoint/${checkpointId}/count`),
+            getApiUrl(
+              `api/prediction-checkpoint-attempts/user/${userId}` +
+                `/checkpoint/${checkpointId}/count`
+            ),
             { headers: { Authorization: `Bearer ${token}` } }
           );
           console.log("Attempt count response status:", attemptRes.status);
-          
+
           if (!attemptRes.ok) {
-            console.error("Error fetching attempt count:", attemptRes.status, attemptRes.statusText);
+            console.error(
+              "Error fetching attempt count:",
+              attemptRes.status,
+              attemptRes.statusText
+            );
             // Continue with normal navigation if we can't get attempt count
           } else {
             const attemptCount = await attemptRes.json();
@@ -538,7 +591,9 @@ const BookPage = () => {
               navigate(`/prediction/${bookId}`);
               return;
             } else {
-              console.log("User has already attempted this checkpoint, continuing with normal navigation");
+              console.log(
+                "User has already attempted this checkpoint, continuing with normal navigation"
+              );
             }
           }
           // Otherwise fall through and advance normally
@@ -578,7 +633,7 @@ const BookPage = () => {
     setIsPageTransitioning(true);
     const prevIndex = Math.max(currentPageIndex - 1, 0);
     setCurrentPageIndex(prevIndex);
-    
+
     // Update reading progress if we have a tracker
     if (trackerId) {
       await syncReadingTimeToBackend(prevIndex + 1, true);
@@ -631,14 +686,21 @@ const BookPage = () => {
     };
 
     // Track various user activities
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    
-    events.forEach(event => {
+    const events = [
+      "mousedown",
+      "mousemove",
+      "keypress",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+
+    events.forEach((event) => {
       document.addEventListener(event, updateActivity, true);
     });
 
     return () => {
-      events.forEach(event => {
+      events.forEach((event) => {
         document.removeEventListener(event, updateActivity, true);
       });
     };
@@ -666,11 +728,18 @@ const BookPage = () => {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentPageIndex, pages.length, isFocusMode]);
 
+  // Reset image loading state when page changes
+  useEffect(() => {
+    if (pages[currentPageIndex]?.imageURL) {
+      setImageLoading(true);
+    }
+  }, [currentPageIndex, pages]);
+
   if (loading) {
     return (
       <div className="min-h-screen">
         <StudentNavbar />
-        <p className="text-center mt-20 text-gray-500">Loading...</p>
+        <BookLoader />
       </div>
     );
   }
@@ -876,15 +945,17 @@ const BookPage = () => {
               >
                 Reading Time
               </label>
-              <div className={`p-3 rounded-lg border text-center ${
-                readingTheme === "dark" 
-                  ? "bg-gray-700 border-gray-600 text-gray-200" 
-                  : "bg-gray-50 border-gray-200 text-gray-800"
-              }`}>
+              <div
+                className={`p-3 rounded-lg border text-center ${
+                  readingTheme === "dark"
+                    ? "bg-gray-700 border-gray-600 text-gray-200"
+                    : "bg-gray-50 border-gray-200 text-gray-800"
+                }`}
+              >
                 <div className="text-2xl font-mono font-bold">
-                  {String(displayTime.hours).padStart(2, '0')}:
-                  {String(displayTime.minutes).padStart(2, '0')}:
-                  {String(displayTime.seconds).padStart(2, '0')}
+                  {String(displayTime.hours).padStart(2, "0")}:
+                  {String(displayTime.minutes).padStart(2, "0")}:
+                  {String(displayTime.seconds).padStart(2, "0")}
                 </div>
                 <div className="text-xs mt-1">
                   {isReading ? "Reading..." : "Paused"}
@@ -995,14 +1066,49 @@ const BookPage = () => {
               {hasContent ? (
                 <>
                   {currentPage?.imageURL && (
-                    <motion.img
-                      src={getImageURL(currentPage.imageURL)}
-                      alt="Book Page"
-                      className="rounded-xl max-h-[500px] object-contain mb-8"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.5 }}
-                    />
+                    <div className="relative w-full max-w-2xl mb-8">
+                      {/* Skeleton Loader */}
+                      {imageLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-xl animate-pulse">
+                          <div className="flex flex-col items-center space-y-4">
+                            <svg
+                              className="w-16 h-16 text-gray-300"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <div className="text-gray-400 text-sm">
+                              Loading image...
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actual Image with Container */}
+                      <motion.div
+                        className="min-h-[400px] flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.5 }}
+                      >
+                        <img
+                          src={getImageURL(currentPage.imageURL)}
+                          alt="Book Page"
+                          className="rounded-xl max-h-[500px] w-full object-contain"
+                          onLoadStart={() => setImageLoading(true)}
+                          onLoad={() => setImageLoading(false)}
+                          onError={() => setImageLoading(false)}
+                          style={{ display: imageLoading ? "none" : "block" }}
+                        />
+                      </motion.div>
+                    </div>
                   )}
 
                   <motion.div
