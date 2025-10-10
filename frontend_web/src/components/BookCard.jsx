@@ -12,14 +12,14 @@ const BookCard = ({ book }) => {
 
   return (
     <div
-      className="book-card relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-110 mx-2"
+      className="book-card relative flex flex-col cursor-pointer transition-transform duration-300 hover:scale-105 mx-2"
       onClick={handleClick}
     >
-      <div className="book-cover overflow-hidden rounded-lg shadow-md">
+      <div className="book-cover overflow-hidden rounded-lg shadow-md aspect-[2/3] bg-gray-100">
         <img
           src={getImageUrl(book.imageURL)}
           alt={book.title}
-          className="w-full h-auto object-cover"
+          className="w-full h-full object-cover"
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = fallbackImage;
