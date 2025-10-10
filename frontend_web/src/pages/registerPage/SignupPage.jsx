@@ -11,7 +11,9 @@ const API_BASE = getApiBaseUrl();
 const ErrorModal = ({ message, onClose }) => (
   <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
     <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-sm">
-      <h2 className="text-xl font-semibold text-red-600 mb-2">⚠️ Signup Error</h2>
+      <h2 className="text-xl font-semibold text-red-600 mb-2">
+        ⚠️ Signup Error
+      </h2>
       <p className="text-gray-700 text-sm">{message}</p>
       <button
         onClick={onClose}
@@ -59,8 +61,12 @@ const SignupPage = () => {
     }
 
     // unique username based on email + timestamp
-    const localPart = formData.email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "");
-    const generatedUsername = `${localPart}-${Date.now().toString(36).slice(-6)}`;
+    const localPart = formData.email
+      .split("@")[0]
+      .replace(/[^a-zA-Z0-9_.-]/g, "");
+    const generatedUsername = `${localPart}-${Date.now()
+      .toString(36)
+      .slice(-6)}`;
 
     const payload = {
       ...formData,
@@ -79,8 +85,14 @@ const SignupPage = () => {
       nav(`/verify?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
       const msg = (err && err.message) || "";
-      if (/exist/i.test(msg) || /duplicate/i.test(msg) || /conflict/i.test(msg)) {
-        showErrorModal("User already exists. Try logging in or use a different email.");
+      if (
+        /exist/i.test(msg) ||
+        /duplicate/i.test(msg) ||
+        /conflict/i.test(msg)
+      ) {
+        showErrorModal(
+          "User already exists. Try logging in or use a different email."
+        );
       } else {
         showErrorModal(msg || "Registration failed. Please try again.");
       }
@@ -102,7 +114,9 @@ const SignupPage = () => {
       <div className="flex flex-col md:flex-row max-w-5xl w-full bg-white rounded-xl shadow-xl overflow-hidden">
         {/* Left side - Form */}
         <div className="w-full md:w-1/2 p-8 md:p-12">
-          <h2 className="text-3xl font-bold text-gray-800 mb-8">Create an Account</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-8">
+            Create an Account
+          </h2>
 
           <form onSubmit={handleSubmit}>
             <div className="flex gap-4 mb-6">
@@ -155,9 +169,45 @@ const SignupPage = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
 
@@ -188,7 +238,12 @@ const SignupPage = () => {
               className="w-full border border-gray-300 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3"
             >
               {/* Inline Microsoft “four squares” so you don’t need an asset */}
-              <svg width="20" height="20" viewBox="0 0 23 23" aria-hidden="true">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 23 23"
+                aria-hidden="true"
+              >
                 <rect width="10" height="10" x="1" y="1" />
                 <rect width="10" height="10" x="12" y="1" />
                 <rect width="10" height="10" x="1" y="12" />
@@ -205,14 +260,17 @@ const SignupPage = () => {
               and{" "}
               <a href="/privacy" className="text-blue-500 hover:underline">
                 Privacy Policy
-              </a>.
+              </a>
+              .
             </p>
           </form>
         </div>
 
         {/* Right side - Branding */}
         <div className="w-full md:w-1/2 bg-blue-500 p-8 flex flex-col justify-center items-center">
-          <h2 className="text-4xl font-bold text-white mb-8">Join Readle Today</h2>
+          <h2 className="text-4xl font-bold text-white mb-8">
+            Join Readle Today
+          </h2>
           <div className="flex justify-center items-center">
             <img src={mascot} alt="Readle Mascot" className="w-96 h-auto" />
           </div>
@@ -221,7 +279,10 @@ const SignupPage = () => {
 
       {/* Error Modal */}
       {showError && (
-        <ErrorModal message={errorMessage} onClose={() => setShowError(false)} />
+        <ErrorModal
+          message={errorMessage}
+          onClose={() => setShowError(false)}
+        />
       )}
     </div>
   );
