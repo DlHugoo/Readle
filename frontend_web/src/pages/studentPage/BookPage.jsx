@@ -1091,19 +1091,23 @@ const BookPage = () => {
                         </div>
                       )}
 
-                      {/* Actual Image */}
-                      <motion.img
-                        src={getImageURL(currentPage.imageURL)}
-                        alt="Book Page"
-                        className="rounded-xl max-h-[500px] w-full object-contain min-h-[400px]"
+                      {/* Actual Image with Container (No Background) */}
+                      <motion.div
+                        className="min-h-[400px] flex items-center justify-center rounded-xl overflow-hidden"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        onLoadStart={() => setImageLoading(true)}
-                        onLoad={() => setImageLoading(false)}
-                        onError={() => setImageLoading(false)}
-                        style={{ display: imageLoading ? "none" : "block" }}
-                      />
+                      >
+                        <img
+                          src={getImageURL(currentPage.imageURL)}
+                          alt="Book Page"
+                          className="rounded-xl max-h-[500px] w-full object-contain"
+                          onLoadStart={() => setImageLoading(true)}
+                          onLoad={() => setImageLoading(false)}
+                          onError={() => setImageLoading(false)}
+                          style={{ display: imageLoading ? "none" : "block" }}
+                        />
+                      </motion.div>
                     </div>
                   )}
 
