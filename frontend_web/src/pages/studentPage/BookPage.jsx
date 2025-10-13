@@ -14,8 +14,6 @@ import {
   Maximize2,
   Minimize2,
   Settings,
-  Volume2,
-  VolumeX,
   Moon,
   Sun,
   Eye,
@@ -24,6 +22,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 
 // Use utility function for image URLs
@@ -44,7 +43,6 @@ const BookPage = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [readingTheme, setReadingTheme] = useState("default"); // default, sepia, dark, high-contrast
   const [fontSize, setFontSize] = useState("medium"); // small, medium, large, xlarge
-  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [showProgress, setShowProgress] = useState(true);
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
@@ -937,25 +935,6 @@ const BookPage = () => {
               </button>
             </div>
 
-            {/* Audio Toggle */}
-            <div className="mb-4">
-              <button
-                onClick={() => setIsAudioEnabled(!isAudioEnabled)}
-                className={`p-2 rounded-lg border transition-all duration-200 flex items-center gap-2 ${
-                  isAudioEnabled
-                    ? readingTheme === "dark"
-                      ? "bg-green-600 border-green-500 text-white"
-                      : "bg-green-100 border-green-300 text-green-700"
-                    : readingTheme === "dark"
-                    ? "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
-                    : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                }`}
-              >
-                {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                {isAudioEnabled ? "Audio On" : "Audio Off"}
-              </button>
-            </div>
-
             {/* Reading Timer */}
             <div className="mb-4">
               <label
@@ -983,15 +962,29 @@ const BookPage = () => {
               </div>
             </div>
 
-            {/* Keyboard Shortcuts */}
-            <div
-              className={`text-xs space-y-1 ${
-                readingTheme === "dark" ? "text-gray-400" : "text-gray-500"
-              }`}
-            >
-              <div>← → Arrow keys to navigate</div>
-              <div>F11 for focus mode</div>
-              <div>Esc to exit focus</div>
+            {/* Keyboard Shortcuts and Exit Button */}
+            <div className="flex items-start justify-between gap-4">
+              <div
+                className={`text-xs space-y-1 flex-1 ${
+                  readingTheme === "dark" ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                <div>F11 for focus mode</div>
+                <div>Esc to exit focus</div>
+              </div>
+
+              {/* Exit Icon Button */}
+              <button
+                onClick={() => navigate(-1)}
+                className={`p-3 rounded-lg border transition-all duration-200 hover:scale-110 ${
+                  readingTheme === "dark"
+                    ? "bg-red-600 border-red-500 text-white hover:bg-red-700"
+                    : "bg-red-500 border-red-400 text-white hover:bg-red-600"
+                }`}
+                title="Exit Book"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           </motion.div>
         )}
