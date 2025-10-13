@@ -9,6 +9,7 @@ import VocabularyHighlighter from "../../components/VocabularyHighlighter";
 import BookLoader from "../../components/BookLoader";
 import { jwtDecode } from "jwt-decode";
 import { getImageUrl, getApiUrl } from "../../utils/apiConfig";
+import confetti from "canvas-confetti";
 import {
   Maximize2,
   Minimize2,
@@ -64,6 +65,25 @@ const BookPage = () => {
   const syncIntervalRef = useRef(null); // For periodic backend sync
   const [lastActivityTime, setLastActivityTime] = useState(Date.now()); // Track user activity
   const lastSyncTimeRef = useRef(0); // Throttle sync calls
+  const finishButtonRef = useRef(null);
+
+  // Confetti effect on button hover
+  const triggerConfetti = (event) => {
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    const x = (rect.left + rect.width / 2) / window.innerWidth;
+    const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+    confetti({
+      particleCount: 30,
+      spread: 60,
+      origin: { x, y },
+      colors: ["#3b82f6", "#60a5fa", "#93c5fd", "#fbbf24", "#fcd34d"],
+      ticks: 100,
+      gravity: 0.8,
+      scalar: 0.8,
+    });
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -1178,18 +1198,24 @@ const BookPage = () => {
         <div className="flex gap-4">
           {currentPageIndex === pages.length - 1 && (
             <motion.button
+              ref={finishButtonRef}
               onClick={async () => {
                 if (trackerId) {
                   await syncReadingTimeToBackend(currentPageIndex + 1, true);
                 }
                 navigate(`/book/${bookId}/complete`);
               }}
-              className="mt-4 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-full shadow-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105"
+              onMouseEnter={triggerConfetti}
+              className="mt-4 px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold tracking-wide rounded-full shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:scale-110 hover:shadow-2xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
+              style={{
+                fontFamily:
+                  '"Comic Sans MS", "Chalkboard SE", "Comic Neue", cursive',
+              }}
             >
-              🎉 Finish Reading
+              Finish Reading!
             </motion.button>
           )}
         </div>

@@ -16,6 +16,7 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "axios": "^1.8.4",
+    "canvas-confetti": "^1.9.3",
     "framer-motion": "^12.10.0",
     "frontend_web": "file:",
     "jwt-decode": "^4.0.0",
