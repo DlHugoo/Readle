@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Loader2,
 } from "lucide-react";
 
 // Use utility function for image URLs
@@ -47,6 +48,7 @@ const BookPage = () => {
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [isVocabularyEnabled, setIsVocabularyEnabled] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
+  const [isFinishingBook, setIsFinishingBook] = useState(false);
   const contentRef = useRef(null);
 
   // Reading timer state - using raw seconds for backend sync
@@ -1193,13 +1195,24 @@ const BookPage = () => {
             <motion.button
               ref={finishButtonRef}
               onClick={async () => {
-                if (trackerId) {
-                  await syncReadingTimeToBackend(currentPageIndex + 1, true);
+                setIsFinishingBook(true);
+                try {
+                  if (trackerId) {
+                    await syncReadingTimeToBackend(currentPageIndex + 1, true);
+                  }
+                  navigate(`/book/${bookId}/complete`);
+                } catch (error) {
+                  console.error("Error finishing book:", error);
+                  setIsFinishingBook(false);
                 }
-                navigate(`/book/${bookId}/complete`);
               }}
-              onMouseEnter={triggerConfetti}
-              className="mt-4 px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold tracking-wide rounded-full shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:scale-110 hover:shadow-2xl"
+              onMouseEnter={!isFinishingBook ? triggerConfetti : undefined}
+              disabled={isFinishingBook}
+              className={`mt-4 px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold tracking-wide rounded-full shadow-xl transition-all duration-300 flex items-center gap-2 ${
+                isFinishingBook
+                  ? "opacity-75 cursor-not-allowed"
+                  : "hover:from-blue-600 hover:to-blue-700 hover:scale-110 hover:shadow-2xl"
+              }`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
@@ -1208,7 +1221,10 @@ const BookPage = () => {
                   '"Comic Sans MS", "Chalkboard SE", "Comic Neue", cursive',
               }}
             >
-              Finish Reading!
+              {isFinishingBook && (
+                <Loader2 className="animate-spin" size={20} />
+              )}
+              {isFinishingBook ? "Finishing..." : "Finish Reading!"}
             </motion.button>
           )}
         </div>
