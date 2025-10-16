@@ -2,39 +2,25 @@ import React, { useState, useRef, useEffect } from "react";
 import logo from "../assets/logo-face.png";
 import { useNavigate } from "react-router-dom";
 import { User, LogOut, ChevronDown, BookOpen } from "lucide-react";
-import { jwtDecode } from "jwt-decode";
-import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
+import { apiClient } from "../api/api";
 
 function TeahcerNav() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [teacherName, setTeacherName] = useState('Teacher');
   const dropdownRef = useRef(null);
-  const token = localStorage.getItem('token');
+  
+  // ✅ Use auth context instead of localStorage
+  const { user, logout } = useAuth();
 
-  // Get user email from token
-  const getUserEmailFromToken = () => {
-    if (!token) return null;
-    try {
-      const decoded = jwtDecode(token);
-      return decoded.email || decoded.sub;
-    } catch (error) {
-      console.error("Failed to decode token", error);
-      return null;
-    }
-  };
-
-  // Fetch teacher name
+  // ✅ Fetch teacher name using user data from context
   const fetchTeacherName = async () => {
-    const userEmail = getUserEmailFromToken();
-    if (!userEmail) return;
+    if (!user || !user.email) return;
 
     try {
-      const response = await axios.get(`/api/users/by-email/${encodeURIComponent(userEmail)}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // ✅ Use apiClient - token sent automatically via cookie
+      const response = await apiClient.get(`/api/users/by-email/${encodeURIComponent(user.email)}`);
       setTeacherName(response.data.firstName + ' ' + response.data.lastName);
     } catch (error) {
       console.error("Error fetching teacher name:", error);
@@ -59,13 +45,12 @@ function TeahcerNav() {
   // Fetch teacher name on component mount
   useEffect(() => {
     fetchTeacherName();
-  }, [token]);
+  }, [user]);
 
-  const handleLogout = () => {
-    // Clear user token/session
-    localStorage.removeItem('token');
-    // Redirect to login page
-    navigate('/login');
+  const handleLogout = async () => {
+    // ✅ Use auth context logout - clears HTTPOnly cookie
+    await logout();
+    // Navigation is handled by auth context
   };
 
   // Remove handleProfileClick as we don't have profile pages

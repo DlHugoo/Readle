@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { login as apiLogin } from "../../api/api";
+import { sessionStore } from "../../utils/secureStorage";
 import mascot from "../../assets/mascot.png";
 
 // Use environment variable for API base URL
@@ -45,19 +45,14 @@ const LoginPage = () => {
     setErrorMessage("");
 
     try {
-      const data = await apiLogin({
+      // ✅ Use auth context login - handles HTTPOnly cookie automatically
+      const data = await authLogin({
         email: formData.email,
         password: formData.password,
       });
-      // data = { token, role, userId }
+      // data = { userId, role, email, message }
 
-      authLogin({
-        token: data.token,
-        role: data.role,
-        userId: data.userId,
-        email: formData.email,
-      });
-
+      // ✅ Navigate based on role
       switch (data.role) {
         case "TEACHER":
           navigate("/classroom");
@@ -71,7 +66,8 @@ const LoginPage = () => {
     } catch (err) {
       const msg = err && err.message ? String(err.message) : "";
       if (/not\s*verified|verify\s*your\s*email/i.test(msg)) {
-        localStorage.setItem("pendingEmail", formData.email);
+        // ✅ Use sessionStorage instead of localStorage for UI state
+        sessionStore.set("pendingEmail", formData.email);
         navigate(`/verify?email=${encodeURIComponent(formData.email)}`);
         return;
       }

@@ -2,6 +2,7 @@ package com.edu.readle.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -65,12 +66,32 @@ public class JwtFilter extends OncePerRequestFilter {
 
         System.out.println("JwtFilter invoked for: " + request.getRequestURI());
 
-        final String authHeader = request.getHeader("Authorization");
-        String email = null;
         String jwt = null;
+        String email = null;
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            jwt = authHeader.substring(7);
+        // ✅ STEP 1: Try to get token from HTTPOnly cookie first (more secure)
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    System.out.println("JWT token found in cookie");
+                    break;
+                }
+            }
+        }
+
+        // ✅ STEP 2: Fallback to Authorization header (backward compatibility)
+        if (jwt == null) {
+            final String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                jwt = authHeader.substring(7);
+                System.out.println("JWT token found in Authorization header");
+            }
+        }
+
+        // ✅ STEP 3: Extract username from token if found
+        if (jwt != null) {
             try {
                 email = jwtService.extractUsername(jwt);
             } catch (Exception e) {
