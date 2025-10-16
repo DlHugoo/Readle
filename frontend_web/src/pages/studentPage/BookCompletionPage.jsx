@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import Confetti from "react-confetti";
 import axios from "axios";
+import { getAccessToken } from "../../api/api";
 import { getImageUrl } from "../../utils/apiConfig";
 
 const getImageURL = (url) => {
@@ -36,8 +37,8 @@ const BookCompletionPage = () => {
 
     const checkActivities = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
+        const token = getAccessToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         // Check for SSA
         const ssaRes = await fetch(`/api/ssa/by-book/${bookId}`, { headers });
@@ -56,8 +57,8 @@ const BookCompletionPage = () => {
       }
 
       try {
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
+        const token = getAccessToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
         // Check for Snake Game
         const snakeRes = await fetch(`/api/snake-questions/book/${bookId}`, { headers });
@@ -70,9 +71,9 @@ const BookCompletionPage = () => {
 
     const completeBook = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         const userId = localStorage.getItem("userId");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         if (!userId) {
           setCompletionError("User not found. Please log in again.");

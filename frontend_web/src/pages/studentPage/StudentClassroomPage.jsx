@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import mascot from "../../assets/mascot.png";
 import { toast } from "react-toastify";
+import { getAccessToken } from "../../api/api";
 import "react-toastify/dist/ReactToastify.css";
 import { CalendarDays, Users, BookOpen, Copy } from "lucide-react";
 
@@ -19,10 +20,10 @@ const StudentClassroomPage = () => {
     const fetchClassrooms = async () => {
       setLoading(true);
       try {
+        const t = getAccessToken();
         const response = await fetch(`/api/classrooms/student/${studentId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         });
 
         if (!response.ok) throw new Error("Failed to fetch classrooms");
@@ -47,13 +48,13 @@ const StudentClassroomPage = () => {
 
     setLoading(true);
     try {
+      const t = getAccessToken();
       const response = await fetch(
         `/api/classrooms/join?studentId=${studentId}&classroomCode=${classroomCode}`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         }
       );
 
@@ -65,9 +66,8 @@ const StudentClassroomPage = () => {
         toast.success("Successfully joined classroom!");
 
         const refresh = await fetch(`/api/classrooms/student/${studentId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         });
 
         if (refresh.ok) {

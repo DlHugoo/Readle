@@ -1,6 +1,7 @@
 import { getApiBaseUrl, getImageUrl } from '../../utils/apiConfig';
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { getAccessToken } from "../../api/api";
 import Navbar from "../../components/StudentNavbar";
 import SnakeUp from "../../assets/snake/snakeup.png";
 import SnakeDown from "../../assets/snake/snakedown.png";
@@ -47,10 +48,11 @@ const SnakeGame = () => {
 
   // Fetch trackerId for this user/book
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (userId && bookId && token) {
       axios.get(`/api/progress/book/${userId}/${bookId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       })
       .then(res => setTrackerId(res.data.id))
       .catch(err => console.error("Failed to fetch trackerId:", err));
@@ -59,7 +61,7 @@ const SnakeGame = () => {
 
   const fetchPages = async () => {
     try {
-      const res = await axios.get(`/api/pages/${bookId}`);
+      const res = await axios.get(`/api/pages/${bookId}`, { withCredentials: true });
       const pagesData = res.data.sort((a, b) => a.pageNumber - b.pageNumber);
       setPages(pagesData);
     } catch (err) {
@@ -69,7 +71,7 @@ const SnakeGame = () => {
 
   const fetchAttemptCount = async () => {
     try {
-      const res = await fetch(`/api/snake-attempts/user/${userId}/book/${bookId}/count`);
+      const res = await fetch(`/api/snake-attempts/user/${userId}/book/${bookId}/count`, { credentials: "include" });
       const data = await res.json();
       setAttemptCount(data);
     } catch (err) {
@@ -88,14 +90,12 @@ const SnakeGame = () => {
     
 const fetchQuestions = async () => {
   try {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     const res = await axios.get(
       `/api/snake-questions/book/${bookId}`,
       {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' },
+        withCredentials: true,
       }
     );
     console.log("Fetched questions:", res.data);
@@ -257,11 +257,11 @@ const fetchQuestions = async () => {
               
               // Mark book as completed if game is won and trackerId is available
               if (trackerId) {
-                const token = localStorage.getItem("token");
+                const token = getAccessToken();
                 axios.put(
                   `/api/progress/complete/${trackerId}`,
                   {},
-                  { headers: { Authorization: `Bearer ${token}` } }
+                  { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
                 ).catch(err => console.error("Failed to mark book as completed:", err));
               }
             }
@@ -330,13 +330,11 @@ const resetGame = () => {
   setSpeed(300);
   setGameStarted(false);
   
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
   axios
     .get(`/api/snake-questions/book/${bookId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' },
+      withCredentials: true,
     })
     .then((res) => {
       // Shuffle the questions array

@@ -41,7 +41,7 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource(null)))
+            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
@@ -62,7 +62,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login",
                                  "/api/auth/register",
                                  "/api/auth/verify-email",
-                                 "/api/auth/resend").permitAll()
+                                 "/api/auth/resend",
+                                 "/api/auth/refresh",
+                                 "/api/auth/logout").permitAll()
                 // NOTE: do NOT leave `/api/auth/**` wide-open; `/api/auth/me` must be authenticated.
 
                 // Public reads
@@ -123,10 +125,15 @@ public class SecurityConfig {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowCredentials(true);
         // allow both localhost and 127.0.0.1 during dev
-        c.setAllowedOrigins(List.of(appUrl, "http://localhost:5173", "http://127.0.0.1:5173", "https://readle-pi.vercel.app"));
+        c.setAllowedOrigins(List.of(
+                appUrl,
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "https://readle-pi.vercel.app"
+        ));
         c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
-        c.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","Origin","X-Requested-With"));
-        c.setExposedHeaders(List.of("Authorization"));
+        c.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","Origin","X-Requested-With","X-CSRF-Token"));
+        c.setExposedHeaders(List.of("Authorization","Set-Cookie"));
 
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
         s.registerCorsConfiguration("/**", c);

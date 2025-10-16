@@ -46,9 +46,7 @@ const AdminLoginPage = () => {
           return;
         }
 
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
-        localStorage.setItem("userId", data.userId);
+        // access token is now managed in-memory via axios instance; no localStorage
 
         window.location.href = "/admin-dashboard";
       } else {

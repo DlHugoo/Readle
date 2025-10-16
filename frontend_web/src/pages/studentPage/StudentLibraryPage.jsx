@@ -2,6 +2,7 @@ import { getApiBaseUrl, getImageUrl } from "../../utils/apiConfig";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getAccessToken } from "../../api/api";
 import StudentNavbar from "../../components/StudentNavbar";
 import BookCard from "../../components/BookCard";
 import FeaturedCarousel from "../../components/FeaturedCarousel";
@@ -55,7 +56,7 @@ const JoinClassroomModal = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleJoin = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     const studentId = localStorage.getItem("userId");
 
     if (!classroomCode.trim()) {
@@ -236,7 +237,7 @@ const StudentLibraryPage = () => {
   useEffect(() => {
     const getBooks = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         if (!token) {
           setError("Please log in to view the library.");
           setShowErrorModal(true);
@@ -245,7 +246,8 @@ const StudentLibraryPage = () => {
         }
 
         const response = await axios.get("/api/books/for-you", {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
 
         setBooks(response.data);
@@ -271,7 +273,7 @@ const StudentLibraryPage = () => {
   useEffect(() => {
     const fetchInProgressBooks = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         const userId = localStorage.getItem("userId");
 
         if (!token || !userId) {
@@ -279,10 +281,10 @@ const StudentLibraryPage = () => {
           return;
         }
 
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const response = await axios.get(
           `/api/progress/in-progress/${userId}`,
-          { headers }
+          { headers, withCredentials: true }
         );
 
         const progressBooks = response.data.map((progress) => progress.book);

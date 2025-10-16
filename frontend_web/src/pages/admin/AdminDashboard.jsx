@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { getAccessToken } from "../../api/api";
 import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BadgeManagement from "../../components/BadgeManagement";
@@ -60,7 +61,7 @@ const AdminDashboard = () => {
 
   const fetchBooks = async () => {
     try {
-      const response = await axios.get("/api/books/for-you");
+      const response = await axios.get("/api/books/for-you", { withCredentials: true });
       setBooks(response.data);
     } catch (error) {
       console.error("Failed to fetch books", error);
@@ -70,9 +71,10 @@ const AdminDashboard = () => {
 
   const fetchArchivedBooks = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const response = await axios.get("/api/books/archived", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       setArchivedBooks(response.data);  // ✅ update archivedBooks, not books
     } catch (error) {
@@ -140,7 +142,7 @@ const AdminDashboard = () => {
   const uploadImage = async (file) => {
     if (!file) return null;
 
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
 
     try {
       // Convert file to base64
@@ -156,8 +158,9 @@ const AdminDashboard = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: "include",
         body: JSON.stringify({
           file: base64Data,
           filename: file.name,
@@ -201,7 +204,7 @@ const AdminDashboard = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const adminId = localStorage.getItem("userId");
 
       let imageURL = null;
@@ -222,9 +225,8 @@ const AdminDashboard = () => {
           imageURL,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         }
       );
 
@@ -248,17 +250,19 @@ const AdminDashboard = () => {
   };
 
   const handleArchiveClick = async (book) => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
 
     try {
       if (book.archived) {
         await axios.put(`/api/books/${book.bookID}/unarchive`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
         showAlertModal("success", "Book unarchived successfully!");
       } else {
         await axios.put(`/api/books/${book.bookID}/archive`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
         showAlertModal("success", "Book archived successfully!");
       }
@@ -273,10 +277,11 @@ const AdminDashboard = () => {
 
 
   const confirmDeleteBook = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     try {
       await axios.delete(`/api/books/admin/${selectedBook.bookID}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       setBooks(books.filter((b) => b.bookID !== selectedBook.bookID));
       showAlertModal("success", "Book deleted successfully!");
@@ -306,7 +311,7 @@ const AdminDashboard = () => {
 
   const uploadEditImage = async () => {
     if (!editImageFile) return null;
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     
     // Convert file to base64 (like other upload functions)
     const base64Data = await new Promise((resolve, reject) => {
@@ -327,8 +332,9 @@ const AdminDashboard = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      credentials: "include",
       body: JSON.stringify(requestData)
     });
 
@@ -341,7 +347,7 @@ const AdminDashboard = () => {
   };
 
   const submitEdit = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     let imageURL = editFields.imageURL;
 
     if (editImageFile) {
@@ -361,9 +367,8 @@ const AdminDashboard = () => {
 
     try {
       const res = await axios.put(`/api/books/admin/${editingBook.bookID}`, updated, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
 
       setBooks((prev) =>

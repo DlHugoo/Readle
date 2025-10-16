@@ -5,6 +5,7 @@ import mascot from "../../assets/mascot.png";
 import arrow from "../../assets/arrow.png";
 import fallbackImage from "../../assets/not-available.jpeg";
 import { getImageUrl as getImageUrlUtil } from "../../utils/apiConfig";
+import { getAccessToken } from "../../api/api";
 
 const ClassroomContentPage = () => {
   const { classroomId } = useParams();
@@ -16,10 +17,10 @@ const ClassroomContentPage = () => {
   useEffect(() => {
     const fetchClassroom = async () => {
       try {
+        const t = getAccessToken();
         const res = await fetch(`/api/classrooms/${classroomId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         });
         if (res.ok) {
           const data = await res.json();
@@ -34,10 +35,10 @@ const ClassroomContentPage = () => {
 
     const fetchBooks = async () => {
       try {
+        const t = getAccessToken();
         const response = await fetch(`/api/classrooms/${classroomId}/books`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         });
 
         if (!response.ok) throw new Error("Failed to load books.");

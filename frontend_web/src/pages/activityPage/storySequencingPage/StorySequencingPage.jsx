@@ -7,6 +7,7 @@ import SequencingBoard from "./SequencingBoard";
 import FeedbackModal from "./FeedbackModal";
 import sequenceBg from "../../../assets/sequence-bg2.png";
 import { getImageUrl } from "../../../utils/apiConfig";
+import { getAccessToken } from "../../../api/api";
 
 const StorySequencingPage = () => {
   const { bookId } = useParams();
@@ -24,7 +25,7 @@ const StorySequencingPage = () => {
 
   // Fetch trackerId for this user/book
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (userId && bookId && token) {
       axios
         .get(`/api/progress/book/${userId}/${bookId}`, {
@@ -38,7 +39,7 @@ const StorySequencingPage = () => {
   useEffect(() => {
     const fetchSSA = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         const role = localStorage.getItem("role");
         const userId = localStorage.getItem("userId");
 
@@ -151,7 +152,7 @@ const StorySequencingPage = () => {
 
   const handleSubmitSequence = async (sequenceIds) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       if (!token) {
         alert("You must be logged in.");
         navigate("/login");

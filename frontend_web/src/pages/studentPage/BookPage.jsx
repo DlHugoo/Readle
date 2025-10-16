@@ -8,8 +8,8 @@ import StoryProgressIndicator from "../../components/StoryProgressIndicator";
 import VocabularyHighlighter from "../../components/VocabularyHighlighter";
 import BookLoader from "../../components/BookLoader";
 import { jwtDecode } from "jwt-decode";
+import { getAccessToken } from "../../api/api";
 import { getImageUrl, getApiUrl } from "../../utils/apiConfig";
-import confetti from "canvas-confetti";
 import {
   Maximize2,
   Minimize2,
@@ -84,7 +84,7 @@ const BookPage = () => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (token) {
       try {
         const decoded = jwtDecode(token);
@@ -256,7 +256,7 @@ const BookPage = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const currentTotalSeconds = getCurrentTotalSeconds();
 
       // Calculate incremental time since last sync
@@ -275,9 +275,10 @@ const BookPage = () => {
           {
             method: "PUT",
             headers: {
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
               "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify({}),
           }
         );
@@ -311,14 +312,14 @@ const BookPage = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       console.log(
         `Loading reading time for user ${userId}, book ${book.bookID}`
       );
 
       const response = await fetch(
         getApiUrl(`api/progress/book/${userId}/${book.bookID}`),
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
       );
 
       if (response.ok) {
@@ -378,13 +379,13 @@ const BookPage = () => {
           // If no page param, check for user's last read page
           const storedUserId = localStorage.getItem("userId");
           if (storedUserId && bookData?.bookID) {
-            const token = localStorage.getItem("token");
+            const token = getAccessToken();
             try {
               const progressRes = await fetch(
                 getApiUrl(
                   `api/progress/book/${storedUserId}/${bookData.bookID}`
                 ),
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
               );
               const progressData = await progressRes.json();
 
@@ -456,8 +457,7 @@ const BookPage = () => {
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     if (!storedUserId || !book?.bookID || !pages.length) return;
-
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
 
     console.log(
       `Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`
@@ -466,7 +466,8 @@ const BookPage = () => {
     // First try to get existing progress
     axios
       .get(getApiUrl(`api/progress/book/${storedUserId}/${book.bookID}`), {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       })
       .then((res) => {
         if (res.data?.id) {
@@ -494,7 +495,7 @@ const BookPage = () => {
             .post(
               getApiUrl(`api/progress/start/${storedUserId}/${book.bookID}`),
               {},
-              { headers: { Authorization: `Bearer ${token}` } }
+              { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
             )
             .then((res) => {
               if (res.data?.id) {
@@ -541,14 +542,14 @@ const BookPage = () => {
     if (currentPageIndex < pages.length - 1) {
       setIsPageTransitioning(true);
 
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const userId = localStorage.getItem("userId"); // or your userId state
 
       try {
         // 1) Load the checkpoint metadata for this book
         const checkpointRes = await fetch(
           getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
         );
 
         // Handle 404 response (no checkpoint found)
@@ -588,7 +589,7 @@ const BookPage = () => {
               `api/prediction-checkpoint-attempts/user/${userId}` +
                 `/checkpoint/${checkpointId}/count`
             ),
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
           );
           console.log("Attempt count response status:", attemptRes.status);
 

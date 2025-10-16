@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import axios from "axios";
+import { setAccessToken } from "../../api/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { getApiBaseUrl } from "../../utils/apiConfig";
 
@@ -28,15 +29,14 @@ export default function AuthCallback() {
         return;
       }
 
-      // Persist token + set global default for any other axios usage in the app
-      try { localStorage.setItem("token", token); } catch {}
+      // Set in-memory access token (no localStorage)
+      setAccessToken(token);
       axios.defaults.headers.common.Authorization = `Bearer ${token}`;
 
       // Use a dedicated axios instance for the calls here (also adds baseURL)
       const api = axios.create({ baseURL: BASE, withCredentials: true });
       api.interceptors.request.use((config) => {
-        const t = localStorage.getItem("token");
-        if (t) config.headers.Authorization = `Bearer ${t}`;
+        // axios.defaults Authorization already set above for this session
         return config;
       });
 

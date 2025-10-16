@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { setAccessToken } from "../api/api";
 
 const AuthContext = createContext();
 
@@ -11,30 +12,18 @@ export const AuthProvider = ({ children }) => {
   const login = ({ token, role, userId, email }) => {
     const userData = { token, role, userId, email };
     setUser(userData);
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-    localStorage.setItem("userId", userId);
-    localStorage.setItem("email", email);
+    setAccessToken(token);
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("email");
+    setAccessToken(null);
     navigate("/login");
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    const userId = localStorage.getItem("userId");
-    const email = localStorage.getItem("email");
-
-    if (token && role && userId && email) {
-      setUser({ token, role, userId, email });
-    }
+    // On initial load we don't hydrate from localStorage anymore.
+    // If needed, you can call /api/auth/refresh here to get a fresh access token.
     setLoading(false); // Mark auth check as complete
   }, []);
 

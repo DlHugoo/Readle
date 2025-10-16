@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getAccessToken } from '../../api/api';
 import StudentNavbar from '../../components/StudentNavbar';
 import { jwtDecode } from 'jwt-decode';
 
@@ -19,7 +20,7 @@ const StudentBadgeDashboard = () => {
 
   // Get user ID from token
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (token) {
       try {
         const decoded = jwtDecode(token);
@@ -67,13 +68,10 @@ const StudentBadgeDashboard = () => {
       console.log("Fetching badges for userId:", userId);
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
+        const token = getAccessToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
-        const axiosOptions = { 
-          headers, 
-          timeout: 10000 // 10 seconds timeout
-        };
+        const axiosOptions = { headers, withCredentials: true, timeout: 10000 };
         
         // First, refresh all badge progress to ensure we have the latest data
         try {
@@ -160,8 +158,8 @@ const StudentBadgeDashboard = () => {
       // Trigger a silent refresh
       const refreshBadges = async () => {
         try {
-          const token = localStorage.getItem("token");
-          const headers = { Authorization: `Bearer ${token}` };
+          const token = getAccessToken();
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
           
           // Refresh badge progress
           await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, { headers });
@@ -212,17 +210,17 @@ const StudentBadgeDashboard = () => {
     
     setRefreshing(true);
     try {
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
+      const token = getAccessToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
       // Refresh badge progress
-      await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, { headers });
+      await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, { headers, withCredentials: true });
       
       // Fetch updated badge data
       const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, { headers }),
-        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, { headers }),
-        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, { headers })
+        axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, { headers, withCredentials: true }),
+        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, { headers, withCredentials: true }),
+        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, { headers, withCredentials: true })
       ]);
       
       const userBadges = userBadgesRes.data || [];

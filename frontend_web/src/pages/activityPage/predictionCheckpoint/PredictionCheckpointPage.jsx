@@ -13,6 +13,7 @@ import Slot from "../storySequencingPage/Slot";
 import ImageCard from "../storySequencingPage/ImageCard";
 import sequenceBg from "../../../assets/sequence-bg1.png";
 import { getImageUrl } from "../../../utils/apiConfig";
+import { getAccessToken } from "../../../api/api";
 
 const PredictionCheckpointPage = () => {
   const { bookId } = useParams();
@@ -40,13 +41,14 @@ const PredictionCheckpointPage = () => {
   useEffect(() => {
     const fetchPredictionData = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
         const res = await fetch(
           `/api/prediction-checkpoints/by-book/${bookId}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
+            credentials: "include",
           }
         );
         
@@ -142,7 +144,7 @@ const PredictionCheckpointPage = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const userId = localStorage.getItem("userId");
 
       // Check if the prediction is correct first
@@ -151,9 +153,10 @@ const PredictionCheckpointPage = () => {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             'Content-Type': 'application/json'
           },
+          credentials: "include",
           body: JSON.stringify({
             selectedImageId: predictionSlot.id,
             userId: userId,
@@ -169,9 +172,10 @@ const PredictionCheckpointPage = () => {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             'Content-Type': 'application/json'
           },
+          credentials: "include",
           body: JSON.stringify({})
         }
       );

@@ -28,6 +28,7 @@ import {
   Trash2
 } from "lucide-react";
 import axios from "axios";
+import { getAccessToken } from "../../../api/api";
 import { getApiUrl, getImageUrl } from "../../../utils/apiConfig";
 import TeacherNav from "../../../components/TeacherNav";
 
@@ -102,10 +103,11 @@ const CreatePredictionCheckpoint = () => {
   useEffect(() => {
     if (selectedBookId) {
       // Fetch existing prediction checkpoint
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       setLoading(true);
       fetch(`/api/prediction-checkpoints/by-book/${selectedBookId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
       })
         .then(res => res.json())
         .then((data) => {
@@ -182,7 +184,7 @@ const CreatePredictionCheckpoint = () => {
       
       // Always fetch pages when selectedBookId is available, regardless of books array
       axios
-        .get(`/api/pages/${selectedBookId}`)
+        .get(`/api/pages/${selectedBookId}`, { withCredentials: true })
         .then((response) => {
           setBookPageCount(response.data.length || 0);
         })
@@ -279,7 +281,7 @@ const CreatePredictionCheckpoint = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
 
       // Upload all images first
       const uploadImage = async (file) => {
@@ -304,8 +306,9 @@ const CreatePredictionCheckpoint = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
+            credentials: "include",
             body: JSON.stringify(requestData)
           }
         );
@@ -345,9 +348,8 @@ const CreatePredictionCheckpoint = () => {
           })),
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         }
       );
 
@@ -399,7 +401,7 @@ const CreatePredictionCheckpoint = () => {
   
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const storyPayload = storyImages.map((img, idx) => ({
         id: img.originalId,
         position: idx + 1,
@@ -412,7 +414,7 @@ const CreatePredictionCheckpoint = () => {
       await axios.put(
         `/api/prediction-checkpoints/update-positions/${existingCheckpoint.id}`,
         { storyImages: storyPayload, optionImages: optionPayload },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
       );
   
       setOriginalStoryImages([...storyImages]);

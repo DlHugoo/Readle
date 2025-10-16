@@ -4,6 +4,7 @@ import TeahcerNav from '../../components/TeacherNav';
 import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check, Sparkles, Star, Heart, Zap, GraduationCap, Users, Edit, Trash2, Archive, MoreVertical, X } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from 'axios'; // Import axios
+import { getAccessToken } from '../../api/api';
 import { getImageUrl } from "../../utils/apiConfig";
 
 const ClassroomContentManager = () => {
@@ -52,7 +53,7 @@ const ClassroomContentManager = () => {
   useEffect(() => {
     const fetchClassroomDetails = async () => {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       console.log("Fetching details for classroomId:", classroomId);
       console.log("Token:", token);
 
@@ -64,9 +65,8 @@ const ClassroomContentManager = () => {
 
       try {
         const response = await axios.get(`/api/classrooms/${classroomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
 
         console.log("Classroom details fetched successfully:", response.data);
@@ -91,9 +91,10 @@ const ClassroomContentManager = () => {
   // Fetch only active (non-archived) books for the classroom
   const fetchActiveBooks = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       const res = await axios.get(`/api/classrooms/${classroomId}/books`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       const books = Array.isArray(res.data) ? res.data : [];
       setClassroomContent(books.filter((b) => !isArchived(b)));
@@ -183,7 +184,7 @@ const ClassroomContentManager = () => {
   const uploadImage = async (file) => {
   if (!file) return null;
 
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
 
   try {
     console.log("=== FRONTEND UPLOAD DEBUG START ===");
@@ -225,8 +226,9 @@ const ClassroomContentManager = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      credentials: "include",
       body: JSON.stringify(requestData)
     });
     
@@ -263,7 +265,7 @@ const ClassroomContentManager = () => {
 };
 
   const handleAddBook = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (!token) {
       showAlertModal("error", "You must be logged in to add a book.");
       return;
@@ -313,10 +315,8 @@ const ClassroomContentManager = () => {
       };
 
       const response = await axios.post("/api/books", newBook, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" },
+        withCredentials: true,
       });
 
       showAlertModal("success", "Book added successfully!");
@@ -355,9 +355,10 @@ const ClassroomContentManager = () => {
 
   const checkIfBookCanBeDeleted = async (bookId) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const res = await axios.get(`/api/books/${bookId}/can-delete`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       if (res.data === true) {
         setShowDeleteModal(true);
@@ -371,7 +372,7 @@ const ClassroomContentManager = () => {
   };
 
   const confirmDeleteBook = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (!token) {
       showAlertModal("error", "You must be logged in to delete a book.");
       return;
@@ -380,9 +381,8 @@ const ClassroomContentManager = () => {
     try {
       // First attempt to delete the book
       await axios.delete(`/api/books/${selectedBook.bookID}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
 
       showAlertModal("success", "Book deleted successfully!");
@@ -403,14 +403,15 @@ const ClassroomContentManager = () => {
   };
 
   const confirmArchiveBook = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (!token) {
       showAlertModal("error", "You must be logged in to archive a book.");
       return;
     }
     try {
       await axios.put(`/api/books/${selectedBook.bookID}/archive`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       showAlertModal("success", "Book archived successfully!");
       // Refresh active books to ensure archived items are excluded
@@ -423,7 +424,7 @@ const ClassroomContentManager = () => {
   };
 
   const submitEditBook = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     if (!token) {
       showAlertModal("error", "You must be logged in to edit a book.");
       return;
@@ -453,10 +454,8 @@ const ClassroomContentManager = () => {
       };
 
       const response = await axios.put(`/api/books/${selectedBook.bookID}`, updatedBook, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" },
+        withCredentials: true,
       });
 
       showAlertModal("success", "Book updated successfully!");
