@@ -1,88 +1,48 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiClient } from "../api/api";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Track initial auth check
   const navigate = useNavigate();
 
-  // ✅ On mount, check if we have a valid session via HTTPOnly cookie
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // ✅ This will send the HTTPOnly cookie automatically
-        const response = await apiClient.get("/api/auth/me");
-        if (response.data) {
-          setUser({
-            userId: response.data.id,
-            email: response.data.email,
-            role: response.data.role,
-            firstName: response.data.firstName,
-            lastName: response.data.lastName,
-          });
-        }
-      } catch (error) {
-        console.log("Not authenticated:", error.message);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const login = ({ token, role, userId, email }) => {
+    const userData = { token, role, userId, email };
+    setUser(userData);
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("email", email);
+  };
 
-    checkAuth();
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("email");
+    navigate("/login");
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    const email = localStorage.getItem("email");
+
+    if (token && role && userId && email) {
+      setUser({ token, role, userId, email });
+    }
+    setLoading(false); // Mark auth check as complete
   }, []);
 
-  const login = async ({ email, password }) => {
-    try {
-      // ✅ Backend will set HTTPOnly cookie
-      const response = await apiClient.post("/api/auth/login", {
-        email,
-        password,
-      });
-
-      // ✅ Store only non-sensitive data in memory
-      setUser({
-        userId: response.data.userId,
-        email: response.data.email,
-        role: response.data.role,
-      });
-
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      // ✅ Call backend to clear cookie
-      await apiClient.post("/api/auth/logout");
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setUser(null);
-      navigate("/login");
-    }
-  };
-
-  const value = {
-    user,
-    loading,
-    login,
-    logout,
-    isAuthenticated: !!user,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);

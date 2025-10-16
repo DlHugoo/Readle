@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -120,13 +121,12 @@ public class SecurityConfig {
             @Value("${app.url:http://localhost:5173}") String appUrl
     ) {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowCredentials(true); // ✅ Required for HTTPOnly cookies
+        c.setAllowCredentials(true);
         // allow both localhost and 127.0.0.1 during dev
         c.setAllowedOrigins(List.of(appUrl, "http://localhost:5173", "http://127.0.0.1:5173", "https://readle-pi.vercel.app"));
         c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
         c.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","Origin","X-Requested-With"));
-        // ✅ Expose Set-Cookie header so frontend can see it (for debugging)
-        c.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
+        c.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
         s.registerCorsConfiguration("/**", c);
