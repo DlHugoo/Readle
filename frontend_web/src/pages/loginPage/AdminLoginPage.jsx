@@ -1,10 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login as apiLogin } from "../../api/api";
+import { useAuth } from "../../contexts/AuthContext";
 import mascot from "../../assets/mascot.png";
 
 const AdminLoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login: authLogin } = useAuth(); // ✅ Get login from context
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,30 +37,43 @@ const AdminLoginPage = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    setIsLoading(true);
+    setErrorMessage("");
+
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const data = await apiLogin({
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data.role !== "ADMIN") {
-          setErrorMessage("Only admins can log in here.");
-          return;
-        }
-
-        // access token is now managed in-memory via axios instance; no localStorage
-
-        window.location.href = "/admin-dashboard";
-      } else {
-        setErrorMessage(data.message || "Incorrect email or password.");
+      // Check if admin role
+      if (data.role !== "ADMIN") {
+        setErrorMessage("Only admins can log in here.");
+        setIsLoading(false);
+        return;
       }
+
+      // ✅ Set user in AuthContext (critical for ProtectedRoute!)
+      authLogin({
+        token: data.token,
+        role: data.role,
+        userId: data.userId,
+        email: formData.email,
+      });
+
+      // ✅ Use setTimeout to ensure state update completes before navigation
+      setTimeout(() => {
+        navigate("/admin-dashboard");
+      }, 0);
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMessage("Server error. Please try again.");
+      const msg = error?.response?.data?.message || error?.message;
+      if (msg && /not\s*verified|verify\s*your\s*email/i.test(msg)) {
+        setErrorMessage("Please verify your email first.");
+      } else {
+        setErrorMessage("Incorrect email or password. Please try again.");
+      }
+      setIsLoading(false);
     }
   };
 
@@ -82,6 +101,7 @@ const AdminLoginPage = () => {
               onChange={handleChange}
               className="w-full px-4 py-3 mb-4 rounded-lg border border-gray-300"
               required
+              disabled={isLoading}
             />
 
             <div className="mb-6 relative">
@@ -93,12 +113,14 @@ const AdminLoginPage = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300"
                 required
+                disabled={isLoading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                disabled={isLoading}
               >
                 {showPassword ? (
                   <svg
@@ -141,9 +163,10 @@ const AdminLoginPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-4 rounded-lg transition duration-300"
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={isLoading}
             >
-              Log In
+              {isLoading ? "Logging in..." : "Log In"}
             </button>
 
             {errorMessage && (
