@@ -6,7 +6,9 @@ import axios from "axios";
 // For local dev: set VITE_API_BASE_URL=http://localhost:3000
 const BASE = import.meta.env.VITE_API_BASE_URL || "";
 
-// ---- token helpers ----
+// ---- token helpers (DEPRECATED - kept for backward compatibility) ----
+// ⚠️ These are no longer used with HTTPOnly cookies
+// Token is now managed automatically by the browser
 export const getToken = () => localStorage.getItem("token");
 export const setToken = (t) => {
   if (t) localStorage.setItem("token", t);
@@ -16,16 +18,12 @@ export const setToken = (t) => {
 // Single axios client for the app
 export const apiClient = axios.create({
   baseURL: BASE || undefined,
-  withCredentials: false, // not using cookies
+  withCredentials: true, // ✅ IMPORTANT: Send HTTPOnly cookies automatically
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT from localStorage on every request
-apiClient.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// ✅ Token is now sent automatically via HTTPOnly cookie
+// No need for manual Authorization header management
 
 // Auto-logout on 401 (expired/invalid token)
 apiClient.interceptors.response.use(
@@ -65,11 +63,19 @@ export const resendOtp = async ({ email }) => {
 
 export const login = async ({ email, password }) => {
   const { data } = await apiClient.post("/api/auth/login", { email, password });
-  if (data?.token) setToken(data.token);
-  return data; // { token, role, userId }
+  // ✅ Backend sets HTTPOnly cookie automatically
+  // ✅ Response now contains: { userId, role, email, message }
+  return data;
 };
 
-export const logout = () => setToken(null);
+export const logout = async () => {
+  // ✅ Call backend to clear HTTPOnly cookie
+  try {
+    await apiClient.post("/api/auth/logout");
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
+};
 
 // Who am I? (useful for role-based redirect)
 export const getMe = async () => {

@@ -9,23 +9,21 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // ✅ On mount, check if we have a valid session via HTTPOnly cookie
+  // On mount, check if we have a valid session (via HTTPOnly cookie)
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // ✅ This will send the HTTPOnly cookie automatically
+        // This will send the HTTPOnly cookie automatically
         const response = await apiClient.get("/api/auth/me");
         if (response.data) {
           setUser({
             userId: response.data.id,
             email: response.data.email,
             role: response.data.role,
-            firstName: response.data.firstName,
-            lastName: response.data.lastName,
           });
         }
       } catch (error) {
-        console.log("Not authenticated:", error.message);
+        console.log("Not authenticated");
         setUser(null);
       } finally {
         setLoading(false);
@@ -37,13 +35,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async ({ email, password }) => {
     try {
-      // ✅ Backend will set HTTPOnly cookie
+      // Backend will set HTTPOnly cookie
       const response = await apiClient.post("/api/auth/login", {
         email,
         password,
       });
 
-      // ✅ Store only non-sensitive data in memory
+      // Store only non-sensitive data in memory
       setUser({
         userId: response.data.userId,
         email: response.data.email,
@@ -58,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // ✅ Call backend to clear cookie
+      // Call backend to clear cookie
       await apiClient.post("/api/auth/logout");
     } catch (error) {
       console.error("Logout error:", error);
@@ -86,3 +84,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+
