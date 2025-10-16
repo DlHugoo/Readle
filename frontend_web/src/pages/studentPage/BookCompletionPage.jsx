@@ -12,10 +12,8 @@ import {
   BookOpen,
   ArrowLeft,
   AlertCircle,
-  Clock,
-  FileText,
-  Award,
 } from "lucide-react";
+import motivationalQuotes from "../../data/motivationalQuotes.json";
 
 const getImageURL = (url) => {
   if (url?.startsWith("/uploads")) {
@@ -34,6 +32,10 @@ const BookCompletionPage = () => {
   const [hasSnakeGame, setHasSnakeGame] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completionError, setCompletionError] = useState(null);
+  const [randomQuote] = useState(
+    () =>
+      motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
+  );
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -269,32 +271,6 @@ const BookCompletionPage = () => {
           <span className="font-bold text-green-700">{book.title}</span>
         </motion.p>
 
-        {/* Reading Statistics Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="grid grid-cols-3 gap-4 w-full max-w-lg mb-8"
-        >
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-            <FileText size={32} className="text-blue-600 mx-auto mb-2" />
-            <div className="text-3xl font-bold text-blue-600">
-              {book.pageCount || "—"}
-            </div>
-            <div className="text-xs text-gray-600">Pages</div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-            <Clock size={32} className="text-green-600 mx-auto mb-2" />
-            <div className="text-3xl font-bold text-green-600">✓</div>
-            <div className="text-xs text-gray-600">Complete</div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-            <Award size={32} className="text-purple-600 mx-auto mb-2" />
-            <div className="text-3xl font-bold text-purple-600">🏆</div>
-            <div className="text-xs text-gray-600">Achievement</div>
-          </div>
-        </motion.div>
-
         {/* Book Cover with Enhanced Display */}
         {book.imageURL && (
           <motion.div
@@ -323,9 +299,9 @@ const BookCompletionPage = () => {
           className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-8 max-w-lg shadow-md"
         >
           <p className="text-blue-800 italic font-medium">
-            "Reading is to the mind what exercise is to the body."
+            "{randomQuote.quote}"
           </p>
-          <p className="text-blue-600 text-sm mt-1">— Joseph Addison</p>
+          <p className="text-blue-600 text-sm mt-1">— {randomQuote.author}</p>
         </motion.div>
 
         {/* Activities Section */}
