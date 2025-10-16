@@ -17,12 +17,12 @@ const StoryProgressIndicator = ({
     const isActive =
       index < Math.ceil((currentPage / totalPages) * maxIndicators);
 
-    // Determine if this is the last indicator and we're on the last page
+    // Determine if this is the last indicator - always show crown
     const isLastPage = currentPage === totalPages;
     const isLastIndicator = index === maxIndicators - 1;
-    const showCrown = isLastIndicator && isLastPage;
+    const showCrown = isLastIndicator; // Always show crown on last indicator
 
-    return { isActive, showCrown };
+    return { isActive, showCrown, isLastPage };
   });
 
   const getThemeClasses = () => {
@@ -51,9 +51,9 @@ const StoryProgressIndicator = ({
       default:
         return {
           container: "bg-blue-100/50 border-blue-200",
-          progress: "bg-gradient-to-r from-blue-400 to-purple-500",
+          progress: "bg-gradient-to-r from-blue-400 to-blue-500",
           indicator: "text-blue-600",
-          active: "text-blue-700",
+          active: "text-yellow-500",
         };
     }
   };
@@ -108,7 +108,7 @@ const StoryProgressIndicator = ({
               {indicator.showCrown ? (
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
+                  animate={{ scale: indicator.isActive ? 1.2 : 0.8, rotate: 0 }}
                   transition={{
                     type: "spring",
                     stiffness: 300,
@@ -116,9 +116,19 @@ const StoryProgressIndicator = ({
                     delay: 0.5,
                   }}
                   className="text-2xl"
-                  title="Story Completed! 🎉"
+                  title={
+                    indicator.isLastPage
+                      ? "Story Completed! 🎉"
+                      : "Complete the story"
+                  }
                 >
-                  <Crown className="w-6 h-6 text-yellow-500" />
+                  <Crown
+                    className={`w-6 h-6 transition-colors duration-300 ${
+                      indicator.isActive
+                        ? "text-yellow-500"
+                        : themeClasses.indicator
+                    }`}
+                  />
                 </motion.div>
               ) : (
                 <motion.div
