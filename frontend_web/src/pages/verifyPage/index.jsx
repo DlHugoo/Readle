@@ -10,7 +10,7 @@ export default function VerifyEmailPage() {
   const nav = useNavigate();
   const [params] = useSearchParams();
 
-  const stored = localStorage.getItem("pendingEmail") || "";
+  const stored = sessionStorage.getItem("pendingEmail") || "";
   const initialEmail = params.get("email") || stored;
 
   // read-only email (no input)

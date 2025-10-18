@@ -6,11 +6,14 @@ import ClassroomSidebar from "../../components/ClassroomSidebar";
 import StudentProgressModal from './StudentProgressModal';
 import axios from "axios";
 import { getApiBaseUrl } from "../../utils/apiConfig";
+import { useAuth } from "../../contexts/AuthContext";
+import { getAccessToken } from "../../api/api";
 
 const API_BASE_URL = getApiBaseUrl();
 
 const ClassroomStudents = () => {
   const { classroomId } = useParams();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true); // Always open by default
   const [classroomName, setClassroomName] = useState("");
   const [classroomCode, setClassroomCode] = useState(""); // Add state for classroom code
@@ -71,7 +74,7 @@ const ClassroomStudents = () => {
   // Fetch classroom details and students
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       
       if (!token) {
         console.error("No token found. Please log in.");
@@ -176,7 +179,7 @@ const ClassroomStudents = () => {
       return;
     }
     
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (!token) {
       setProgressError("Authentication required. Please log in.");
       setProgressLoading(false);
@@ -354,7 +357,7 @@ const ClassroomStudents = () => {
     setAddStudentError(null);
     setAddStudentSuccess(null);
     
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (!token) {
       setAddStudentError("Authentication required. Please log in.");
       setAddingStudent(false);
@@ -486,7 +489,7 @@ const ClassroomStudents = () => {
     
     setRemovingStudent(true);
     
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (!token) {
       setError("Authentication required. Please log in.");
       setRemovingStudent(false);

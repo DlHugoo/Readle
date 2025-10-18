@@ -9,6 +9,7 @@ import SnakeLeft from "../../assets/snake/snakeleft.png";
 import SnakeRight from "../../assets/snake/snakeright.png";
 import Confetti from "react-confetti";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const gridSize = 10;
 const cellSize = 50;
@@ -24,6 +25,7 @@ const directions = {
 const SnakeGame = () => {
   const navigate = useNavigate();
   const { bookId } = useParams();
+  const { user } = useAuth();
   const [snake, setSnake] = useState(initialSnake);
   const [dir, setDir] = useState(directions.ArrowRight);
   const [currentDirection, setCurrentDirection] = useState("ArrowRight");
@@ -44,20 +46,19 @@ const SnakeGame = () => {
   const [trackerId, setTrackerId] = useState(null);
 
   const gridContainerSize = gridSize * cellSize + (gridSize - 1) * gapSize;
-  const userId = localStorage.getItem("userId");
 
   // Fetch trackerId for this user/book
   useEffect(() => {
     const token = getAccessToken();
-    if (userId && bookId && token) {
-      axios.get(`/api/progress/book/${userId}/${bookId}`, {
+    if (user?.userId && bookId && token) {
+      axios.get(`/api/progress/book/${user.userId}/${bookId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         withCredentials: true,
       })
       .then(res => setTrackerId(res.data.id))
       .catch(err => console.error("Failed to fetch trackerId:", err));
     }
-  }, [userId, bookId]);
+  }, [user?.userId, bookId]);
 
   const fetchPages = async () => {
     try {
@@ -71,7 +72,7 @@ const SnakeGame = () => {
 
   const fetchAttemptCount = async () => {
     try {
-      const res = await fetch(`/api/snake-attempts/user/${userId}/book/${bookId}/count`, { credentials: "include" });
+      const res = await fetch(`/api/snake-attempts/user/${user.userId}/book/${bookId}/count`, { credentials: "include" });
       const data = await res.json();
       setAttemptCount(data);
     } catch (err) {
@@ -80,10 +81,10 @@ const SnakeGame = () => {
   };
 
   useEffect(() => {
-    if (userId && bookId) {
+    if (user?.userId && bookId) {
       fetchAttemptCount();
     }
-  }, [userId, bookId]);
+  }, [user?.userId, bookId]);
 
   useEffect(() => {
     console.log("Received bookId:", bookId);
@@ -183,8 +184,8 @@ const fetchQuestions = async () => {
   }, [bookId]);
 
   const createAttempt = async (finalScore) => {
-    if (!userId) {
-      console.warn("No user ID found in localStorage");
+    if (!user?.userId) {
+      console.warn("No user ID found");
       return;
     }
 
@@ -192,7 +193,7 @@ const fetchQuestions = async () => {
     try {
       await axios.post(`/api/snake-attempts`, null, {
         params: {
-          userId: userId,
+          userId: user.userId,
           bookId: bookId,
           score: finalScore
         }

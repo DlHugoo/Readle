@@ -9,6 +9,7 @@ import FeaturedCarousel from "../../components/FeaturedCarousel";
 import Banner1 from "../../assets/Banner-1.jpg";
 import Banner2 from "../../assets/Banner-2.jpg";
 import Banner3 from "../../assets/Banner-3.jpg";
+import { useAuth } from "../../contexts/AuthContext";
 
 // 📌 Enhanced Error Modal with animation
 const ErrorModal = ({ message, onClose }) => (
@@ -51,13 +52,14 @@ const ErrorModal = ({ message, onClose }) => (
 
 // ✨ Enhanced Join Classroom Modal
 const JoinClassroomModal = ({ onClose }) => {
+  const { user } = useAuth();
   const [classroomCode, setClassroomCode] = useState("");
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleJoin = async () => {
     const token = getAccessToken();
-    const studentId = localStorage.getItem("userId");
+    const studentId = user?.userId;
 
     if (!classroomCode.trim()) {
       setError("Please enter a valid classroom code.");
@@ -76,7 +78,7 @@ const JoinClassroomModal = ({ onClose }) => {
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem("hasSeenJoinPrompt", "true");
+        sessionStorage.setItem("hasSeenJoinPrompt", "true");
         window.location.reload();
       } else {
         setError(data?.error || "Failed to join classroom.");
@@ -219,6 +221,7 @@ const JoinClassroomModal = ({ onClose }) => {
 };
 
 const StudentLibraryPage = () => {
+  const { user } = useAuth();
   const [books, setBooks] = useState([]);
   const [inProgressBooks, setInProgressBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -262,7 +265,7 @@ const StudentLibraryPage = () => {
     };
 
     // Show modal only once per first-time user
-    const hasSeenPrompt = localStorage.getItem("hasSeenJoinPrompt");
+    const hasSeenPrompt = sessionStorage.getItem("hasSeenJoinPrompt");
     if (!hasSeenPrompt) {
       setShowJoinModal(true);
     }
@@ -274,7 +277,7 @@ const StudentLibraryPage = () => {
     const fetchInProgressBooks = async () => {
       try {
         const token = getAccessToken();
-        const userId = localStorage.getItem("userId");
+        const userId = user?.userId;
 
         if (!token || !userId) {
           setInProgressLoading(false);
@@ -297,7 +300,7 @@ const StudentLibraryPage = () => {
     };
 
     fetchInProgressBooks();
-  }, []);
+  }, [user?.userId]);
 
   const renderSkeletonCard = () => (
     <div className="animate-pulse">
@@ -435,7 +438,7 @@ const StudentLibraryPage = () => {
       {showJoinModal && (
         <JoinClassroomModal
           onClose={() => {
-            localStorage.setItem("hasSeenJoinPrompt", "true");
+            sessionStorage.setItem("hasSeenJoinPrompt", "true");
             setShowJoinModal(false);
           }}
         />

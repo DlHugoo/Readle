@@ -14,10 +14,12 @@ import ImageCard from "../storySequencingPage/ImageCard";
 import sequenceBg from "../../../assets/sequence-bg1.png";
 import { getImageUrl } from "../../../utils/apiConfig";
 import { getAccessToken } from "../../../api/api";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const PredictionCheckpointPage = () => {
   const { bookId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Add sensors configuration
   const sensors = useSensors(
@@ -145,7 +147,7 @@ const PredictionCheckpointPage = () => {
 
     try {
       const token = getAccessToken();
-      const userId = localStorage.getItem("userId");
+      const userId = user?.userId;
 
       // Check if the prediction is correct first
       const response = await fetch(

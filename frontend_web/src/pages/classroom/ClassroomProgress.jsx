@@ -6,12 +6,15 @@ import ClassroomSidebar from "../../components/ClassroomSidebar";
 import StudentDetailsModal from './StudentDetailsModal';
 import axios from "axios";
 import { getApiBaseUrl } from "../../utils/apiConfig";
+import { useAuth } from "../../contexts/AuthContext";
+import { getAccessToken } from "../../api/api";
 
 const API_BASE_URL = getApiBaseUrl();
 
 const ClassroomProgress = () => {
   const { classroomId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true); // Always open by default
   const [classroomName, setClassroomName] = useState("");
   const [students, setStudents] = useState([]);
@@ -91,7 +94,7 @@ const ClassroomProgress = () => {
   // Fetch classroom details and students
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       
       if (!token) {
         setError("Authentication required. Please log in.");
@@ -470,7 +473,7 @@ const [classroomBooks, setClassroomBooks] = useState([]);
 // Add this function to fetch classroom books
 const fetchClassroomBooks = async () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     const response = await axios.get(`${API_BASE_URL}/api/classrooms/${classroomId}/books`, {
       headers: { Authorization: `Bearer ${token}` }
     });

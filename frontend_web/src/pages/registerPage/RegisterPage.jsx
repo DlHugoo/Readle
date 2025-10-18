@@ -11,7 +11,7 @@ const RegisterPage = () => {
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
     // store for the signup page (and backend payload)
-    localStorage.setItem("userRole", role);
+    sessionStorage.setItem("userRole", role);
     // show the form after a tiny delay (nice UX)
     setTimeout(() => setShowSignup(true), 300);
   };

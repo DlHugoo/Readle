@@ -8,10 +8,12 @@ import FeedbackModal from "./FeedbackModal";
 import sequenceBg from "../../../assets/sequence-bg2.png";
 import { getImageUrl } from "../../../utils/apiConfig";
 import { getAccessToken } from "../../../api/api";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const StorySequencingPage = () => {
   const { bookId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [storyData, setStoryData] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -21,29 +23,26 @@ const StorySequencingPage = () => {
   const [resetCounter, setResetCounter] = useState(0);
   const [trackerId, setTrackerId] = useState(null);
   const [modal, setModal] = useState({ open: false, message: "", type: "" });
-  const userId = localStorage.getItem("userId");
 
   // Fetch trackerId for this user/book
   useEffect(() => {
     const token = getAccessToken();
-    if (userId && bookId && token) {
+    if (user?.userId && bookId && token) {
       axios
-        .get(`/api/progress/book/${userId}/${bookId}`, {
+        .get(`/api/progress/book/${user.userId}/${bookId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setTrackerId(res.data.id))
         .catch((err) => console.error("Failed to fetch trackerId:", err));
     }
-  }, [userId, bookId]);
+  }, [user?.userId, bookId]);
 
   useEffect(() => {
     const fetchSSA = async () => {
       try {
         const token = getAccessToken();
-        const role = localStorage.getItem("role");
-        const userId = localStorage.getItem("userId");
 
-        if (!token || !userId) {
+        if (!token || !user?.userId) {
           setModal({
             open: true,
             message: "Please log in to access this activity.",
@@ -53,7 +52,7 @@ const StorySequencingPage = () => {
           return;
         }
 
-        if (role !== "STUDENT") {
+        if (user?.role !== "STUDENT") {
           setModal({
             open: true,
             message: "This activity is only accessible to students.",

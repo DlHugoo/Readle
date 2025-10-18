@@ -10,6 +10,7 @@ import BookLoader from "../../components/BookLoader";
 import { jwtDecode } from "jwt-decode";
 import { getAccessToken } from "../../api/api";
 import { getImageUrl, getApiUrl } from "../../utils/apiConfig";
+import { useAuth } from "../../contexts/AuthContext";
 import confetti from "canvas-confetti";
 import {
   Maximize2,
@@ -32,6 +33,7 @@ const getImageURL = getImageUrl;
 
 const BookPage = () => {
   const { bookId } = useParams();
+  const { user } = useAuth();
   const [book, setBook] = useState(null);
   const [pages, setPages] = useState([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -380,13 +382,12 @@ const BookPage = () => {
           setCurrentPageIndex(initialPage);
         } else {
           // If no page param, check for user's last read page
-          const storedUserId = localStorage.getItem("userId");
-          if (storedUserId && bookData?.bookID) {
+          if (user?.userId && bookData?.bookID) {
             const token = getAccessToken();
             try {
               const progressRes = await fetch(
                 getApiUrl(
-                  `api/progress/book/${storedUserId}/${bookData.bookID}`
+                  `api/progress/book/${user.userId}/${bookData.bookID}`
                 ),
                 { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
               );
@@ -458,17 +459,16 @@ const BookPage = () => {
   }, [pages.length, currentPageIndex]);
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    if (!storedUserId || !book?.bookID || !pages.length) return;
+    if (!user?.userId || !book?.bookID || !pages.length) return;
     const token = getAccessToken();
 
     console.log(
-      `Checking/creating tracker for User ID: ${storedUserId}, Book ID: ${book.bookID}`
+      `Checking/creating tracker for User ID: ${user.userId}, Book ID: ${book.bookID}`
     );
 
     // First try to get existing progress
     axios
-      .get(getApiUrl(`api/progress/book/${storedUserId}/${book.bookID}`), {
+      .get(getApiUrl(`api/progress/book/${user.userId}/${book.bookID}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         withCredentials: true,
       })
@@ -496,7 +496,7 @@ const BookPage = () => {
           console.log("No existing progress found, creating new tracker");
           axios
             .post(
-              getApiUrl(`api/progress/start/${storedUserId}/${book.bookID}`),
+              getApiUrl(`api/progress/start/${user.userId}/${book.bookID}`),
               {},
               { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
             )
@@ -546,7 +546,7 @@ const BookPage = () => {
       setIsPageTransitioning(true);
 
       const token = getAccessToken();
-      const userId = localStorage.getItem("userId"); // or your userId state
+      const userId = user?.userId;
 
       try {
         // 1) Load the checkpoint metadata for this book
