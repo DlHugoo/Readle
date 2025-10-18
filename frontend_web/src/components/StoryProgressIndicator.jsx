@@ -123,11 +123,19 @@ const StoryProgressIndicator = ({
                   }
                 >
                   <Crown
-                    className={`w-6 h-6 transition-colors duration-300 ${
+                    className={`w-6 h-6 transition-all duration-300 ${
                       indicator.isActive
-                        ? "text-yellow-500"
+                        ? "text-yellow-500 fill-current drop-shadow-lg"
                         : themeClasses.indicator
                     }`}
+                    style={
+                      indicator.isActive
+                        ? {
+                            filter:
+                              "drop-shadow(0 0 8px rgba(234, 179, 8, 0.6))",
+                          }
+                        : {}
+                    }
                   />
                 </motion.div>
               ) : (
