@@ -10,6 +10,7 @@ import BookLoader from "../../components/BookLoader";
 import { jwtDecode } from "jwt-decode";
 import { getAccessToken } from "../../api/api";
 import { getImageUrl, getApiUrl } from "../../utils/apiConfig";
+import confetti from "canvas-confetti";
 import {
   Maximize2,
   Minimize2,
