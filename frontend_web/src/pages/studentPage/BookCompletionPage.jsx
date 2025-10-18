@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import StudentNavbar from "../../components/StudentNavbar";
 import Confetti from "react-confetti";
 import axios from "axios";
+import { getAccessToken } from "../../api/api";
 import { getImageUrl } from "../../utils/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -25,6 +27,7 @@ const getImageURL = (url) => {
 const BookCompletionPage = () => {
   const { bookId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // ✅ Get user from AuthContext
   const [book, setBook] = useState(null);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [showConfetti, setShowConfetti] = useState(true);
@@ -50,9 +53,9 @@ const BookCompletionPage = () => {
 
     const checkActivities = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
-
+        const token = getAccessToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        
         // Check for SSA
         const ssaRes = await fetch(`/api/ssa/by-book/${bookId}`, { headers });
         if (ssaRes.ok) {
@@ -70,9 +73,9 @@ const BookCompletionPage = () => {
       }
 
       try {
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
-
+        const token = getAccessToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        
         // Check for Snake Game
         const snakeRes = await fetch(`/api/snake-questions/book/${bookId}`, {
           headers,
@@ -86,9 +89,9 @@ const BookCompletionPage = () => {
 
     const completeBook = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const userId = localStorage.getItem("userId");
-        const headers = { Authorization: `Bearer ${token}` };
+        const token = getAccessToken();
+        const userId = user?.userId; // ✅ Get userId from AuthContext
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         if (!userId) {
           setCompletionError("User not found. Please log in again.");
@@ -137,8 +140,10 @@ const BookCompletionPage = () => {
 
     fetchBook();
     checkActivities();
-    completeBook(); // Automatically complete the book when page loads
-  }, [bookId]);
+    if (user) {
+      completeBook(); // Automatically complete the book when page loads
+    }
+  }, [bookId, user]);
 
   useEffect(() => {
     const handleResize = () =>

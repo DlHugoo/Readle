@@ -9,11 +9,12 @@ export const uploadFileAsBase64 = async (file, endpoint = '/api/books/upload-ima
       try {
         const base64Data = reader.result.split(',')[1]; // Remove data:image/jpeg;base64, prefix
         
+        const token = (await import('../api/api')).getAccessToken?.() || null;
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
           body: JSON.stringify({
             file: base64Data,

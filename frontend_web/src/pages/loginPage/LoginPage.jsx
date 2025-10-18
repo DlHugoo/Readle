@@ -49,7 +49,15 @@ const LoginPage = () => {
         email: formData.email,
         password: formData.password,
       });
+      
+      console.log("Login response:", data); // Debug log
+      
       // data = { token, role, userId }
+      if (!data || !data.token) {
+        setErrorMessage("Invalid response from server. Please try again.");
+        setIsLoading(false);
+        return;
+      }
 
       authLogin({
         token: data.token,
@@ -58,25 +66,36 @@ const LoginPage = () => {
         email: formData.email,
       });
 
-      switch (data.role) {
-        case "TEACHER":
-          navigate("/classroom");
-          break;
-        case "ADMIN":
-          navigate("/admin-dashboard");
-          break;
-        default:
-          navigate("/library");
-      }
+      console.log("Navigating to dashboard for role:", data.role); // Debug log
+
+      // ✅ Use setTimeout to ensure state update completes before navigation
+      setTimeout(() => {
+        switch (data.role) {
+          case "TEACHER":
+            navigate("/classroom");
+            break;
+          case "ADMIN":
+            navigate("/admin-dashboard");
+            break;
+          default:
+            navigate("/library");
+        }
+      }, 0);
     } catch (err) {
+      console.error("Login error details:", err); // More detailed logging
+      console.error("Error response:", err?.response?.data); // API error details
+      
       const msg = err && err.message ? String(err.message) : "";
-      if (/not\s*verified|verify\s*your\s*email/i.test(msg)) {
-        localStorage.setItem("pendingEmail", formData.email);
+      const apiError = err?.response?.data?.message || err?.response?.data?.error;
+      
+      if (/not\s*verified|verify\s*your\s*email/i.test(msg) || /not\s*verified|verify\s*your\s*email/i.test(apiError)) {
+        sessionStorage.setItem("pendingEmail", formData.email);
         navigate(`/verify?email=${encodeURIComponent(formData.email)}`);
         return;
       }
-      setErrorMessage("Incorrect email or password. Please try again.");
-      console.error("Login error:", err);
+      
+      // Show the actual error message from the API if available
+      setErrorMessage(apiError || "Incorrect email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }

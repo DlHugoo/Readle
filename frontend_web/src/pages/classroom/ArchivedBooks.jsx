@@ -4,6 +4,7 @@ import TeahcerNav from '../../components/TeacherNav';
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import { Menu, ArrowLeft, RotateCcw, Archive, Sparkles, Star, Heart, Zap } from "lucide-react";
 import axios from "axios";
+import { getAccessToken } from "../../api/api";
 import { getImageUrl } from "../../utils/apiConfig";
 
 const ArchivedBooks = () => {
@@ -19,18 +20,20 @@ const ArchivedBooks = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (!token) { setError('Authentication required.'); setLoading(false); return; }
 
     const fetchAll = async () => {
       try {
         const [cls, res] = await Promise.all([
           axios.get(`/api/classrooms/${classroomId}`, { 
-            headers: { Authorization: `Bearer ${token}` } 
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            withCredentials: true,
           }),
           // Updated endpoint
           axios.get(`/api/books/classroom/${classroomId}/archived`, { 
-            headers: { Authorization: `Bearer ${token}` } 
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            withCredentials: true,
           })
         ]);
         setClassroomName(cls.data.name || 'Classroom');
@@ -52,19 +55,21 @@ const ArchivedBooks = () => {
     
     try {
       setUnarchiving(prev => new Set(prev).add(bookId));
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       if (!token) {
         setError('Authentication required');
         return;
       }
       
       await axios.put(`/api/books/${bookId}/unarchive`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       
       // Refresh the archived books list
       const res = await axios.get(`/api/books/classroom/${classroomId}/archived`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       setBooks(res.data || []);
       setError(null); // Clear any previous errors

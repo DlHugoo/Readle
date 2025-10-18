@@ -28,6 +28,7 @@ import {
 // Add this import at the top if not already present
 import { Link } from "react-router-dom";
 import axios from "axios"; // Import axios
+import { getAccessToken } from "../../api/api";
 import AIImageGenerator from "../../components/AIImageGenerator";
 import { getImageUrl } from "../../utils/apiConfig";
 
@@ -77,13 +78,12 @@ const BookPageEditor = ({ role = "teacher" }) => {
     const fetchBookAndPages = async () => {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessToken();
 
         // Fetch book details
         const bookResponse = await axios.get(`/api/books/${bookId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
 
         const bookData = bookResponse.data;
@@ -91,9 +91,8 @@ const BookPageEditor = ({ role = "teacher" }) => {
 
         // Fetch pages for this book
         const pagesResponse = await axios.get(`/api/pages/${bookId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
 
         const pagesData = pagesResponse.data;
@@ -218,7 +217,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
 
     setIsCreating(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const response = await axios.post(
         `/api/pages/${bookId}`,
         {
@@ -268,16 +267,15 @@ const BookPageEditor = ({ role = "teacher" }) => {
 
     setIsDeleting(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const currentPage = pages[currentPageIndex];
 
       // Use the correct delete endpoint with pageID instead of id
       await axios.delete(
         `/api/pages/${bookId}/page/${currentPage.id || currentPage.pageID}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         }
       );
 
@@ -342,7 +340,7 @@ const BookPageEditor = ({ role = "teacher" }) => {
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const currentPage = pages[currentPageIndex];
 
       // First upload image if there is a new one
@@ -362,8 +360,9 @@ const BookPageEditor = ({ role = "teacher" }) => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
+            credentials: "include",
             body: JSON.stringify({
               file: base64Data,
               filename: pageImage.name,
@@ -402,8 +401,9 @@ const BookPageEditor = ({ role = "teacher" }) => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
+          withCredentials: true,
         }
       );
 

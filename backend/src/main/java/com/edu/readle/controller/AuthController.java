@@ -7,6 +7,9 @@ import com.edu.readle.repository.UserRepository;
 import com.edu.readle.service.AuthService;
 import com.edu.readle.service.BadgeService;
 import com.edu.readle.service.EmailVerificationService;
+import com.edu.readle.security.JwtService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,15 +25,18 @@ public class AuthController {
     private final UserRepository userRepository;
     private final BadgeService badgeService;
     private final EmailVerificationService emailVerificationService;
+    private final JwtService jwtService;
 
     public AuthController(AuthService authService,
                           UserRepository userRepository,
                           BadgeService badgeService,
-                          EmailVerificationService emailVerificationService) {
+                          EmailVerificationService emailVerificationService,
+                          JwtService jwtService) {
         this.authService = authService;
         this.userRepository = userRepository;
         this.badgeService = badgeService;
         this.emailVerificationService = emailVerificationService;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -106,11 +112,51 @@ public class AuthController {
         }
 
         String token = authService.authenticate(request.getEmail(), request.getPassword());
+        String refresh = jwtService.generateRefreshToken(user.getEmail(), user.getId());
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refresh)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/api/auth/refresh")
+                .maxAge(14L * 24L * 60L * 60L)
+                .build();
 
         // Track user login for badge progress (only after successful login)
         badgeService.trackUserLogin(user.getId());
 
-        return ResponseEntity.ok(new AuthResponse(token, user.getRole().name(), user.getId()));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(new AuthResponse(token, user.getRole().name(), user.getId()));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@CookieValue(value = "refresh_token", required = false) String refreshToken) {
+        if (refreshToken == null || !jwtService.isValid(refreshToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or invalid refresh token");
+        }
+
+        String email = jwtService.extractUsername(refreshToken);
+        Long userId = jwtService.extractUserId(refreshToken);
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        String newAccess = jwtService.generateToken(email, userId, user.getRole().name());
+        return ResponseEntity.ok(new AuthResponse(newAccess, user.getRole().name(), user.getId()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        ResponseCookie clear = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/api/auth/refresh")
+                .maxAge(0)
+                .build();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, clear.toString())
+                .build();
     }
 
     /** Simple DTOs for verify/resend to avoid adding new files right now. */

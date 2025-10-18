@@ -13,18 +13,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:uploads/");
     }
 
-    // CORS setup
-@Override
-public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**")
-            .allowedOrigins(
-                "http://localhost:5173",               // local dev
-                "https://readle-pi.vercel.app"       // your Vercel prod domain // 
-            )
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("*")
-            .exposedHeaders("Authorization")
-            .allowCredentials(true);
-}
+    // CORS is now configured in SecurityConfig.corsConfigurationSource
 
 }

@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { getAccessToken } from "../../api/api";
 import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import BadgeManagement from "../../components/BadgeManagement";
 import { getApiUrl, getImageUrl } from "../../utils/apiConfig";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth(); // ✅ Get user and logout from AuthContext
   const [activeTab, setActiveTab] = useState("books"); // "books" or "badges"
   const [books, setBooks] = useState([]);
   const [newBook, setNewBook] = useState({
@@ -45,22 +48,21 @@ const AdminDashboard = () => {
   const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
   useEffect(() => {
-    const role = localStorage.getItem("role");
-    if (role !== "ADMIN") {
-      navigate("/admin-login");
-    } else {
+    // ✅ Use user from AuthContext instead of localStorage
+    // ProtectedRoute already handles auth check, but double-check here
+    if (user && user.role === "ADMIN") {
       if (activeTab === "books") {
         fetchBooks();
       } else if (activeTab === "archived") {
         fetchArchivedBooks();
       }
     }
-  }, [navigate, activeTab]);
+  }, [user, activeTab]);
 
 
   const fetchBooks = async () => {
     try {
-      const response = await axios.get("/api/books/for-you");
+      const response = await axios.get("/api/books/for-you", { withCredentials: true });
       setBooks(response.data);
     } catch (error) {
       console.error("Failed to fetch books", error);
@@ -70,9 +72,10 @@ const AdminDashboard = () => {
 
   const fetchArchivedBooks = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const response = await axios.get("/api/books/archived", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       setArchivedBooks(response.data);  // ✅ update archivedBooks, not books
     } catch (error) {
@@ -140,7 +143,7 @@ const AdminDashboard = () => {
   const uploadImage = async (file) => {
     if (!file) return null;
 
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
 
     try {
       // Convert file to base64
@@ -156,8 +159,9 @@ const AdminDashboard = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: "include",
         body: JSON.stringify({
           file: base64Data,
           filename: file.name,
@@ -201,8 +205,8 @@ const AdminDashboard = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const adminId = localStorage.getItem("userId");
+      const token = getAccessToken();
+      const adminId = user?.userId; // ✅ Get userId from AuthContext
 
       let imageURL = null;
       if (imageFile) {
@@ -222,9 +226,8 @@ const AdminDashboard = () => {
           imageURL,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         }
       );
 
@@ -248,17 +251,19 @@ const AdminDashboard = () => {
   };
 
   const handleArchiveClick = async (book) => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
 
     try {
       if (book.archived) {
         await axios.put(`/api/books/${book.bookID}/unarchive`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
         showAlertModal("success", "Book unarchived successfully!");
       } else {
         await axios.put(`/api/books/${book.bookID}/archive`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
         });
         showAlertModal("success", "Book archived successfully!");
       }
@@ -273,10 +278,11 @@ const AdminDashboard = () => {
 
 
   const confirmDeleteBook = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     try {
       await axios.delete(`/api/books/admin/${selectedBook.bookID}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       setBooks(books.filter((b) => b.bookID !== selectedBook.bookID));
       showAlertModal("success", "Book deleted successfully!");
@@ -306,7 +312,7 @@ const AdminDashboard = () => {
 
   const uploadEditImage = async () => {
     if (!editImageFile) return null;
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     
     // Convert file to base64 (like other upload functions)
     const base64Data = await new Promise((resolve, reject) => {
@@ -327,8 +333,9 @@ const AdminDashboard = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      credentials: "include",
       body: JSON.stringify(requestData)
     });
 
@@ -341,7 +348,7 @@ const AdminDashboard = () => {
   };
 
   const submitEdit = async () => {
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     let imageURL = editFields.imageURL;
 
     if (editImageFile) {
@@ -361,9 +368,8 @@ const AdminDashboard = () => {
 
     try {
       const res = await axios.put(`/api/books/admin/${editingBook.bookID}`, updated, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
 
       setBooks((prev) =>
@@ -397,10 +403,7 @@ const AdminDashboard = () => {
           {/* Logout Button */}
           <button
             onClick={() => {
-              localStorage.removeItem("token");
-              localStorage.removeItem("role");
-              localStorage.removeItem("userId");
-              navigate("/login");
+              logout(); // ✅ Use logout from AuthContext
             }}
             className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition-colors"
           >

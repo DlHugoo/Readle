@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import TeahcerNav from '../../components/TeacherNav';
 import axios from 'axios'; // Import axios
+  import { getAccessToken } from "../../api/api";
 import { PlusCircle, Users, BookOpen, Calendar, Code, Edit, Trash2, AlertCircle, CheckCircle, X, GraduationCap, Sparkles, Heart, Star, Zap, ChevronDown, Info } from 'lucide-react'; // Import icons
 
 const ClassroomManagement = () => {
@@ -37,7 +38,7 @@ const ClassroomManagement = () => {
   // State for expandable description
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
-  const token = localStorage.getItem('token');
+  const token = getAccessToken();
   const navigate = useNavigate(); // Initialize useNavigate
 
   // Function to show notification modal instead of alert

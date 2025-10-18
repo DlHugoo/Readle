@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import axios from 'axios';
+import { getAccessToken } from '../../api/api';
 
 import { getApiBaseUrl } from '../../utils/apiConfig';
 
@@ -36,10 +37,11 @@ const StudentProgressModal = ({
     
     setBadgesLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
+      const token = getAccessToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const axiosOptions = { 
-        headers, 
+        headers,
+        withCredentials: true,
         timeout: 10000 // 10 seconds timeout
       };
 

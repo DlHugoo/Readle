@@ -4,13 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { User, LogOut, ChevronDown, BookOpen } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import { getAccessToken } from "../api/api";
 
 function TeahcerNav() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [teacherName, setTeacherName] = useState('Teacher');
   const dropdownRef = useRef(null);
-  const token = localStorage.getItem('token');
+  const token = getAccessToken();
 
   // Get user email from token
   const getUserEmailFromToken = () => {
@@ -31,9 +32,8 @@ function TeahcerNav() {
 
     try {
       const response = await axios.get(`/api/users/by-email/${encodeURIComponent(userEmail)}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       setTeacherName(response.data.firstName + ' ' + response.data.lastName);
     } catch (error) {
@@ -61,10 +61,8 @@ function TeahcerNav() {
     fetchTeacherName();
   }, [token]);
 
-  const handleLogout = () => {
-    // Clear user token/session
-    localStorage.removeItem('token');
-    // Redirect to login page
+  const handleLogout = async () => {
+    try { await axios.post('/api/auth/logout', {}, { withCredentials: true }); } catch {}
     navigate('/login');
   };
 
