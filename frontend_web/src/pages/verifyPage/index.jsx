@@ -69,7 +69,7 @@ export default function VerifyEmailPage() {
       setIsLoading(true);
       await verifyEmail({ email, code: joined });
       setOk("Email verified! Redirecting to login…");
-      localStorage.removeItem("pendingEmail");
+      sessionStorage.removeItem("pendingEmail");
       setTimeout(() => nav("/login"), 800);
     } catch (err) {
       setError(err?.message || "Invalid or expired code.");

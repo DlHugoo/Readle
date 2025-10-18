@@ -89,7 +89,7 @@ const LoginPage = () => {
       const apiError = err?.response?.data?.message || err?.response?.data?.error;
       
       if (/not\s*verified|verify\s*your\s*email/i.test(msg) || /not\s*verified|verify\s*your\s*email/i.test(apiError)) {
-        localStorage.setItem("pendingEmail", formData.email);
+        sessionStorage.setItem("pendingEmail", formData.email);
         navigate(`/verify?email=${encodeURIComponent(formData.email)}`);
         return;
       }

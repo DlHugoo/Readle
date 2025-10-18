@@ -11,7 +11,8 @@ function LandingPage() {
   const navigate = useNavigate();
 
     useEffect(() => {
-    localStorage.clear(); // Clear local storage on page load
+    // Clear any remaining session storage on page load
+    sessionStorage.clear();
   }, []);
 
   return (
