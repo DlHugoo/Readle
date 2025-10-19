@@ -69,14 +69,47 @@ const LoginPage = () => {
           navigate("/library");
       }
     } catch (err) {
-      const msg = err && err.message ? String(err.message) : "";
-      if (/not\s*verified|verify\s*your\s*email/i.test(msg)) {
-        localStorage.setItem("pendingEmail", formData.email);
-        navigate(`/verify?email=${encodeURIComponent(formData.email)}`);
-        return;
-      }
-      setErrorMessage("Incorrect email or password. Please try again.");
       console.error("Login error:", err);
+
+      // Extract error message from axios response
+      let errorMsg = "An error occurred. Please try again.";
+
+      if (err.response) {
+        // Backend returned an error response
+        const backendMsg =
+          err.response.data?.message || err.response.data?.error || "";
+        const status = err.response.status;
+
+        // Check for email verification requirement
+        if (/not\s*verified|verify\s*your\s*email/i.test(backendMsg)) {
+          localStorage.setItem("pendingEmail", formData.email);
+          navigate(`/verify?email=${encodeURIComponent(formData.email)}`);
+          return;
+        }
+
+        // Handle specific status codes
+        if (status === 401 || status === 403) {
+          errorMsg =
+            backendMsg || "Incorrect email or password. Please try again.";
+        } else if (status === 404) {
+          errorMsg = "User not found. Please check your email or register.";
+        } else if (status === 500) {
+          errorMsg = "Server error. Please try again later.";
+        } else if (backendMsg) {
+          errorMsg = backendMsg;
+        } else {
+          errorMsg = "Incorrect email or password. Please try again.";
+        }
+      } else if (err.request) {
+        // Network error - no response received
+        errorMsg =
+          "Unable to connect to server. Please check your internet connection.";
+      } else if (err.message) {
+        // Other errors
+        errorMsg = err.message;
+      }
+
+      setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }
