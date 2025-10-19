@@ -1,8 +1,11 @@
 export default async function handler(req, res) {
   // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Note: When using credentials, we can't use '*' for origin
+  const origin = req.headers.origin || 'https://readle-pi.vercel.app';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -54,6 +57,11 @@ export default async function handler(req, res) {
     // Add authorization header if present
     if (req.headers.authorization) {
       headers.Authorization = req.headers.authorization;
+    }
+    
+    // Forward cookies to backend
+    if (req.headers.cookie) {
+      headers.Cookie = req.headers.cookie;
     }
 
     // Prepare request options
@@ -109,6 +117,30 @@ export default async function handler(req, res) {
     const authHeader = response.headers.get('authorization');
     if (authHeader) {
       res.setHeader('Authorization', authHeader);
+    }
+    
+    // Forward Set-Cookie headers from backend
+    const setCookieHeader = response.headers.get('set-cookie');
+    if (setCookieHeader) {
+      // Since Vercel is HTTPS and backend is HTTP, we need to rewrite the cookie to be secure
+      // The backend might send Secure=false, but we need Secure=true for HTTPS
+      let cookieValue = setCookieHeader;
+      
+      // If the backend cookie is not secure, make it secure for HTTPS
+      if (!cookieValue.includes('Secure') || cookieValue.includes('Secure=false')) {
+        cookieValue = cookieValue.replace(/Secure=false/gi, 'Secure');
+        if (!cookieValue.includes('Secure')) {
+          cookieValue += '; Secure';
+        }
+      }
+      
+      // Change SameSite=Lax to SameSite=None for cross-origin if needed
+      if (cookieValue.includes('SameSite=Lax')) {
+        cookieValue = cookieValue.replace('SameSite=Lax', 'SameSite=None');
+      }
+      
+      res.setHeader('Set-Cookie', cookieValue);
+      console.log('Forwarding cookie:', cookieValue);
     }
     
     // Handle different content types
