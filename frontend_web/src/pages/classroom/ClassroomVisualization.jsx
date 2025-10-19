@@ -13,12 +13,15 @@ import {
 
 // Add API base URL constant
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { useAuth } from '../../contexts/AuthContext';
+import { getAccessToken } from '../../api/api';
 
 const API_BASE_URL = getApiBaseUrl();
 
 const ClassroomVisualization = () => {
   const { classroomId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // State variables
   const [sidebarOpen, setSidebarOpen] = useState(true); // Always open by default
@@ -43,7 +46,7 @@ const ClassroomVisualization = () => {
   useEffect(() => {
     const fetchClassroomDetails = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessToken();
         
         if (!token) {
           setError("Authentication required. Please log in.");
@@ -70,7 +73,7 @@ const ClassroomVisualization = () => {
   useEffect(() => {
     const fetchClassroomBooks = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessToken();
         
         if (!token) return;
         
@@ -94,7 +97,7 @@ const ClassroomVisualization = () => {
     const fetchStudentProgress = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessToken();
         
         if (!token) {
           setError("Authentication required. Please log in.");

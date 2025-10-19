@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import axios from "axios";
+import { getAccessToken } from "../../../api/api";
 import { getImageUrl, getApiUrl, getUploadUrl } from "../../../utils/apiConfig";
 import TeacherNav from '../../../components/TeacherNav';
 const Modal = ({ open, onClose, type, message }) => {
@@ -89,7 +90,7 @@ const TeacherCreateSSA = () => {
     if (!selectedBookId) return;
     
     setLoading(true);
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     
     axios
       .get(`/api/ssa/by-book/${selectedBookId}`, {
@@ -225,7 +226,7 @@ const TeacherCreateSSA = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       
       // Prepare the updated image data with new positions
       const updatedImages = images.map((img, index) => ({
@@ -276,7 +277,7 @@ const TeacherCreateSSA = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const uploadedImageData = await Promise.all(
         images.map(async ({ file, preview }, idx) => {
           if (!file) {

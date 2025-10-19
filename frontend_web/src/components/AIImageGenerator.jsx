@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Wand2, Loader2, X } from "lucide-react";
 import axios from "axios";
+import { getAccessToken } from "../api/api";
 import ImagePreview from "./ImagePreview";
 
 const AIImageGenerator = ({
@@ -25,7 +26,7 @@ const AIImageGenerator = ({
     setGeneratedImages([]);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const response = await axios.post(
         "/api/imagen/generate",
         {
@@ -33,10 +34,8 @@ const AIImageGenerator = ({
           numberOfImages: 4,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" },
+          withCredentials: true,
         }
       );
 
@@ -64,7 +63,7 @@ const AIImageGenerator = ({
     setGeneratedImages([]);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const response = await axios.post(
         "/api/imagen/generate-book-page",
         {
@@ -72,10 +71,8 @@ const AIImageGenerator = ({
           numberOfImages: 4,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" },
+          withCredentials: true,
         }
       );
 

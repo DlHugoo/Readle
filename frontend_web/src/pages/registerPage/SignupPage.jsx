@@ -54,7 +54,7 @@ const SignupPage = () => {
     e.preventDefault();
 
     // role chosen on previous screen and stored
-    const role = localStorage.getItem("userRole");
+    const role = sessionStorage.getItem("userRole");
     if (!role) {
       showErrorModal("Please select a role before signing up.");
       return;
@@ -79,7 +79,7 @@ const SignupPage = () => {
       await apiRegister(payload); // returns { message: "Check your email..." }
 
       // Save email so Verify page knows who to verify
-      localStorage.setItem("pendingEmail", formData.email);
+      sessionStorage.setItem("pendingEmail", formData.email);
 
       // Go to /verify (the verify page will POST /api/auth/verify-email)
       nav(`/verify?email=${encodeURIComponent(formData.email)}`);
@@ -104,7 +104,7 @@ const SignupPage = () => {
   // === NEW: Microsoft signup
   const handleMicrosoftSignup = () => {
     // Optional: if you want to require role before OAuth, uncomment:
-    // const role = localStorage.getItem("userRole");
+    // const role = sessionStorage.getItem("userRole");
     // if (!role) return showErrorModal("Please select a role before continuing.");
     window.location.href = `${API_BASE}/auth/microsoft/start`;
   };

@@ -49,7 +49,15 @@ const LoginPage = () => {
         email: formData.email,
         password: formData.password,
       });
+
+      console.log("Login response:", data); // Debug log
+
       // data = { token, role, userId }
+      if (!data || !data.token) {
+        setErrorMessage("Invalid response from server. Please try again.");
+        setIsLoading(false);
+        return;
+      }
 
       authLogin({
         token: data.token,
@@ -58,16 +66,21 @@ const LoginPage = () => {
         email: formData.email,
       });
 
-      switch (data.role) {
-        case "TEACHER":
-          navigate("/classroom");
-          break;
-        case "ADMIN":
-          navigate("/admin-dashboard");
-          break;
-        default:
-          navigate("/library");
-      }
+      console.log("Navigating to dashboard for role:", data.role); // Debug log
+
+      // ✅ Use setTimeout to ensure state update completes before navigation
+      setTimeout(() => {
+        switch (data.role) {
+          case "TEACHER":
+            navigate("/classroom");
+            break;
+          case "ADMIN":
+            navigate("/admin-dashboard");
+            break;
+          default:
+            navigate("/library");
+        }
+      }, 0);
     } catch (err) {
       console.error("Login error:", err);
 

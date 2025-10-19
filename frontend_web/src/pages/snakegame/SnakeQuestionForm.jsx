@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TeacherNav from '../../components/TeacherNav';
+import { useAuth } from '../../contexts/AuthContext';
+import { getAccessToken } from '../../api/api';
 import { 
   ArrowLeft, 
   CheckCircle, 
@@ -28,6 +30,7 @@ import {
 const SnakeQuestionForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [bookId, setBookId] = useState(null);
   const [bookTitle, setBookTitle] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,7 +96,7 @@ const SnakeQuestionForm = () => {
   useEffect(() => {
     if (bookId) {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       
       axios.get(`/api/snake-questions/book/${bookId}`, {
         headers: {
@@ -149,7 +152,7 @@ const handleSubmit = async (e) => {
     }
 
     setLoading(true);
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     const headers = {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -239,7 +242,7 @@ const handleSubmit = async (e) => {
       }
 
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       const headers = {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

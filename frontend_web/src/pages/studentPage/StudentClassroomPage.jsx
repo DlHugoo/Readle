@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import StudentNavbar from "../../components/StudentNavbar";
 import mascot from "../../assets/mascot.png";
 import { toast } from "react-toastify";
+import { getAccessToken } from "../../api/api";
+import { useAuth } from "../../contexts/AuthContext";
 import "react-toastify/dist/ReactToastify.css";
 import { CalendarDays, Users, BookOpen, Copy } from "lucide-react";
 
@@ -12,17 +14,17 @@ const StudentClassroomPage = () => {
   const [showJoin, setShowJoin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const studentId = localStorage.getItem("userId");
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchClassrooms = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/classrooms/student/${studentId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+        const t = getAccessToken();
+        const response = await fetch(`/api/classrooms/student/${user?.userId}`, {
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         });
 
         if (!response.ok) throw new Error("Failed to fetch classrooms");
@@ -36,8 +38,8 @@ const StudentClassroomPage = () => {
       }
     };
 
-    if (studentId) fetchClassrooms();
-  }, [studentId]);
+    if (user?.userId) fetchClassrooms();
+  }, [user?.userId]);
 
   const handleJoinClassroom = async () => {
     if (!classroomCode) {
@@ -45,15 +47,20 @@ const StudentClassroomPage = () => {
       return;
     }
 
+    if (!user?.userId) {
+      toast.error("User not found. Please log in again.");
+      return;
+    }
+
     setLoading(true);
     try {
+      const t = getAccessToken();
       const response = await fetch(
-        `/api/classrooms/join?studentId=${studentId}&classroomCode=${classroomCode}`,
+        `/api/classrooms/join?studentId=${user.userId}&classroomCode=${classroomCode}`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         }
       );
 
@@ -64,10 +71,9 @@ const StudentClassroomPage = () => {
         setClassroomCode("");
         toast.success("Successfully joined classroom!");
 
-        const refresh = await fetch(`/api/classrooms/student/${studentId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+        const refresh = await fetch(`/api/classrooms/student/${user.userId}`, {
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
         });
 
         if (refresh.ok) {

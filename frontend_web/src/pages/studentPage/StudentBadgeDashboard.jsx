@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getAccessToken } from '../../api/api';
 import StudentNavbar from '../../components/StudentNavbar';
 import { jwtDecode } from 'jwt-decode';
+import { useAuth } from '../../contexts/AuthContext';
 
 import { getApiBaseUrl } from '../../utils/apiConfig';
 
 const API_BASE_URL = getApiBaseUrl();
 
 const StudentBadgeDashboard = () => {
-  const [userId, setUserId] = useState(null);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [allBadges, setAllBadges] = useState([]);
@@ -17,68 +19,26 @@ const StudentBadgeDashboard = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Get user ID from token
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        console.log("Decoded token:", decoded);
-        
-        // Use userID or id from the token (consistent with other components)
-        const userId = decoded.userID || decoded.id;
-        setUserId(userId);
-        
-        // If userID is not available in the token, try localStorage as fallback
-        if (!userId) {
-          const fallbackUserId = localStorage.getItem("userId");
-          if (fallbackUserId) {
-            console.log("Using fallback userId from localStorage:", fallbackUserId);
-            setUserId(fallbackUserId);
-          } else {
-            console.error("No userID found in token or localStorage:", decoded);
-            setError("User ID not found in authentication token");
-          }
-        }
-      } catch (e) {
-        console.error("Failed to decode token", e);
-        // Try localStorage as fallback
-        const fallbackUserId = localStorage.getItem("userId");
-        if (fallbackUserId) {
-          console.log("Using fallback userId from localStorage after token decode error:", fallbackUserId);
-          setUserId(fallbackUserId);
-        } else {
-          setError("Authentication error. Please log in again.");
-        }
-      }
-    } else {
-      setError("Please log in to view your badges");
-    }
-  }, []);
-
   // Fetch badges when userId is available
   useEffect(() => {
     const fetchBadges = async () => {
-      if (!userId) {
+      if (!user?.userId) {
         console.log("No userId available, skipping fetch");
         return;
       }
       
-      console.log("Fetching badges for userId:", userId);
+      console.log("Fetching badges for userId:", user.userId);
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
+        const token = getAccessToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
-        const axiosOptions = { 
-          headers, 
-          timeout: 10000 // 10 seconds timeout
-        };
+        const axiosOptions = { headers, withCredentials: true, timeout: 10000 };
         
         // First, refresh all badge progress to ensure we have the latest data
         try {
-          await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, axiosOptions);
-          console.log("Refreshed badge progress for user:", userId);
+          await axios.post(`${API_BASE_URL}/api/badges/user/${user.userId}/check-all`, {}, axiosOptions);
+          console.log("Refreshed badge progress for user:", user.userId);
         } catch (refreshErr) {
           console.warn("Could not refresh badge progress:", refreshErr);
           // Continue with normal fetch even if refresh fails
@@ -90,9 +50,9 @@ const StudentBadgeDashboard = () => {
         
         // Then fetch user-specific badge progress
         const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, axiosOptions),
-          axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, axiosOptions),
-          axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, axiosOptions)
+          axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}`, axiosOptions),
+          axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}/earned`, axiosOptions),
+          axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}/in-progress`, axiosOptions)
         ]);
         
         const userBadges = userBadgesRes.data || [];
@@ -146,31 +106,31 @@ const StudentBadgeDashboard = () => {
       }
     };
   
-    if (userId) {
+    if (user?.userId) {
       fetchBadges();
     }
-  }, [userId]);
+  }, [user?.userId]);
 
   // Auto-refresh badges every 30 seconds to keep data current
   useEffect(() => {
-    if (!userId) return;
+    if (!user?.userId) return;
     
     const refreshInterval = setInterval(() => {
       console.log("Auto-refreshing badge data...");
       // Trigger a silent refresh
       const refreshBadges = async () => {
         try {
-          const token = localStorage.getItem("token");
-          const headers = { Authorization: `Bearer ${token}` };
+          const token = getAccessToken();
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
           
           // Refresh badge progress
-          await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, { headers });
+          await axios.post(`${API_BASE_URL}/api/badges/user/${user.userId}/check-all`, {}, { headers });
           
           // Fetch updated badge data
           const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
-            axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, { headers }),
-            axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, { headers }),
-            axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, { headers })
+            axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}`, { headers }),
+            axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}/earned`, { headers }),
+            axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}/in-progress`, { headers })
           ]);
           
           const userBadges = userBadgesRes.data || [];
@@ -204,25 +164,25 @@ const StudentBadgeDashboard = () => {
     }, 30000); // Refresh every 30 seconds
     
     return () => clearInterval(refreshInterval);
-  }, [userId]);
+  }, [user?.userId]);
 
   // Manual refresh function
   const handleManualRefresh = async () => {
-    if (!userId || refreshing) return;
+    if (!user?.userId || refreshing) return;
     
     setRefreshing(true);
     try {
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
+      const token = getAccessToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
       // Refresh badge progress
-      await axios.post(`${API_BASE_URL}/api/badges/user/${userId}/check-all`, {}, { headers });
+      await axios.post(`${API_BASE_URL}/api/badges/user/${user.userId}/check-all`, {}, { headers, withCredentials: true });
       
       // Fetch updated badge data
       const [userBadgesRes, earnedBadgesRes, inProgressBadgesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/api/badges/user/${userId}`, { headers }),
-        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/earned`, { headers }),
-        axios.get(`${API_BASE_URL}/api/badges/user/${userId}/in-progress`, { headers })
+        axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}`, { headers, withCredentials: true }),
+        axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}/earned`, { headers, withCredentials: true }),
+        axios.get(`${API_BASE_URL}/api/badges/user/${user.userId}/in-progress`, { headers, withCredentials: true })
       ]);
       
       const userBadges = userBadgesRes.data || [];

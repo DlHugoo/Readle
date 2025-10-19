@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import StudentNavbar from '../../components/StudentNavbar';
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { useAuth } from '../../contexts/AuthContext';
+import { getAccessToken } from '../../api/api';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -30,9 +32,7 @@ const calculatePredictionScore = (attempts) => {
 };
 
 const StudentProgressDashboard = () => {
-    const userId = localStorage.getItem('userId');
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         completedCount: 0,
@@ -61,10 +61,10 @@ const StudentProgressDashboard = () => {
 
     // 🔒 Redirect admins trying to access this dashboard
     useEffect(() => {
-        if (role === 'ADMIN') {
+        if (user?.role === 'ADMIN') {
             navigate('/admin-dashboard');
         }
-    }, [role, navigate]);
+    }, [user?.role, navigate]);
 
     // Initialize filter state from URL parameters
     useEffect(() => {
@@ -92,11 +92,12 @@ const StudentProgressDashboard = () => {
 
     // Fetch user's classrooms
     const fetchClassrooms = async () => {
-        if (!userId || !token) return;
+        if (!user?.userId) return;
         
         try {
+            const token = getAccessToken();
             const headers = { Authorization: `Bearer ${token}` };
-            const response = await axios.get(`${API_BASE_URL}/api/classrooms/student/${userId}`, { headers });
+            const response = await axios.get(`${API_BASE_URL}/api/classrooms/student/${user.userId}`, { headers });
             setClassrooms(response.data);
             console.log('Fetched classrooms:', response.data);
         } catch (error) {
@@ -189,20 +190,21 @@ const StudentProgressDashboard = () => {
             // ... your original logic
         };
 
-        if (userId) {
+        if (user?.userId) {
             fetchProgressData();
         }
-    }, [userId, token]);
+    }, [user?.userId]);
 
     useEffect(() => {
         const fetchProgressData = async () => {
+            const token = getAccessToken();
             if (!token) {
                 setError('Please log in to view your progress');
                 setLoading(false);
                 return;
             }
 
-            if (!userId) {
+            if (!user?.userId) {
                 setError('User ID not found. Please log in again.');
                 setLoading(false);
                 return;
@@ -214,10 +216,10 @@ const StudentProgressDashboard = () => {
                 };
 
                 const [completedCountRes, inProgressCountRes, completedBooksRes, inProgressBooksRes] = await Promise.all([
-                    axios.get(`${API_BASE_URL}/api/progress/completed/count/${userId}`, { headers }),
-                    axios.get(`${API_BASE_URL}/api/progress/in-progress/count/${userId}`, { headers }),
-                    axios.get(`${API_BASE_URL}/api/progress/completed/${userId}`, { headers }),
-                    axios.get(`${API_BASE_URL}/api/progress/in-progress/${userId}`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/progress/completed/count/${user.userId}`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/progress/in-progress/count/${user.userId}`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/progress/completed/${user.userId}`, { headers }),
+                    axios.get(`${API_BASE_URL}/api/progress/in-progress/${user.userId}`, { headers }),
                 ]);
 
                 setStats({
@@ -241,7 +243,7 @@ const StudentProgressDashboard = () => {
                     try {
                         const bookId = book.book.bookID;
                         const snakeAttemptsRes = await axios.get(
-                            `${API_BASE_URL}/api/snake-attempts/user/${userId}/book/${bookId}/count`, 
+                            `${API_BASE_URL}/api/snake-attempts/user/${user.userId}/book/${bookId}/count`, 
                             { headers }
                         );
                         snakeAttemptsData[bookId] = snakeAttemptsRes.data;
@@ -249,7 +251,7 @@ const StudentProgressDashboard = () => {
                         // Fetch SSA attempts for this book
                         try {
                             const ssaAttemptsRes = await axios.get(
-                                `${API_BASE_URL}/api/ssa-attempts/user/${userId}/book/${bookId}/count`,
+                                `${API_BASE_URL}/api/ssa-attempts/user/${user.userId}/book/${bookId}/count`,
                                 { headers }
                             );
                             ssaAttemptsData[bookId] = ssaAttemptsRes.data;
@@ -270,16 +272,16 @@ const StudentProgressDashboard = () => {
                                 // Use the checkpoint ID from the response
                                 const checkpointId = predictionCheckpointRes.data.id;
                                 // Defensive check: only proceed if both userId and checkpointId are valid numbers
-                                if (!isNaN(Number(userId)) && !isNaN(Number(checkpointId))) {
+                                if (!isNaN(Number(user.userId)) && !isNaN(Number(checkpointId))) {
                                     // First check if there are any attempts to avoid 404s
                                     const attemptCountRes = await axios.get(
-                                        `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/count`,
+                                        `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${user.userId}/checkpoint/${checkpointId}/count`,
                                         { headers }
                                     );
                                     if (attemptCountRes.data && Number(attemptCountRes.data) > 0) {
                                         // Fetch the latest attempt only if there is at least one
                                         const predictionLatestAttemptRes = await axios.get(
-                                            `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${userId}/checkpoint/${checkpointId}/latest`,
+                                            `${API_BASE_URL}/api/prediction-checkpoint-attempts/user/${user.userId}/checkpoint/${checkpointId}/latest`,
                                             { headers }
                                         );
                                         if (predictionLatestAttemptRes.data && typeof predictionLatestAttemptRes.data.correct === 'boolean') {
@@ -387,11 +389,11 @@ const StudentProgressDashboard = () => {
             }
         };
 
-        if (userId) {
+        if (user?.userId) {
             fetchProgressData();
             fetchClassrooms();
         }
-    }, [userId, token]);
+    }, [user?.userId]);
 
     const formatDuration = (totalReadingTimeSeconds) => {
         // Debug: Log the input value

@@ -6,36 +6,52 @@ import axios from "axios";
 // For local dev: set VITE_API_BASE_URL=http://localhost:3000
 const BASE = import.meta.env.VITE_API_BASE_URL || "";
 
-// ---- token helpers ----
-export const getToken = () => localStorage.getItem("token");
-export const setToken = (t) => {
-  if (t) localStorage.setItem("token", t);
-  else localStorage.removeItem("token");
-};
+// ---- in-memory access token (no localStorage) ----
+let inMemoryAccessToken = null;
+export const setAccessToken = (t) => { inMemoryAccessToken = t || null; };
+export const getAccessToken = () => inMemoryAccessToken;
 
 // Single axios client for the app
 export const apiClient = axios.create({
   baseURL: BASE || undefined,
-  withCredentials: false, // not using cookies
+  withCredentials: true, // send HttpOnly refresh cookie
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT from localStorage on every request
+// Attach in-memory access token on every request
 apiClient.interceptors.request.use((config) => {
-  const token = getToken();
+  const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Auto-logout on 401 (expired/invalid token)
+// Refresh flow on 401
+let refreshingPromise = null;
+async function refreshToken() {
+  if (!refreshingPromise) {
+    refreshingPromise = apiClient.post("/api/auth/refresh")
+      .then((res) => {
+        setAccessToken(res.data?.token || res.data?.accessToken || null);
+        return getAccessToken();
+      })
+      .finally(() => { refreshingPromise = null; });
+  }
+  return refreshingPromise;
+}
+
 apiClient.interceptors.response.use(
   (res) => res,
-  (err) => {
+  async (err) => {
     if (err?.response?.status === 401) {
-      setToken(null);
-      // Optionally preserve where the user was:
-      // const from = encodeURIComponent(window.location.pathname + window.location.search);
-      // window.location.replace(`/login?expired=1&from=${from}`);
+      try {
+        await refreshToken();
+        const cfg = err.config;
+        const t = getAccessToken();
+        if (t) cfg.headers.Authorization = `Bearer ${t}`;
+        return apiClient(cfg);
+      } catch (_) {
+        setAccessToken(null);
+      }
     }
     return Promise.reject(err);
   }
@@ -65,11 +81,14 @@ export const resendOtp = async ({ email }) => {
 
 export const login = async ({ email, password }) => {
   const { data } = await apiClient.post("/api/auth/login", { email, password });
-  if (data?.token) setToken(data.token);
+  if (data?.token) setAccessToken(data.token);
   return data; // { token, role, userId }
 };
 
-export const logout = () => setToken(null);
+export const logout = async () => {
+  try { await apiClient.post("/api/auth/logout"); } catch {}
+  setAccessToken(null);
+};
 
 // Who am I? (useful for role-based redirect)
 export const getMe = async () => {

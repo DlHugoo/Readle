@@ -15,11 +15,13 @@ public class JwtService {
 
     private final Key key;
     private final long ttlMs;
+    private final long refreshTtlMs;
     private final String issuer;
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.ttl-minutes:1440}") long ttlMinutes,          // default: 24h
+            @Value("${app.jwt.refresh-ttl-days:14}") long refreshTtlDays,   // default: 14d
             @Value("${spring.application.name:readle}") String issuer       // issuer tag
     ) {
         if (secret == null || secret.length() < 32) {
@@ -27,6 +29,7 @@ public class JwtService {
         }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.ttlMs = ttlMinutes * 60_000L;
+        this.refreshTtlMs = refreshTtlDays * 24L * 60L * 60L * 1000L;
         this.issuer = issuer;
     }
 
@@ -52,6 +55,21 @@ public class JwtService {
         }
 
         return b.signWith(key, SignatureAlgorithm.HS256).compact();
+    }
+
+    /** Longer-lived token intended for refresh cookie only */
+    public String generateRefreshToken(String username, Long userId) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + refreshTtlMs);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuer(issuer)
+                .setIssuedAt(now)
+                .setExpiration(exp)
+                .addClaims(Map.of("uid", userId, "typ", "refresh"))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
     public boolean isValid(String token) {

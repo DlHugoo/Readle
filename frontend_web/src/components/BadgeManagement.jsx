@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { getAccessToken } from "../api/api";
 import { PlusCircle, Edit, Trash2, Award, Upload, AlertCircle, CheckCircle } from "lucide-react";
 import { getImageUrl } from "../utils/apiConfig";
 
@@ -59,9 +60,10 @@ const BadgeManagement = () => {
   const fetchBadges = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const response = await axios.get("/api/badges", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       setBadges(response.data);
       setError("");
@@ -140,7 +142,7 @@ const BadgeManagement = () => {
   const uploadImage = async (file) => {
     if (!file) return null;
 
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
     
     // Convert file to base64 (like other upload functions)
     const base64Data = await new Promise((resolve, reject) => {
@@ -162,8 +164,9 @@ const BadgeManagement = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: "include",
         body: JSON.stringify(requestData)
       });
 
@@ -200,7 +203,7 @@ const BadgeManagement = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
 
       let imageURL = null;
       if (imageFile) {
@@ -217,7 +220,8 @@ const BadgeManagement = () => {
         ...newBadge,
         imageUrl: imageURL,
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
 
       setBadges([...badges, response.data]);
@@ -261,7 +265,7 @@ const BadgeManagement = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       let imageURL = editBadge.imageUrl;
 
       if (editImageFile) {
@@ -278,7 +282,8 @@ const BadgeManagement = () => {
         ...editBadge,
         imageUrl: imageURL,
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
 
       setBadges(prev => prev.map(b => b.id === response.data.id ? response.data : b));
@@ -298,9 +303,10 @@ const BadgeManagement = () => {
 
   const confirmDeleteBadge = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       await axios.delete(`/api/badges/${selectedBadge.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
       });
       
       setBadges(badges.filter(b => b.id !== selectedBadge.id));
