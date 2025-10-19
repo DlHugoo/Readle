@@ -93,8 +93,6 @@ const LoginPage = () => {
             backendMsg || "Incorrect email or password. Please try again.";
         } else if (status === 404) {
           errorMsg = "User not found. Please check your email or register.";
-        } else if (status === 500) {
-          errorMsg = "Server error. Please try again later.";
         } else if (backendMsg) {
           errorMsg = backendMsg;
         } else {
