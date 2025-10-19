@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { setAccessToken } from "../api/api";
+import { setAccessToken, refreshToken, getMe } from "../api/api";
 
 const AuthContext = createContext();
 
@@ -22,9 +22,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // On initial load we don't hydrate from localStorage anymore.
-    // If needed, you can call /api/auth/refresh here to get a fresh access token.
-    setLoading(false); // Mark auth check as complete
+    // Try to restore session on page load using the HTTPOnly refresh cookie
+    const restoreSession = async () => {
+      try {
+        // Attempt to refresh the access token using the HTTPOnly cookie
+        const token = await refreshToken();
+        
+        if (token) {
+          // If refresh succeeded, fetch user data
+          const userData = await getMe();
+          setUser({
+            userId: userData.id,
+            email: userData.email,
+            role: userData.role,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+          });
+        }
+      } catch (error) {
+        console.log("No active session or refresh failed:", error.message);
+        // User stays logged out
+      } finally {
+        setLoading(false); // Mark auth check as complete
+      }
+    };
+
+    restoreSession();
   }, []);
 
   return (
