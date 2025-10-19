@@ -8,6 +8,7 @@ import com.edu.readle.service.AuthService;
 import com.edu.readle.service.BadgeService;
 import com.edu.readle.service.EmailVerificationService;
 import com.edu.readle.security.JwtService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,9 @@ public class AuthController {
     private final BadgeService badgeService;
     private final EmailVerificationService emailVerificationService;
     private final JwtService jwtService;
+    
+    @Value("${app.cookie.secure:true}")
+    private boolean cookieSecure;
 
     public AuthController(AuthService authService,
                           UserRepository userRepository,
@@ -116,9 +120,9 @@ public class AuthController {
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refresh)
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
-                .path("/api/auth/refresh")
+                .secure(cookieSecure) // Configurable: true for production HTTPS, false for local HTTP
+                .sameSite(cookieSecure ? "None" : "Lax") // None requires Secure=true, Lax for local dev
+                .path("/") // Changed to "/" so cookie is sent with all requests
                 .maxAge(14L * 24L * 60L * 60L)
                 .build();
 
@@ -149,9 +153,9 @@ public class AuthController {
     public ResponseEntity<Void> logout() {
         ResponseCookie clear = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
-                .path("/api/auth/refresh")
+                .secure(cookieSecure)
+                .sameSite(cookieSecure ? "None" : "Lax")
+                .path("/") // Changed to "/" to match login cookie path
                 .maxAge(0)
                 .build();
         return ResponseEntity.noContent()
