@@ -27,7 +27,7 @@ apiClient.interceptors.request.use((config) => {
 
 // Refresh flow on 401
 let refreshingPromise = null;
-async function refreshToken() {
+export async function refreshToken() {
   if (!refreshingPromise) {
     refreshingPromise = apiClient.post("/api/auth/refresh")
       .then((res) => {
