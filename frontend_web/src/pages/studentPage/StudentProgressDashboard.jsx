@@ -456,7 +456,7 @@ const StudentProgressDashboard = () => {
                     {/* Header Section */}
                     <div className="text-center mb-12">
                         <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                            📚 Reading Progress Dashboard
+                            Reading Progress Dashboard
                         </h1>
                         <p className="text-lg text-gray-600 mb-6">Track your reading journey and celebrate your achievements!</p>
                         <button
@@ -470,7 +470,7 @@ const StudentProgressDashboard = () => {
                     {/* Filter Section */}
                     <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
                         <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                            🔍 Filter Books
+                             Filter Books
                         </h2>
                         <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
                             {/* Filter Type Toggle */}
@@ -556,7 +556,7 @@ const StudentProgressDashboard = () => {
                     {/* Average Scores Cards with Enhanced Design */}
                     <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
                         <h2 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                            🎯 Average Activity Scores
+                            Average Activity Scores
                         </h2>
                         <p className="text-center text-gray-600 mb-8">
                             {filterType === 'global' 
@@ -624,7 +624,7 @@ const StudentProgressDashboard = () => {
                     {/* Books in Progress with Enhanced Design */}
                     <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
                         <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
-                            📖 Books in Progress
+                            Books in Progress
                         </h2>
                         <div className="space-y-6">
                             {filteredInProgressBooks.length === 0 && (
@@ -726,7 +726,7 @@ const StudentProgressDashboard = () => {
                     {/* Completed Books with Enhanced Design */}
                     <div className="bg-white rounded-2xl shadow-xl p-8">
                         <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
-                            ✅ Completed Books
+                            Completed Books
                         </h2>
                         <div className="space-y-6">
                             {filteredCompletedBooks.length === 0 && (
