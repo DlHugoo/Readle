@@ -17,11 +17,7 @@
     },
     {
       "source": "/dictionary-api/:path*",
-      "destination": "/api/dictionary"
-    },
-    {
-      "source": "/api/dictionary/:path*",
-      "destination": "/api/dictionary"
+      "destination": "/api/dictionary/:path*"
     },
     {
       "source": "/api/:path*",

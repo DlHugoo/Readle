@@ -13,22 +13,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Extract the path after /dictionary-api/ or /api/dictionary/
-    // Input: /dictionary-api/api/v2/entries/en/{word} OR /api/dictionary/api/v2/entries/en/{word}
+    // Extract the path after /api/dictionary/
+    // Input: /api/dictionary/api/v2/entries/en/{word}
     // We want to construct: https://api.dictionaryapi.dev/api/v2/entries/en/{word}
-    let urlPath = req.url.split('?')[0]; // Remove query params if any
-    
-    // Remove the proxy prefix
-    if (urlPath.includes('/dictionary-api/')) {
-      urlPath = urlPath.replace('/dictionary-api/', '');
-    } else if (urlPath.includes('/api/dictionary/')) {
-      urlPath = urlPath.replace('/api/dictionary/', '');
-    }
-    
-    const dictionaryApiUrl = `https://api.dictionaryapi.dev/${urlPath}`;
+    const urlPath = req.url.split('?')[0]; // Remove query params if any
+    const path = urlPath.replace('/api/dictionary/', '');
+    const dictionaryApiUrl = `https://api.dictionaryapi.dev/${path}`;
 
     console.log('Dictionary API request URL:', req.url);
-    console.log('Extracted path:', urlPath);
     console.log('Fetching dictionary definition from:', dictionaryApiUrl);
 
     // Fetch from Dictionary API
