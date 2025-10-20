@@ -394,15 +394,15 @@ const AdminDashboard = () => {
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Top Bar with Logout */}
-        <div className="sticky top-0 z-20 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-blue-100">
+        <div className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-indigo-700 border-b border-indigo-700/40">
           <div className="flex justify-between items-center p-4 max-w-7xl mx-auto w-full">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
                 <BookOpen size={22} className="text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight">Admin Dashboard</h1>
-                <p className="text-xs text-gray-500">Manage books and badges</p>
+                <h1 className="text-xl font-extrabold text-white leading-tight">Admin Dashboard</h1>
+                <p className="text-xs text-blue-100">Manage books and badges</p>
               </div>
             </div>
 
@@ -411,7 +411,7 @@ const AdminDashboard = () => {
               onClick={() => {
                 logout();
               }}
-              className="px-3 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white text-sm font-semibold shadow hover:shadow-md transition-all"
+              className="px-3 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white text-sm font-semibold shadow hover:shadow-md transition-all ring-1 ring-white/10"
             >
               Logout
             </button>
