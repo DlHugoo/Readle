@@ -1,11 +1,11 @@
-// Dynamic vocabulary service using Dictionary API directly
+// Vocabulary service using secure backend API
 class VocabularyService {
   constructor() {
-    this.apiBaseUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en';
+    this.apiBaseUrl = '/api/vocabulary/definition';
     this.cache = new Map(); // Cache for API responses
   }
 
-  // Fetch word definition from Dictionary API
+  // Fetch word definition from backend API
   async fetchWordDefinition(word) {
     const cleanWord = word.toLowerCase().replace(/[^\w]/g, '');
     
