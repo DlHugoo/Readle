@@ -2,7 +2,6 @@ package com.edu.readle.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -22,9 +21,6 @@ public class VocabularyService {
 
     // Simple in-memory cache to reduce API calls
     private final Map<String, String> cache = new ConcurrentHashMap<>();
-
-    @Autowired
-    private RestTemplate restTemplate;
 
     /**
      * Fetch word definition from Dictionary API
@@ -60,6 +56,9 @@ public class VocabularyService {
 
         // Fetch from Dictionary API
         try {
+            // Create RestTemplate instance directly (like ImagenService does)
+            RestTemplate restTemplate = new RestTemplate();
+
             String url = DICTIONARY_API_BASE_URL + cleanWord;
             logger.info("Fetching definition for word: {} from {}", cleanWord, url);
 
