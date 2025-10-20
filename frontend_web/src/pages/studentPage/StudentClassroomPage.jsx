@@ -638,11 +638,6 @@ const StudentClassroomPage = () => {
       <div className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-3 mb-6">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse-slow"></div>
-            <span className="text-blue-600 font-semibold text-sm tracking-wider uppercase">My Dashboard</span>
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse-slow"></div>
-          </div>
           <h1 className="text-5xl sm:text-6xl font-black mb-6 bg-gradient-to-r from-gray-800 via-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
             My Classrooms
           </h1>

@@ -124,6 +124,11 @@ const customStyles = `
     animation: glow 2s infinite;
   }
   
+  /* Maintain 3:4 aspect ratio for book cards */
+  .aspect-3-4 {
+    aspect-ratio: 3 / 4;
+  }
+  
   .book-card-3d {
     transform-style: preserve-3d;
     transition: all 0.6s cubic-bezier(0.23, 1, 0.320, 1);
@@ -241,7 +246,7 @@ const ClassroomContentPage = () => {
           {/* Simple Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600"></div>
           
-          <div className="relative container mx-auto px-4 py-20">
+          <div className="relative container mx-auto px-4 py-10">
             {/* Navigation */}
             <div className="flex items-center justify-between mb-12">
               <Link
@@ -268,22 +273,22 @@ const ClassroomContentPage = () => {
                 <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse-slow"></div>
               </div>
               
-              <h1 className="text-6xl sm:text-7xl font-black mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight">
+              <h1 className="text-3xl sm:text-5xl font-black mb-4 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight">
                 {classroomName}
               </h1>
               
               <div className="flex items-center justify-center gap-4 mb-8">
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
+                <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
                   <BookOpen size={20} className="text-yellow-400" />
                   <span className="text-white font-semibold">{books.length} Books</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
+                <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
                   <Sparkles size={20} className="text-purple-400" />
                   <span className="text-white font-semibold">Ready to Explore</span>
                 </div>
               </div>
               
-              <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-lg text-blue-100 mb-6 max-w-3xl mx-auto leading-relaxed">
                 Dive into an incredible collection of stories and adventures. 
                 <span className="text-yellow-300 font-semibold"> Your reading journey starts here!</span>
               </p>
@@ -318,7 +323,7 @@ const ClassroomContentPage = () => {
             {Object.entries(groupedBooks).map(([difficulty, booksAtLevel]) => (
               <div key={difficulty} className="relative">
                 {/* Futuristic Difficulty Header */}
-                <div className="flex items-center gap-6 mb-12">
+                <div className="flex items-center gap-6 mb-8">
                   <div className="flex items-center gap-3">
                     {Array.from({ length: parseInt(difficulty) }).map((_, i) => (
                       <div key={i} className="w-10 h-10 difficulty-badge rounded-full flex items-center justify-center shadow-lg animate-pulse" style={{ animationDelay: `${i * 0.1}s` }}>
@@ -327,10 +332,7 @@ const ClassroomContentPage = () => {
                     ))}
                   </div>
                   <div className="flex-1 h-px bg-gradient-to-r from-yellow-400 via-orange-500 to-transparent"></div>
-                  <div className="difficulty-badge text-white px-8 py-4 rounded-2xl font-bold text-xl shadow-2xl flex items-center gap-3">
-                    <Trophy size={24} />
-                    Level {difficulty}
-                  </div>
+                  {/* Removed textual level tag to classify difficulty by stars only */}
                 </div>
 
                 {/* Innovative Books Grid - 3D Book Shelf */}
@@ -343,8 +345,8 @@ const ClassroomContentPage = () => {
                       className="group block"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
-                      {/* 3D Book Card */}
-                      <div className="relative book-card-3d h-96 perspective-1000">
+                      {/* 3D Book Card - 3:4 Aspect Ratio */}
+                      <div className="relative book-card-3d aspect-3-4 perspective-1000">
                         {/* Book Spine */}
                         <div className="book-spine"></div>
                         
@@ -353,8 +355,10 @@ const ClassroomContentPage = () => {
                           
                           {/* Difficulty Badge */}
                           <div className="absolute top-4 left-4 z-30">
-                            <div className="difficulty-badge text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                              Level {difficulty}
+                            <div className="bg-black/40 backdrop-blur px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
+                              {Array.from({ length: Math.max(1, Math.min(5, parseInt(book.difficultyLevel) || 0)) }).map((_, i) => (
+                                <Star key={i} size={14} className="text-yellow-400" style={{ fill: '#f59e0b' }} />
+                              ))}
                             </div>
                           </div>
                           
