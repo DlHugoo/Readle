@@ -392,66 +392,91 @@ const AdminDashboard = () => {
     "★".repeat(Math.max(1, Math.min(level, 3)));
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Top Bar with Logout */}
-        <div className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full">
-          <h1 className="text-3xl font-bold text-[#3B82F6] flex items-center">
-            <BookOpen size={32} className="mr-3 text-[#3B82F6]" />
-            Admin Dashboard
-          </h1>
+        <div className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 to-indigo-700 border-b border-indigo-700/40">
+          <div className="flex justify-between items-center p-4 max-w-7xl mx-auto w-full">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                <BookOpen size={22} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-extrabold text-white leading-tight">Admin Dashboard</h1>
+                <p className="text-xs text-blue-100">Manage books and badges</p>
+              </div>
+            </div>
 
-          {/* Logout Button */}
-          <button
-            onClick={() => {
-              logout(); // ✅ Use logout from AuthContext
-            }}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition-colors"
-          >
-            Logout
-          </button>
+            {/* Logout Button */}
+            <button
+              onClick={() => {
+                logout();
+              }}
+              className="px-3 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white text-sm font-semibold shadow hover:shadow-md transition-all ring-1 ring-white/10"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col pt-6">
         <div className="p-6 max-w-7xl mx-auto w-full">
-          {/* Page Title */}
-          <h1 className="text-3xl font-bold mb-6 text-[#3B82F6] flex items-center">
-            <BookOpen size={32} className="mr-3 text-[#3B82F6]" />
-            Admin Dashboard
-          </h1>
-
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
-            <button
-              onClick={() => setActiveTab("books")}
-              className={`py-2 px-4 font-semibold text-gray-700 ${
-                activeTab === "books"
-                  ? "border-b-2 border-[#3B82F6] text-[#3B82F6]"
-                  : "hover:text-gray-900"
-              }`}
-            >
-              Books
-            </button>
-            <button
-              onClick={() => setActiveTab("archived")}
-              className={`py-2 px-4 font-semibold text-gray-700 ${
-                activeTab === "archived"
-                  ? "border-b-2 border-[#3B82F6] text-[#3B82F6]"
-                  : "hover:text-gray-900"
-              }`}
-            >
-              Archived
-            </button>
-            <button
-              onClick={() => setActiveTab("badges")}
-              className={`py-2 px-4 font-semibold text-gray-700 ${
-                activeTab === "badges"
-                  ? "border-b-2 border-[#3B82F6] text-[#3B82F6]"
-                  : "hover:text-gray-900"
-              }`}
-            >
-              Badges
-            </button>
+          <div className="relative">
+            {/* subtle background accents */}
+            <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-gradient-to-br from-blue-500/10 to-indigo-500/10 blur-2xl"></div>
+            <div className="pointer-events-none absolute -top-8 right-0 h-28 w-28 rounded-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 blur-2xl"></div>
+
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <div className="flex gap-2 bg-white p-1 rounded-xl border border-gray-200 shadow-sm">
+                <button
+                  onClick={() => setActiveTab("books")}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                    activeTab === "books"
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <BookOpen size={16} />
+                  Books
+                </button>
+                <button
+                  onClick={() => setActiveTab("archived")}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                    activeTab === "archived"
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <CheckCircle size={16} />
+                  Archived
+                </button>
+                <button
+                  onClick={() => setActiveTab("badges")}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                    activeTab === "badges"
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Award size={16} />
+                  Badges
+                </button>
+              </div>
+
+              {/* Quick action */}
+              {activeTab === "books" && (
+                <button
+                  onClick={() => setShowAddBookModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-400 text-white font-semibold shadow hover:shadow-md transition-all"
+                >
+                  <PlusCircle size={18} />
+                  Add Book
+                </button>
+              )}
+            </div>
           </div>
+
+          
 
           {/* Content based on active tab */}
           {activeTab === "books" && (
@@ -470,23 +495,11 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <button
-                  onClick={() => setShowAddBookModal(true)}
-                  className="bg-white border border-[#FACC14] hover:bg-[#FACC14] hover:text-white text-[#FACC14] font-semibold py-3 px-4 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <BookOpen size={24} />
-                    <span>Add New Book to Library</span>
-                  </div>
-                  <PlusCircle size={20} />
-                </button>
-              </div>
+              {/* Action Buttons removed to avoid redundancy with top-right Add Book */}
 
               {/* Book List */}
-              <div className="mt-6">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+              <div className="mt-5">
+                <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                   <BookOpen size={20} className="mr-2 text-blue-500" />
                   <span>Books Library</span>
                 </h2>
@@ -496,7 +509,7 @@ const AdminDashboard = () => {
                     <p className="text-gray-500 mb-3">No books available in the library.</p>
                     <button
                       onClick={() => setShowAddBookModal(true)}
-                      className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                      className="inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow hover:shadow-md transition-all"
                     >
                       <PlusCircle size={16} className="mr-2" />
                       Add Your First Book
@@ -504,82 +517,83 @@ const AdminDashboard = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {books.map((book, index) => (
-                      <div
-                        key={book.bookID}
-                        className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 relative"
-                        onClick={() => handleBookClick(book.bookID)}
-                      >
-                        {/* Book Cover Image */}
-                        <div className="h-48 bg-gray-200 flex items-center justify-center">
-                          {book.imageURL ? (
-                            <img
-                              src={getImageUrl(book.imageURL)}
-                              alt={book.title}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-gray-500">No Image</span>
+                    {[...books]
+                      .sort((a, b) => (Number(b.difficultyLevel || 0) - Number(a.difficultyLevel || 0)))
+                      .map((book, index) => (
+                      <div key={book.bookID} className="rounded-2xl p-[1px] bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 hover:from-blue-500/20 hover:via-indigo-500/20 hover:to-purple-500/20 transition-all duration-300">
+                        <div
+                          className="group relative bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                          onClick={() => handleBookClick(book.bookID)}
+                        >
+                          {/* Book Cover Image (3:4) */}
+                          <div className="aspect-[3/4] bg-gray-100 flex items-center justify-center overflow-hidden">
+                            {book.imageURL ? (
+                              <img
+                                src={getImageUrl(book.imageURL)}
+                                alt={book.title}
+                                className="h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                              />
+                            ) : (
+                              <span className="text-gray-500">No Image</span>
+                            )}
+                          </div>
+
+                          {/* Hover Overlay with compact details */}
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                            <div className="w-full px-3 py-2 text-white">
+                              <h3 className="text-sm font-semibold leading-tight truncate">{book.title}</h3>
+                              <div className="text-[11px] leading-tight text-blue-100 truncate">by {book.author}</div>
+                              <div className="mt-1 flex items-center gap-0.5">
+                                {Array.from({ length: Math.max(1, Math.min(3, book.difficultyLevel || 1)) }).map((_, i) => (
+                                  <span key={i} className="text-amber-400 text-base leading-none">★</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 3-dot Menu */}
+                          <button
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent triggering other events
+                              setMenuOpenIndex(index === menuOpenIndex ? null : index);
+                            }}
+                          >
+                            ⋮
+                          </button>
+
+                          {menuOpenIndex === index && (
+                            <div className="absolute top-2 right-10 bg-white border rounded-lg shadow-md z-10 w-40 overflow-hidden">
+                              <button
+                                className="block w-full text-left px-4 py-2 hover:bg-yellow-50 text-yellow-700 font-medium"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditModal(book, index);
+                                }}
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button
+                                className="block w-full text-left px-4 py-2 hover:bg-blue-50 text-blue-700 font-medium"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleArchiveClick(book);
+                                }}
+                              >
+                                📦 {book.archived ? "Unarchive" : "Archive"}
+                              </button>
+                              <button
+                                className="block w-full text-left px-4 py-2 hover:bg-red-50 text-red-700 font-medium"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteClick(book);
+                                }}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
                           )}
                         </div>
-
-                        {/* Book Details */}
-                        <div className="p-3">
-                          <h3 className="text-lg font-bold text-[#3B82F6] truncate">
-                            {book.title}
-                          </h3>
-                          <p className="text-sm text-gray-600">by {book.author}</p>
-                          <p className="text-sm text-gray-600 mt-1 flex items-center">
-                            Difficulty:{" "}
-                            <span className="ml-2 text-yellow-500 text-2xl">
-                              {getDifficultyStars(book.difficultyLevel)}
-                            </span>
-                          </p>
-                        </div>
-
-                        {/* 3-dot Menu */}
-                        <button
-                          className="absolute top-2 right-2 text-gray-700 hover:text-black text-2xl"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent triggering other events
-                            setMenuOpenIndex(index === menuOpenIndex ? null : index);
-                          }}
-                        >
-                          ⋮
-                        </button>
-
-                        {menuOpenIndex === index && (
-                          <div className="absolute top-0 right-10 bg-white border rounded shadow-md z-10 w-40">
-                            <button
-                              className="block w-full text-left px-4 py-2 hover:bg-yellow-200 text-yellow-600 font-semibold"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditModal(book, index);
-                              }}
-                            >
-                              ✏️ Edit
-                            </button>
-                            <button
-                              className="block w-full text-left px-4 py-2 hover:bg-blue-200 text-blue-600 font-semibold"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleArchiveClick(book);
-                              }}
-                            >
-                              📦 {book.archived ? "Unarchive" : "Archive"}
-                            </button>
-                            <button
-                              className="block w-full text-left px-4 py-2 hover:bg-red-200 text-red-600 font-semibold"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(book);
-                              }}
-                            >
-                              🗑️ Delete
-                            </button>
-                          </div>
-                        )}
-
                       </div>
                     ))}
                   </div>
@@ -588,8 +602,8 @@ const AdminDashboard = () => {
 
               {/* Add Book Modal */}
               {showAddBookModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                  <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg border border-gray-100">
                     <h2 className="text-xl font-bold mb-4 text-[#3B82F6]">Add a New Book</h2>
 
                     <input
@@ -676,13 +690,13 @@ const AdminDashboard = () => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setShowAddBookModal(false)}
-                        className="bg-gray-300 px-4 py-2 rounded"
+                        className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={addBook}
-                        className="bg-[#FACC14] text-white px-4 py-2 rounded hover:bg-yellow-400"
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-400 text-white font-semibold shadow hover:shadow-md transition-all"
                       >
                         Add Book
                       </button>
@@ -693,8 +707,8 @@ const AdminDashboard = () => {
 
               {/* Edit Modal */}
               {editingBook && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                  <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg border border-gray-100">
                     <h2 className="text-xl font-bold mb-4 text-[#3B82F6]">Edit Book</h2>
 
                     <input
@@ -777,13 +791,13 @@ const AdminDashboard = () => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setEditingBook(null)}
-                        className="bg-gray-300 px-4 py-2 rounded"
+                        className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={submitEdit}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow hover:shadow-md transition-all"
                       >
                         Save Changes
                       </button>
@@ -794,8 +808,8 @@ const AdminDashboard = () => {
 
               {/* Delete Confirmation Modal */}
               {showDeleteModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                  <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
                     <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
                     <p className="mb-6">
                       Are you sure you want to delete the book "{selectedBook?.title}"? This action cannot be undone.
@@ -803,13 +817,13 @@ const AdminDashboard = () => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setShowDeleteModal(false)}
-                        className="px-4 py-2 bg-gray-300 rounded"
+                        className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={confirmDeleteBook}
-                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow hover:shadow-md transition-all"
                       >
                         Delete
                       </button>
@@ -820,8 +834,8 @@ const AdminDashboard = () => {
 
               {/* Alert Modal */}
               {alertModal.show && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                  <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+                  <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
                     <div className="flex items-center mb-4">
                       {alertModal.type === "success" ? (
                         <CheckCircle className="text-green-500 mr-3" size={24} />
@@ -836,7 +850,7 @@ const AdminDashboard = () => {
                     <div className="flex justify-end">
                       <button
                         onClick={closeAlertModal}
-                        className={`px-4 py-2 rounded text-white ${
+                        className={`px-4 py-2 rounded-lg text-white font-semibold shadow hover:shadow-md transition-all ${
                           alertModal.type === "success" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
                         }`}
                       >
