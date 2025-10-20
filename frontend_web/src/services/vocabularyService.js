@@ -1,11 +1,13 @@
-// Dynamic vocabulary service using Dictionary API directly
+// Vocabulary service using secure backend API
+import { apiClient } from '../api/api';
+
 class VocabularyService {
   constructor() {
-    this.apiBaseUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en';
+    this.apiBaseUrl = '/api/vocabulary/definition';
     this.cache = new Map(); // Cache for API responses
   }
 
-  // Fetch word definition from Dictionary API
+  // Fetch word definition from backend API
   async fetchWordDefinition(word) {
     const cleanWord = word.toLowerCase().replace(/[^\w]/g, '');
     
@@ -15,13 +17,9 @@ class VocabularyService {
     }
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/${cleanWord}`);
-      
-      if (!response.ok) {
-        throw new Error(`Word not found: ${cleanWord}`);
-      }
-
-      const data = await response.json();
+      // Use apiClient for automatic authentication
+      const response = await apiClient.get(`${this.apiBaseUrl}/${cleanWord}`);
+      const data = response.data; // axios uses .data not .json()
       const wordData = data[0]; // Get first entry
 
       // Parse the API response
