@@ -1,7 +1,7 @@
-// Dynamic vocabulary service using Dictionary API directly
+// Dynamic vocabulary service using Dictionary API through proxy
 class VocabularyService {
   constructor() {
-    this.apiBaseUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en';
+    this.apiBaseUrl = '/dictionary-api/api/v2/entries/en';
     this.cache = new Map(); // Cache for API responses
   }
 

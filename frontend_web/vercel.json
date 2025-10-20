@@ -5,12 +5,19 @@
     },
     "api/test.js": {
       "maxDuration": 10
+    },
+    "api/dictionary.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [
     {
       "source": "/api/test",
       "destination": "/api/test"
+    },
+    {
+      "source": "/dictionary-api/:path*",
+      "destination": "/api/dictionary/:path*"
     },
     {
       "source": "/api/:path*",
