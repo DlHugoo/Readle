@@ -26,6 +26,11 @@ import {
   ChevronRight,
   LogOut,
   Loader2,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  Square,
 } from "lucide-react";
 
 // Use utility function for image URLs
@@ -53,6 +58,16 @@ const BookPage = () => {
   const [imageLoading, setImageLoading] = useState(false);
   const [isFinishingBook, setIsFinishingBook] = useState(false);
   const contentRef = useRef(null);
+
+  // Text-to-Speech state
+  const [isTTSEnabled, setIsTTSEnabled] = useState(false);
+  const [isTTSPlaying, setIsTTSPlaying] = useState(false);
+  const [ttsVoice, setTtsVoice] = useState(null);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [ttsProgress, setTtsProgress] = useState(0);
+  const [isTTSHovered, setIsTTSHovered] = useState(false);
+  const speechSynthesisRef = useRef(null);
+  const ttsProgressInterval = useRef(null);
 
   // Reading timer state - using raw seconds for backend sync
   const [totalReadingTimeSeconds, setTotalReadingTimeSeconds] = useState(0); // Total seconds from backend
@@ -87,6 +102,164 @@ const BookPage = () => {
       scalar: 0.8,
     });
   };
+
+  // Text-to-Speech Functions
+  useEffect(() => {
+    // Load available voices
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+
+      // Try to find a Google US English voice first, then any English voice
+      const googleVoice = voices.find(
+        (v) => v.name.includes("Google") && v.lang.startsWith("en")
+      );
+      const englishVoice = voices.find((v) => v.lang.startsWith("en"));
+      setTtsVoice(googleVoice || englishVoice || voices[0]);
+    };
+
+    // Load voices immediately
+    loadVoices();
+
+    // Also listen for when voices are loaded (some browsers load them async)
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
+
+  const stopTTS = () => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+    setIsTTSPlaying(false);
+    setTtsProgress(0);
+    if (ttsProgressInterval.current) {
+      clearInterval(ttsProgressInterval.current);
+      ttsProgressInterval.current = null;
+    }
+  };
+
+  const playTTS = () => {
+    if (!currentPage?.content || !isTTSEnabled) return;
+
+    // Stop any ongoing speech
+    stopTTS();
+
+    const utterance = new SpeechSynthesisUtterance(currentPage.content);
+
+    // Configure the utterance
+    if (ttsVoice) {
+      utterance.voice = ttsVoice;
+    }
+    utterance.rate = 0.9; // Slightly slower for better comprehension
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    // Calculate approximate duration (words per minute estimation)
+    const wordCount = currentPage.content.split(/\s+/).length;
+    const estimatedDuration = (wordCount / 150) * 60 * 1000; // 150 WPM adjusted for rate
+
+    // Event handlers
+    utterance.onstart = () => {
+      setIsTTSPlaying(true);
+      setTtsProgress(0);
+
+      // Update progress smoothly
+      const startTime = Date.now();
+      ttsProgressInterval.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min((elapsed / estimatedDuration) * 100, 100);
+        setTtsProgress(progress);
+      }, 100);
+    };
+
+    utterance.onend = () => {
+      setIsTTSPlaying(false);
+      setTtsProgress(100);
+      if (ttsProgressInterval.current) {
+        clearInterval(ttsProgressInterval.current);
+        ttsProgressInterval.current = null;
+      }
+      setTimeout(() => setTtsProgress(0), 500);
+    };
+
+    utterance.onerror = (event) => {
+      console.error("TTS Error:", event);
+      setIsTTSPlaying(false);
+      setTtsProgress(0);
+      if (ttsProgressInterval.current) {
+        clearInterval(ttsProgressInterval.current);
+        ttsProgressInterval.current = null;
+      }
+    };
+
+    speechSynthesisRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const pauseTTS = () => {
+    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+      window.speechSynthesis.pause();
+      setIsTTSPlaying(false);
+      if (ttsProgressInterval.current) {
+        clearInterval(ttsProgressInterval.current);
+        ttsProgressInterval.current = null;
+      }
+    }
+  };
+
+  const resumeTTS = () => {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      setIsTTSPlaying(true);
+
+      // Resume progress tracking
+      if (!ttsProgressInterval.current && currentPage?.content) {
+        const wordCount = currentPage.content.split(/\s+/).length;
+        const estimatedDuration = (wordCount / 150) * 60 * 1000;
+        const startTime = Date.now();
+        const currentProgress = ttsProgress;
+
+        ttsProgressInterval.current = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const additionalProgress = (elapsed / estimatedDuration) * 100;
+          const newProgress = Math.min(
+            currentProgress + additionalProgress,
+            100
+          );
+          setTtsProgress(newProgress);
+        }, 100);
+      }
+    }
+  };
+
+  const toggleTTS = () => {
+    if (isTTSPlaying) {
+      pauseTTS();
+    } else if (window.speechSynthesis.paused) {
+      resumeTTS();
+    } else {
+      playTTS();
+    }
+  };
+
+  // Stop TTS when page changes
+  useEffect(() => {
+    stopTTS();
+  }, [currentPageIndex]);
+
+  // Stop TTS when component unmounts
+  useEffect(() => {
+    return () => {
+      stopTTS();
+      if (ttsProgressInterval.current) {
+        clearInterval(ttsProgressInterval.current);
+        ttsProgressInterval.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -324,7 +497,10 @@ const BookPage = () => {
 
       const response = await fetch(
         getApiUrl(`api/progress/book/${userId}/${book.bookID}`),
-        { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: "include",
+        }
       );
 
       if (response.ok) {
@@ -389,7 +565,10 @@ const BookPage = () => {
                 getApiUrl(
                   `api/progress/book/${user.userId}/${bookData.bookID}`
                 ),
-                { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
+                {
+                  headers: token ? { Authorization: `Bearer ${token}` } : {},
+                  credentials: "include",
+                }
               );
               const progressData = await progressRes.json();
 
@@ -498,7 +677,10 @@ const BookPage = () => {
             .post(
               getApiUrl(`api/progress/start/${user.userId}/${book.bookID}`),
               {},
-              { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
+              {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                withCredentials: true,
+              }
             )
             .then((res) => {
               if (res.data?.id) {
@@ -552,7 +734,10 @@ const BookPage = () => {
         // 1) Load the checkpoint metadata for this book
         const checkpointRes = await fetch(
           getApiUrl(`api/prediction-checkpoints/by-book/${bookId}`),
-          { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: "include",
+          }
         );
 
         // Handle 404 response (no checkpoint found)
@@ -592,7 +777,10 @@ const BookPage = () => {
               `api/prediction-checkpoint-attempts/user/${userId}` +
                 `/checkpoint/${checkpointId}/count`
             ),
-            { headers: token ? { Authorization: `Bearer ${token}` } : {}, credentials: "include" }
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              credentials: "include",
+            }
           );
           console.log("Attempt count response status:", attemptRes.status);
 
@@ -939,6 +1127,65 @@ const BookPage = () => {
               </button>
             </div>
 
+            {/* Text-to-Speech Toggle */}
+            <div className="mb-4">
+              <label
+                className={`block text-sm font-medium mb-2 ${
+                  readingTheme === "dark" ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
+                Text-to-Speech
+              </label>
+              <button
+                onClick={() => {
+                  const newState = !isTTSEnabled;
+                  setIsTTSEnabled(newState);
+                  if (!newState) {
+                    stopTTS();
+                  }
+                }}
+                className={`w-full p-2 rounded-lg border transition-all duration-200 flex items-center gap-2 ${
+                  isTTSEnabled
+                    ? readingTheme === "dark"
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-blue-100 border-blue-300 text-blue-700"
+                    : readingTheme === "dark"
+                    ? "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
+                    : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                {isTTSEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                {isTTSEnabled ? "TTS Enabled" : "TTS Disabled"}
+              </button>
+
+              {/* Voice Selection */}
+              {isTTSEnabled && availableVoices.length > 0 && (
+                <select
+                  value={ttsVoice?.name || ""}
+                  onChange={(e) => {
+                    const selected = availableVoices.find(
+                      (v) => v.name === e.target.value
+                    );
+                    setTtsVoice(selected);
+                    stopTTS();
+                  }}
+                  className={`w-full mt-2 p-2 rounded-lg border text-sm ${
+                    readingTheme === "dark"
+                      ? "bg-gray-700 border-gray-600 text-gray-200"
+                      : "bg-white border-gray-300 text-gray-700"
+                  }`}
+                >
+                  {availableVoices
+                    .filter((v) => v.lang.startsWith("en"))
+                    .map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} ({voice.lang})
+                      </option>
+                    ))}
+                </select>
+              )}
+            </div>
+
             {/* Reading Timer */}
             <div className="mb-4">
               <label
@@ -1128,34 +1375,151 @@ const BookPage = () => {
                     </div>
                   )}
 
-                  <motion.div
-                    className={`p-8 rounded-2xl w-full leading-relaxed shadow-lg border transition-all duration-300 ${
-                      readingTheme === "dark"
-                        ? "bg-gray-800/50 border-gray-700"
-                        : readingTheme === "sepia"
-                        ? "bg-amber-100/50 border-amber-200"
-                        : readingTheme === "high-contrast"
-                        ? "bg-white border-gray-300"
-                        : "bg-white/70 border-gray-200"
-                    }`}
-                    style={{ textAlign: "justify" }}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
+                  {/* TTS Controls Wrapper - Group for Hover */}
+                  <div
+                    className="w-full"
+                    onMouseEnter={() => isTTSEnabled && setIsTTSHovered(true)}
+                    onMouseLeave={() => isTTSEnabled && setIsTTSHovered(false)}
                   >
-                    <VocabularyHighlighter
-                      text={currentPage?.content}
-                      theme={readingTheme}
-                      isVocabularyEnabled={isVocabularyEnabled}
-                      className={`${getFontSizeClasses()} ${
+                    {/* TTS Controls - Collapsible Design */}
+                    <AnimatePresence>
+                      {isTTSEnabled && currentPage?.content && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+                          animate={{
+                            height: isTTSPlaying && !isTTSHovered ? 0 : "auto",
+                            opacity: isTTSPlaying && !isTTSHovered ? 0 : 1,
+                            marginBottom:
+                              isTTSPlaying && !isTTSHovered ? 0 : "1rem",
+                          }}
+                          exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                          className="w-full overflow-hidden"
+                        >
+                          <div
+                            className={`w-full p-3 rounded-lg border transition-all duration-300 ${
+                              readingTheme === "dark"
+                                ? "bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/70"
+                                : readingTheme === "sepia"
+                                ? "bg-amber-100/40 border-amber-200/50 hover:bg-amber-100/70"
+                                : readingTheme === "high-contrast"
+                                ? "bg-white/40 border-gray-300/50 hover:bg-white/70"
+                                : "bg-white/40 border-gray-200/50 hover:bg-white/70"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                {/* Play/Pause Button */}
+                                <button
+                                  onClick={toggleTTS}
+                                  className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+                                    isTTSPlaying
+                                      ? readingTheme === "dark"
+                                        ? "bg-blue-600/80 hover:bg-blue-700 text-white"
+                                        : "bg-blue-500/80 hover:bg-blue-600 text-white"
+                                      : readingTheme === "dark"
+                                      ? "bg-green-600/80 hover:bg-green-700 text-white"
+                                      : "bg-green-500/80 hover:bg-green-600 text-white"
+                                  }`}
+                                  title={isTTSPlaying ? "Pause" : "Play"}
+                                >
+                                  {isTTSPlaying ? (
+                                    <Pause size={16} />
+                                  ) : (
+                                    <Play size={16} />
+                                  )}
+                                </button>
+
+                                {/* Stop Button */}
+                                <button
+                                  onClick={stopTTS}
+                                  disabled={
+                                    !isTTSPlaying &&
+                                    !window.speechSynthesis.paused
+                                  }
+                                  className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+                                    readingTheme === "dark"
+                                      ? "bg-red-600/80 hover:bg-red-700 text-white disabled:bg-gray-700/50 disabled:text-gray-500 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                      : "bg-red-500/80 hover:bg-red-600 text-white disabled:bg-gray-200/50 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                  }`}
+                                  title="Stop"
+                                >
+                                  <Square size={16} />
+                                </button>
+
+                                {/* Volume Icon */}
+                                <Volume2
+                                  size={16}
+                                  className={`ml-1 ${
+                                    readingTheme === "dark"
+                                      ? "text-gray-400"
+                                      : readingTheme === "sepia"
+                                      ? "text-amber-600"
+                                      : "text-gray-500"
+                                  }`}
+                                />
+                              </div>
+
+                              {/* Progress Bar */}
+                              <div className="flex-1 mx-3">
+                                <div
+                                  className={`h-1 rounded-full overflow-hidden ${
+                                    readingTheme === "dark"
+                                      ? "bg-gray-700/50"
+                                      : readingTheme === "sepia"
+                                      ? "bg-amber-200/50"
+                                      : "bg-gray-300/50"
+                                  }`}
+                                >
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${ttsProgress}%` }}
+                                    transition={{ duration: 0.1 }}
+                                    className={`h-full rounded-full ${
+                                      readingTheme === "dark"
+                                        ? "bg-blue-500"
+                                        : readingTheme === "sepia"
+                                        ? "bg-amber-600"
+                                        : "bg-blue-500"
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <motion.div
+                      className={`p-8 rounded-2xl w-full leading-relaxed shadow-lg border transition-all duration-300 ${
                         readingTheme === "dark"
-                          ? "text-gray-100"
+                          ? "bg-gray-800/50 border-gray-700"
                           : readingTheme === "sepia"
-                          ? "text-amber-900"
-                          : "text-gray-800"
+                          ? "bg-amber-100/50 border-amber-200"
+                          : readingTheme === "high-contrast"
+                          ? "bg-white border-gray-300"
+                          : "bg-white/70 border-gray-200"
                       }`}
-                    />
-                  </motion.div>
+                      style={{ textAlign: "justify" }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                    >
+                      <VocabularyHighlighter
+                        text={currentPage?.content}
+                        theme={readingTheme}
+                        isVocabularyEnabled={isVocabularyEnabled}
+                        className={`${getFontSizeClasses()} ${
+                          readingTheme === "dark"
+                            ? "text-gray-100"
+                            : readingTheme === "sepia"
+                            ? "text-amber-900"
+                            : "text-gray-800"
+                        }`}
+                      />
+                    </motion.div>
+                  </div>
                 </>
               ) : (
                 <motion.div
@@ -1181,7 +1545,7 @@ const BookPage = () => {
         {/* Enhanced Page Counter */}
         {hasContent && pages.length > 0 && (
           <motion.div
-            className="text-gray-600 font-semibold mb-4 flex items-center gap-2"
+            className="text-gray-600 font-semibold mb-4 mt-4 flex items-center gap-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
