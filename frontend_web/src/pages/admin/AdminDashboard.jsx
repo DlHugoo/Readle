@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { getAccessToken } from "../../api/api";
-import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award } from "lucide-react";
+import { Upload, PlusCircle, BookOpen, Menu, AlertCircle, CheckCircle, Award, Wand2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import BadgeManagement from "../../components/BadgeManagement";
@@ -42,6 +42,7 @@ const AdminDashboard = () => {
   const [menuOpenIndex, setMenuOpenIndex] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
 
   // Constants for file validation
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
@@ -345,6 +346,44 @@ const AdminDashboard = () => {
     }
 
     return await res.text();
+  };
+
+  const handleGenerateCover = async () => {
+    const token = getAccessToken();
+    if (!token) {
+      showAlertModal("error", "You must be logged in to generate a book cover.");
+      return;
+    }
+
+    if (!editingBook || !editingBook.bookID) {
+      showAlertModal("error", "No book selected.");
+      return;
+    }
+
+    setIsGeneratingCover(true);
+    try {
+      const response = await axios.post(`/api/books/${editingBook.bookID}/generate-cover`, {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
+      });
+
+      // Update the book with the new cover
+      const updatedBook = response.data;
+      setEditFields({ ...editFields, imageURL: updatedBook.imageURL });
+      setEditImagePreview(updatedBook.imageURL ? getImageUrl(updatedBook.imageURL) : null);
+      
+      // Update the book in the list
+      setBooks((prev) =>
+        prev.map((b) => (b.bookID === updatedBook.bookID ? updatedBook : b))
+      );
+
+      showAlertModal("success", "Book cover generated successfully!");
+    } catch (error) {
+      console.error("Error generating book cover:", error);
+      showAlertModal("error", `Failed to generate book cover: ${error.response?.data || error.message}`);
+    } finally {
+      setIsGeneratingCover(false);
+    }
   };
 
   const submitEdit = async () => {
@@ -771,6 +810,36 @@ const AdminDashboard = () => {
                       <p className="text-xs text-gray-500 mb-2">
                         Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
                       </p>
+                      
+                      {/* AI Generate Cover Button */}
+                      <button
+                        onClick={handleGenerateCover}
+                        disabled={isGeneratingCover}
+                        className="w-full mb-3 flex items-center justify-center gap-2 p-3 border-2 border-purple-300 rounded-lg bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isGeneratingCover ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-purple-600 font-medium">Generating Cover...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 size={20} className="text-purple-500" />
+                            <span className="text-purple-600 font-medium">Generate Cover with AI</span>
+                          </>
+                        )}
+                      </button>
+
+                      {/* Divider */}
+                      <div className="relative mb-3">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="px-2 bg-white text-gray-500">OR</span>
+                        </div>
+                      </div>
+
                       <label 
                         htmlFor="editBookImage" 
                         className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50 hover:bg-blue-100 cursor-pointer transition-colors"
