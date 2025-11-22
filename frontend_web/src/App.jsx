@@ -15,7 +15,9 @@ import SnakeQuestionForm from "./pages/snakegame/SnakeQuestionForm";
 import StudentClassroomPage from "./pages/studentPage/StudentClassroomPage";
 import ClassroomContentPage from "./pages/classroom/ClassroomContentPage";
 import StorySequencingPage from "./pages/activityPage/storySequencingPage/StorySequencingPage";
+import WordStorySequencingPage from "./pages/activityPage/storySequencingPage/WordStorySequencingPage";
 import TeacherCreateSSA from "./pages/activityPage/storySequencingPage/TeacherCreateSSA";
+import TeacherCreateWordSSA from "./pages/activityPage/storySequencingPage/TeacherCreateWordSSA";
 import StudentProgressDashboard from "./pages/studentPage/StudentProgressDashboard";
 import StudentBadgeDashboard from "./pages/studentPage/StudentBadgeDashboard";
 import ClassroomProgress from "./pages/classroom/ClassroomProgress";
@@ -72,6 +74,7 @@ export default function App() {
         <Route path="/book/:bookId/complete" element={<BookCompletionPage />} />
         <Route path="/book/:bookId/snake-game" element={<SnakeGame />} />
         <Route path="/book/:bookId/sequencing" element={<StorySequencingPage />} />
+        <Route path="/book/:bookId/word-sequencing" element={<WordStorySequencingPage />} />
         <Route path="/student/badges" element={<StudentBadgeDashboard />} />
       </Route>
 
@@ -90,6 +93,7 @@ export default function App() {
         <Route path="/book-editor/:bookId" element={<BookPageEditor role="teacher" />} />
         <Route path="/snake-questions" element={<SnakeQuestionForm />} />
         <Route path="/teacher-create-ssa" element={<TeacherCreateSSA />} />
+        <Route path="/teacher-create-word-ssa" element={<TeacherCreateWordSSA />} />
         <Route path="/create-prediction" element={<CreatePredictionCheckpoint />} />
       </Route>
 
