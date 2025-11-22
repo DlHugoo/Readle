@@ -3,13 +3,16 @@ package com.edu.readle.service;
 import com.edu.readle.dto.BookDTO;
 import com.edu.readle.entity.BookEntity;
 import com.edu.readle.entity.Classroom;
+import com.edu.readle.entity.PageEntity;
 import com.edu.readle.repository.BookRepository;
 import com.edu.readle.repository.ClassroomRepository;
+import com.edu.readle.repository.PageRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.edu.readle.repository.StudentProgressTrackerRepository;
 
@@ -19,11 +22,14 @@ public class BookService {
     private final BookRepository bookRepository;
     private final ClassroomRepository classroomRepository;
     private final StudentProgressTrackerRepository progressRepository;
+    private final PageRepository pageRepository;
 
-    public BookService(BookRepository bookRepository, ClassroomRepository classroomRepository, StudentProgressTrackerRepository progressRepository) {
+    public BookService(BookRepository bookRepository, ClassroomRepository classroomRepository, 
+                      StudentProgressTrackerRepository progressRepository, PageRepository pageRepository) {
         this.bookRepository = bookRepository;
         this.classroomRepository = classroomRepository;
         this.progressRepository = progressRepository;
+        this.pageRepository = pageRepository;
     }
 
     // 🔹 For student "For You" section
@@ -197,5 +203,31 @@ public class BookService {
 
     public boolean hasProgress(BookEntity book) {
         return progressRepository.countByBook(book) > 0;
+    }
+
+    /**
+     * Get aggregated content from all pages of a book.
+     * @param bookId The book ID
+     * @return Aggregated content string from all pages
+     */
+    public String getAggregatedBookContent(Long bookId) {
+        Optional<BookEntity> bookOpt = bookRepository.findById(bookId);
+        if (bookOpt.isEmpty()) {
+            throw new RuntimeException("Book not found with ID: " + bookId);
+        }
+
+        BookEntity book = bookOpt.get();
+        List<PageEntity> pages = pageRepository.findByBook(book);
+        
+        if (pages == null || pages.isEmpty()) {
+            return "";
+        }
+
+        // Sort pages by page number and aggregate content
+        return pages.stream()
+                .sorted((p1, p2) -> Integer.compare(p1.getPageNumber(), p2.getPageNumber()))
+                .map(PageEntity::getContent)
+                .filter(content -> content != null && !content.trim().isEmpty())
+                .collect(Collectors.joining(" "));
     }
 }

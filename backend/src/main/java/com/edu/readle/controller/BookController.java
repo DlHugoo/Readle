@@ -3,6 +3,7 @@ package com.edu.readle.controller;
 import com.edu.readle.dto.BookDTO;
 import com.edu.readle.entity.BookEntity;
 import com.edu.readle.service.BookService;
+import com.edu.readle.service.ImagenService;
 import io.jsonwebtoken.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +26,13 @@ import java.util.Base64;
 public class BookController {
 
     private final BookService bookService;
+    private final ImagenService imagenService;
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max file size
 
     @Autowired
-    public BookController(BookService bookService) {
+    public BookController(BookService bookService, ImagenService imagenService) {
         this.bookService = bookService;
+        this.imagenService = imagenService;
     }
 
     // 🔹 STUDENT: Get globally visible books ("For You" section)
@@ -298,6 +301,75 @@ public class BookController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<BookEntity>> getArchivedBooks() {
         return ResponseEntity.ok(bookService.getArchivedBooks());
+    }
+
+    // 🔹 Generate book cover image using AI
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'TEACHER')")
+    @PostMapping("/{bookId}/generate-cover")
+    public ResponseEntity<?> generateBookCover(@PathVariable Long bookId) {
+        try {
+            Optional<BookEntity> bookOpt = bookService.getBookById(bookId);
+            if (bookOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            BookEntity book = bookOpt.get();
+            
+            // Get aggregated content from all pages
+            String bookContent = bookService.getAggregatedBookContent(bookId);
+            
+            // Generate book cover using AI
+            String base64Image = imagenService.generateBookCover(
+                book.getTitle(), 
+                book.getAuthor(), 
+                bookContent
+            );
+
+            if (base64Image == null || base64Image.isEmpty()) {
+                return ResponseEntity.status(500).body("Failed to generate book cover image");
+            }
+
+            // Save the generated image to file system
+            String uploadDir = "uploads/bookcovers/";
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // Generate unique filename
+            String fileName = System.currentTimeMillis() + "_cover_" + bookId + ".png";
+            Path filePath = Paths.get(uploadDir + fileName);
+
+            // Decode base64 and write to file
+            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+            Files.write(filePath, imageBytes);
+
+            // Update book with new cover image URL
+            String imageURL = "/uploads/bookcovers/" + fileName;
+            book.setImageURL(imageURL);
+            BookEntity updatedBook = bookService.updateBook(bookId, convertToDTO(book)).orElse(book);
+
+            return ResponseEntity.ok(updatedBook);
+
+        } catch (Exception e) {
+            System.err.println("Error generating book cover: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error generating book cover: " + e.getMessage());
+        }
+    }
+
+    // Helper method to convert BookEntity to BookDTO
+    private BookDTO convertToDTO(BookEntity book) {
+        BookDTO dto = new BookDTO();
+        dto.setTitle(book.getTitle());
+        dto.setAuthor(book.getAuthor());
+        dto.setGenre(book.getGenre());
+        dto.setDifficultyLevel(book.getDifficultyLevel());
+        dto.setImageURL(book.getImageURL());
+        if (book.getClassroom() != null) {
+            dto.setClassroomId(book.getClassroom().getId());
+        }
+        return dto;
     }
 
 }
