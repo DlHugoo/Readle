@@ -1,7 +1,13 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
+const FeedbackModal = ({
+  isCorrect,
+  feedback,
+  attemptsLeft,
+  onTryAgain,
+  onContinue,
+}) => {
   const navigate = useNavigate();
   const { bookId } = useParams();
 
@@ -23,9 +29,14 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
               <h2 className="text-3xl font-bold text-green-600 mb-4">
                 Amazing job!
               </h2>
-              <p className="text-xl mb-6">
-                You arranged the pictures in the correct order!
-              </p>
+              {feedback && (
+                <p className="text-lg text-gray-700 mb-4 italic">{feedback}</p>
+              )}
+              {!feedback && (
+                <p className="text-xl mb-6">
+                  You arranged the story parts in the correct order!
+                </p>
+              )}
               <div className="flex justify-center space-x-2 mb-6">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="text-3xl animate-star">
@@ -50,11 +61,39 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
                   <h2 className="text-3xl font-bold text-orange-500 mb-4">
                     Not quite right
                   </h2>
-                  <p className="text-xl mb-2">
-                    Let's try again! Think about what happened in the story.
-                  </p>
-                  <p className="text-lg mb-6 font-semibold">
-                    You have {attemptsLeft} {attemptsLeft === 1 ? "try" : "tries"} left
+                  {feedback ? (
+                    <div className="mb-4">
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-4 text-left">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg
+                              className="h-5 w-5 text-blue-400"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-blue-700 leading-relaxed">
+                              {feedback}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xl mb-2">
+                      Let's try again! Think about what happened in the story.
+                    </p>
+                  )}
+                  <p className="text-lg mb-6 font-semibold text-gray-600">
+                    You have {attemptsLeft}{" "}
+                    {attemptsLeft === 1 ? "try" : "tries"} left
                   </p>
                   <div className="flex flex-col space-y-4 mt-6">
                     <button
@@ -71,9 +110,21 @@ const FeedbackModal = ({ isCorrect, attemptsLeft, onTryAgain, onContinue }) => {
                   <h2 className="text-3xl font-bold text-purple-600 mb-4">
                     Great Effort!
                   </h2>
-                  <p className="text-xl mb-6">
-                    Learning takes time and practice. Keep reading and you'll get better!
-                  </p>
+                  {feedback && (
+                    <div className="mb-4">
+                      <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg mb-4 text-left">
+                        <p className="text-sm text-purple-700 leading-relaxed">
+                          {feedback}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {!feedback && (
+                    <p className="text-xl mb-6">
+                      Learning takes time and practice. Keep reading and you'll
+                      get better!
+                    </p>
+                  )}
                   <div className="flex flex-col space-y-4 mt-6">
                     <button
                       onClick={handleContinue}

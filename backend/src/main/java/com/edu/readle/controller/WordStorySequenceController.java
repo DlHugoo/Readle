@@ -1,5 +1,6 @@
 package com.edu.readle.controller;
 
+import com.edu.readle.dto.SequenceCheckResponseDTO;
 import com.edu.readle.dto.WordStorySequenceDTO;
 import com.edu.readle.entity.*;
 import com.edu.readle.repository.*;
@@ -75,14 +76,34 @@ public class WordStorySequenceController {
                                           Principal principal) {
         List<Long> attempted = body.get("attemptedSequence");
         if (attempted == null || attempted.isEmpty()) {
-            return ResponseEntity.badRequest().body("No sequence submitted");
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "No sequence submitted"));
         }
 
         UserEntity user = userRepo.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        boolean isCorrect = wordStorySequenceService.checkSequence(wssaId, attempted, user);
-        return ResponseEntity.ok(Map.of("correct", isCorrect));
+        try {
+            SequenceCheckResponseDTO response = 
+                wordStorySequenceService.checkSequenceWithFeedback(wssaId, attempted, user);
+            
+            return ResponseEntity.ok(Map.of(
+                "correct", response.isCorrect(),
+                "feedback", response.getFeedback()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback to simple check if feedback generation fails
+            boolean isCorrect = wordStorySequenceService.checkSequence(wssaId, attempted, user);
+            String fallbackFeedback = isCorrect 
+                ? "Excellent work! You've arranged the story parts correctly."
+                : "Good effort! Think about the order of events in the story.";
+            
+            return ResponseEntity.ok(Map.of(
+                "correct", isCorrect,
+                "feedback", fallbackFeedback
+            ));
+        }
     }
 
     /**
