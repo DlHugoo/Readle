@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate  } from "react-router-dom";
 import TeahcerNav from '../../components/TeacherNav';
-import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check, Sparkles, Star, Heart, Zap, GraduationCap, Users, Edit, Trash2, Archive, MoreVertical, X, Wand2 } from "lucide-react";
+import { BookOpen, PlusCircle, Menu, Upload, AlertCircle, CheckCircle, Copy, Check, Sparkles, Star, Heart, Zap, GraduationCap, Users, Edit, Trash2, Archive, MoreVertical, X } from "lucide-react";
 import ClassroomSidebar from "../../components/ClassroomSidebar";
 import axios from 'axios'; // Import axios
 import { getAccessToken } from '../../api/api';
@@ -33,7 +33,6 @@ const ClassroomContentManager = () => {
   const [bookImageURL, setBookImageURL] = useState("");
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
 
   // Add these constants for file validation
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
@@ -421,47 +420,6 @@ const ClassroomContentManager = () => {
     } catch (error) {
       console.error("Error archiving book:", error);
       showAlertModal("error", "Failed to archive book.");
-    }
-  };
-
-  const handleGenerateCover = async () => {
-    const token = getAccessToken();
-    if (!token) {
-      showAlertModal("error", "You must be logged in to generate a book cover.");
-      return;
-    }
-
-    if (!selectedBook || !selectedBook.bookID) {
-      showAlertModal("error", "No book selected.");
-      return;
-    }
-
-    setIsGeneratingCover(true);
-    try {
-      const response = await axios.post(`/api/books/${selectedBook.bookID}/generate-cover`, {}, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        withCredentials: true,
-      });
-
-      // Update the book with the new cover
-      const updatedBook = response.data;
-      setBookImageURL(updatedBook.imageURL);
-      setImagePreview(updatedBook.imageURL ? getImageUrl(updatedBook.imageURL) : null);
-      
-      // Update the book in the list
-      setClassroomContent((prevContent) => {
-        const updated = prevContent.map((book) =>
-          book.bookID === updatedBook.bookID ? updatedBook : book
-        );
-        return updated.filter((b) => !isArchived(b));
-      });
-
-      showAlertModal("success", "Book cover generated successfully!");
-    } catch (error) {
-      console.error("Error generating book cover:", error);
-      showAlertModal("error", `Failed to generate book cover: ${error.response?.data || error.message}`);
-    } finally {
-      setIsGeneratingCover(false);
     }
   };
 
@@ -1140,42 +1098,6 @@ const ClassroomContentManager = () => {
                       <Sparkles size={12} className="mr-1 text-yellow-500" />
                       Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
                     </p>
-                    
-                    {/* AI Generate Cover Button */}
-                    <div className="mb-4">
-                      <button
-                        onClick={handleGenerateCover}
-                        disabled={isGeneratingCover}
-                        className="group w-full flex items-center justify-center gap-3 p-4 border-2 border-purple-300 rounded-xl bg-gradient-to-br from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 cursor-pointer transition-all duration-300 hover:border-purple-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          {isGeneratingCover ? (
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <Wand2 size={20} className="text-white" />
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <span className="block text-purple-600 font-bold">
-                            {isGeneratingCover ? "Generating Cover..." : "Generate Cover with AI"}
-                          </span>
-                          <span className="block text-gray-500 text-sm">
-                            {isGeneratingCover ? "Please wait..." : "Create cover from title, author, and content"}
-                          </span>
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="relative mb-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-300"></div>
-                      </div>
-                      <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white text-gray-500">OR</span>
-                      </div>
-                    </div>
-
                     <label 
                       htmlFor="editBookImage" 
                       className="group flex items-center justify-center gap-3 w-full p-4 border-2 border-dashed border-yellow-300 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 cursor-pointer transition-all duration-300 hover:border-yellow-400"
