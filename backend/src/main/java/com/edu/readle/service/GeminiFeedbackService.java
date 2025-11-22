@@ -56,7 +56,7 @@ public class GeminiFeedbackService {
             generationConfig.put("temperature", 0.7);
             generationConfig.put("topK", 40);
             generationConfig.put("topP", 0.95);
-            generationConfig.put("maxOutputTokens", 200);
+            generationConfig.put("maxOutputTokens", 500); // MUST increase from 200
             generationConfig.put("stopSequences", List.of());
             requestBody.put("generationConfig", generationConfig);
 
@@ -79,10 +79,10 @@ public class GeminiFeedbackService {
             // Extract feedback from response
             @SuppressWarnings("unchecked")
             Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-            
+
             // Debug logging to see actual response structure
             System.out.println("Gemini API Response: " + responseBody);
-            
+
             if (responseBody != null) {
                 // Try to extract feedback from response
                 String feedbackText = extractFeedbackFromResponse(responseBody);
@@ -146,12 +146,20 @@ public class GeminiFeedbackService {
      */
     private String extractFeedbackFromResponse(Map<String, Object> responseBody) {
         try {
-            // Try standard structure: responseBody -> candidates -> content -> parts -> text
+            // Try standard structure: responseBody -> candidates -> content -> parts ->
+            // text
             if (responseBody.containsKey("candidates")) {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> candidates = (List<Map<String, Object>>) responseBody.get("candidates");
                 if (candidates != null && !candidates.isEmpty()) {
                     Map<String, Object> candidate = candidates.get(0);
+
+                    // Log finishReason for debugging
+                    String finishReason = (String) candidate.get("finishReason");
+                    if (finishReason != null) {
+                        System.out.println("Finish reason: " + finishReason);
+                    }
+
                     if (candidate.containsKey("content")) {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> contentMap = (Map<String, Object>) candidate.get("content");
@@ -164,16 +172,20 @@ public class GeminiFeedbackService {
                                     return (String) firstPart.get("text");
                                 }
                             }
+                        } else {
+                            System.err.println(
+                                    "Content exists but 'parts' array is missing. This usually means the response was truncated. Content: "
+                                            + contentMap);
                         }
                     }
                 }
             }
-            
+
             // Alternative: Check if response has direct text field
             if (responseBody.containsKey("text")) {
                 return (String) responseBody.get("text");
             }
-            
+
             return null;
         } catch (Exception e) {
             System.err.println("Error extracting feedback: " + e.getMessage());
