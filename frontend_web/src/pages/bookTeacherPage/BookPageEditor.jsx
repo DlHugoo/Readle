@@ -24,6 +24,7 @@ import {
   Play,
   Target,
   Brain,
+  Type,
 } from "lucide-react";
 // Add this import at the top if not already present
 import { Link } from "react-router-dom";
@@ -1125,6 +1126,34 @@ const BookPageEditor = ({ role = "teacher" }) => {
                       Create an engaging activity to arrange story events in chronological order
                     </p>
                     <div className="mt-4 flex items-center text-purple-600 font-semibold text-sm">
+                      <Play size={16} className="mr-2" />
+                      <span>Start Creating</span>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/teacher-create-word-ssa"
+                  state={{ bookId: bookId, bookTitle: book?.title }}
+                  className="group bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-6 hover:from-orange-100 hover:to-amber-100 transition-all duration-500 transform hover:scale-105 hover:shadow-xl relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full transform translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-500"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center mb-4">
+                      <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <Type size={28} className="text-white" />
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-lg font-bold text-orange-800 group-hover:text-orange-900 transition-colors duration-300">
+                          Word Story Sequencing
+                        </h3>
+                        <p className="text-sm text-orange-600">Text-Based Activity</p>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 text-sm leading-relaxed">
+                      Create a word-based activity where students arrange story parts in chronological order
+                    </p>
+                    <div className="mt-4 flex items-center text-orange-600 font-semibold text-sm">
                       <Play size={16} className="mr-2" />
                       <span>Start Creating</span>
                     </div>
