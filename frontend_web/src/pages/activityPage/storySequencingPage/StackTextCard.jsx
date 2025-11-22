@@ -29,7 +29,7 @@ const StackTextCard = ({ id, text, index, isDragging, activeId }) => {
       animate={{
         opacity: isItemDragging ? 0.5 : 1,
         y: 0,
-        scale: isItemDragging ? 1.05 : 1,
+        scale: isItemDragging ? 1.02 : 1,
       }}
       exit={{ opacity: 0, y: 20 }}
       transition={{
@@ -43,54 +43,54 @@ const StackTextCard = ({ id, text, index, isDragging, activeId }) => {
     >
       <div
         className={`
-          bg-white rounded-xl shadow-md p-4 cursor-grab active:cursor-grabbing
+          bg-white rounded-lg shadow-sm p-5 cursor-grab active:cursor-grabbing
           border-2 transition-all duration-200
           ${
             isItemDragging
-              ? "border-orange-400 shadow-2xl scale-105 rotate-1"
+              ? "border-blue-400 shadow-lg"
               : isActive
-              ? "border-orange-300 shadow-lg"
-              : "border-gray-200 hover:border-orange-200 hover:shadow-lg"
+              ? "border-blue-300 shadow-md"
+              : "border-gray-200 hover:border-blue-200 hover:shadow-md"
           }
           ${isItemDragging ? "opacity-50" : "opacity-100"}
         `}
         {...attributes}
         {...listeners}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           {/* Drag Handle */}
           <div
             className={`
-              flex-shrink-0 mt-1 p-1 rounded-lg transition-colors
+              flex-shrink-0 mt-1 p-2 rounded-md transition-colors
               ${
                 isItemDragging
-                  ? "bg-orange-100 text-orange-600"
-                  : "bg-gray-100 text-gray-400 group-hover:bg-orange-100 group-hover:text-orange-500"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-400 group-hover:bg-blue-100 group-hover:text-blue-500"
               }
             `}
           >
-            <GripVertical size={18} />
+            <GripVertical size={20} />
           </div>
 
           {/* Position Indicator */}
           <div
             className={`
-              flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm transition-all
+              flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-semibold text-sm transition-all
               ${
                 isItemDragging
-                  ? "bg-gradient-to-br from-orange-500 to-amber-600 text-white scale-110"
-                  : "bg-gradient-to-br from-gray-200 to-gray-300 text-gray-700 group-hover:from-orange-200 group-hover:to-amber-200 group-hover:text-orange-700"
+                  ? "bg-blue-600 text-white scale-105"
+                  : "bg-blue-50 text-blue-700 group-hover:bg-blue-100"
               }
             `}
           >
             {index + 1}
           </div>
 
-          {/* Text Content */}
+          {/* Text Content - Main Focus */}
           <div className="flex-1 min-w-0">
             <p
               className={`
-                text-gray-800 text-sm font-medium leading-relaxed
+                text-gray-800 text-base leading-relaxed
                 ${isItemDragging ? "text-gray-600" : ""}
               `}
             >
@@ -98,20 +98,9 @@ const StackTextCard = ({ id, text, index, isDragging, activeId }) => {
             </p>
           </div>
         </div>
-
-        {/* Hover Effect Indicator */}
-        {!isItemDragging && (
-          <motion.div
-            className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/0 via-orange-500/5 to-orange-500/0 opacity-0 group-hover:opacity-100 pointer-events-none"
-            initial={{ x: "-100%" }}
-            whileHover={{ x: "100%" }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-          />
-        )}
       </div>
     </motion.div>
   );
 };
 
 export default StackTextCard;
-

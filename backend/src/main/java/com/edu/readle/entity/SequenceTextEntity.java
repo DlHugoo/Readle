@@ -10,6 +10,8 @@ public class SequenceTextEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long textID;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String textContent;
 
     private int correctPosition;
