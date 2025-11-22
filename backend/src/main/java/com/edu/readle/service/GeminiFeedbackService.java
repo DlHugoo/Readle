@@ -36,6 +36,7 @@ public class GeminiFeedbackService {
             // Prepare request headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-goog-api-key", apiKey);  // API key as header per Gemini API docs
 
             // Prepare request body for Gemini API
             Map<String, Object> requestBody = new HashMap<>();
@@ -70,11 +71,8 @@ public class GeminiFeedbackService {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            // Make API call to Gemini
-            String url = String.format(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s",
-                apiKey
-            );
+            // Make API call to Gemini - Updated to use gemini-2.5-flash (correct model name)
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
             var response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
 
