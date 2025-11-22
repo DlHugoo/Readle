@@ -138,7 +138,7 @@ public class ImagenService {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("sampleCount", 1); // Only need one cover
-            parameters.put("aspectRatio", "3:4"); // Book cover aspect ratio
+            parameters.put("aspectRatio", "16:9"); // Book cover aspect ratio
             parameters.put("personGeneration", "allow_adult");
             requestBody.put("parameters", parameters);
 
@@ -180,30 +180,20 @@ public class ImagenService {
                 ? (bookContent.length() > 500 ? bookContent.substring(0, 500) + "..." : bookContent)
                 : "educational children's story";
 
-        String bookTitle = title != null ? title : "Book";
-        String bookAuthor = author != null ? author : "Unknown";
-
         return String.format(
-                "Professional book cover design for an educational children's book in 3:4 portrait aspect ratio. " +
-                        "The book title is '%s' and the author is '%s'. " +
+                "Professional book cover design for an educational children's book. " +
+                        "Title: '%s'. Author: '%s'. " +
                         "Based on the story content: %s. " +
-                        "Create a complete book cover with both illustration and text. " +
-                        "The cover should be colorful, engaging, and child-friendly with vibrant colors suitable for elementary school children. "
+                        "The cover should be colorful, engaging, and child-friendly. " +
+                        "Design a captivating book cover illustration that represents the main themes and characters of the story. "
                         +
-                        "Design a captivating illustration that represents the main themes and characters of the story. "
-                        +
+                        "Use vibrant colors suitable for elementary school children. " +
                         "The illustration should be culturally appropriate and focus on positive educational themes. " +
-                        "IMPORTANT: Display the title '%s' prominently at the top or center of the cover in large, readable, playful font that matches the children's book aesthetic. "
+                        "Do not include any text, titles, or author names in the illustration - only visual elements. "
                         +
-                        "Display the author name '%s' below the title or at the bottom in a clear, elegant font. " +
-                        "The text should be clearly visible against the background with good contrast. " +
-                        "Use creative typography that is fun and appealing to children while remaining professional and readable. "
-                        +
-                        "The overall design should look like a real published children's book cover with balanced composition of illustration and text.",
-                bookTitle,
-                bookAuthor,
-                contentSummary,
-                bookTitle,
-                bookAuthor);
+                        "Make it professional and appealing as a book cover.",
+                title != null ? title : "Book",
+                author != null ? author : "Unknown",
+                contentSummary);
     }
 }
