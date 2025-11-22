@@ -14,6 +14,9 @@ import {
   BookOpen,
   ArrowLeft,
   AlertCircle,
+  Image,
+  Type,
+  X,
 } from "lucide-react";
 import motivationalQuotes from "../../data/motivationalQuotes.json";
 
@@ -32,9 +35,11 @@ const BookCompletionPage = () => {
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [showConfetti, setShowConfetti] = useState(true);
   const [hasSSA, setHasSSA] = useState(false);
+  const [hasWSSA, setHasWSSA] = useState(false);
   const [hasSnakeGame, setHasSnakeGame] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [completionError, setCompletionError] = useState(null);
+  const [showSequencingModal, setShowSequencingModal] = useState(false);
   const [randomQuote] = useState(
     () =>
       motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
@@ -56,7 +61,7 @@ const BookCompletionPage = () => {
         const token = getAccessToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
-        // Check for SSA
+        // Check for Image-based SSA
         const ssaRes = await fetch(`/api/ssa/by-book/${bookId}`, { headers });
         if (ssaRes.ok) {
           const ssaData = await ssaRes.json();
@@ -70,6 +75,26 @@ const BookCompletionPage = () => {
       } catch (err) {
         console.error("Error checking SSA:", err);
         setHasSSA(false);
+      }
+
+      try {
+        const token = getAccessToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        
+        // Check for Word-based WSSA
+        const wssaRes = await fetch(`/api/wssa/by-book/${bookId}`, { headers });
+        if (wssaRes.ok) {
+          const wssaData = await wssaRes.json();
+          setHasWSSA(!!wssaData);
+        } else if (wssaRes.status === 404) {
+          setHasWSSA(false);
+        } else {
+          console.error("Error checking WSSA:", wssaRes.status);
+          setHasWSSA(false);
+        }
+      } catch (err) {
+        console.error("Error checking WSSA:", err);
+        setHasWSSA(false);
       }
 
       try {
@@ -310,7 +335,7 @@ const BookCompletionPage = () => {
         </motion.div>
 
         {/* Activities Section */}
-        {(hasSSA || hasSnakeGame) && (
+        {(hasSSA || hasWSSA || hasSnakeGame) && (
           <motion.h3
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -322,7 +347,7 @@ const BookCompletionPage = () => {
           </motion.h3>
         )}
 
-        {!hasSSA && !hasSnakeGame ? (
+        {!hasSSA && !hasWSSA && !hasSnakeGame ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -344,11 +369,19 @@ const BookCompletionPage = () => {
             transition={{ delay: 1 }}
             className="flex flex-col sm:flex-row gap-4 justify-center mb-8"
           >
-            {hasSSA && (
+            {(hasSSA || hasWSSA) && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate(`/book/${bookId}/sequencing`)}
+                onClick={() => {
+                  if (hasSSA && hasWSSA) {
+                    setShowSequencingModal(true);
+                  } else if (hasSSA) {
+                    navigate(`/book/${bookId}/sequencing`);
+                  } else if (hasWSSA) {
+                    navigate(`/book/${bookId}/word-sequencing`);
+                  }
+                }}
                 className="group relative px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all overflow-hidden"
               >
                 {/* Animated background */}
@@ -392,6 +425,75 @@ const BookCompletionPage = () => {
           <span>Back to Library</span>
         </motion.button>
       </motion.div>
+
+      {/* Sequencing Activity Selection Modal */}
+      {showSequencingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+          >
+            <button
+              onClick={() => setShowSequencingModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                Choose Activity Type
+              </h3>
+              <p className="text-gray-600">
+                Select which type of story sequencing activity you'd like to try
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setShowSequencingModal(false);
+                  navigate(`/book/${bookId}/sequencing`);
+                }}
+                className="w-full p-6 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-4 group"
+              >
+                <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Image size={32} className="text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h4 className="text-xl font-bold mb-1">Image-Based Sequencing</h4>
+                  <p className="text-sm text-white/90">
+                    Arrange story images in chronological order
+                  </p>
+                </div>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setShowSequencingModal(false);
+                  navigate(`/book/${bookId}/word-sequencing`);
+                }}
+                className="w-full p-6 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-4 group"
+              >
+                <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Type size={32} className="text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h4 className="text-xl font-bold mb-1">Word-Based Sequencing</h4>
+                  <p className="text-sm text-white/90">
+                    Arrange story parts (text) in chronological order
+                  </p>
+                </div>
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

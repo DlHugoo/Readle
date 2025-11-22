@@ -5,9 +5,10 @@ import axios from "axios";
 import StudentNavbar from "../../../components/StudentNavbar";
 import WordSequencingBoard from "./WordSequencingBoard";
 import FeedbackModal from "./FeedbackModal";
-import sequenceBg from "../../../assets/sequence-bg2.png";
 import { getAccessToken } from "../../../api/api";
 import { useAuth } from "../../../contexts/AuthContext";
+import { motion } from "framer-motion";
+import { Type, Sparkles } from "lucide-react";
 
 const WordStorySequencingPage = () => {
   const { bookId } = useParams();
@@ -197,12 +198,12 @@ const WordStorySequencingPage = () => {
 
   if (!storyData)
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
         <StudentNavbar />
         <div className="flex justify-center items-center h-[60vh] text-gray-500 text-lg">
           <div className="flex flex-col items-center gap-3">
             <svg
-              className="animate-spin h-8 w-8 text-blue-500"
+              className="animate-spin h-8 w-8 text-orange-500"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -228,32 +229,61 @@ const WordStorySequencingPage = () => {
     );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       <StudentNavbar />
-      <div className="max-w-7xl mx-auto px-4 py-6 h-full">
-        <div
-          className="bg-white rounded-xl shadow-lg p-6 min-h-[calc(95vh-8rem)]"
-          style={{
-            backgroundImage: `url(${sequenceBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
-          <h1 className="text-3xl font-bold text-center text-seq-title mb-4">
-            {storyData.title}
-          </h1>
-          <p className="text-xl text-sequence-title text-center mb-6">
-            Drag and drop the story parts in the correct chronological order
-          </p>
+      
+      {/* Decorative Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-orange-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-yellow-200/10 rounded-full blur-3xl"></div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 py-8 h-full relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 mb-6 border-2 border-orange-200"
+        >
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Type size={32} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                  {storyData.title}
+                </h1>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <Sparkles size={16} className="text-orange-500" />
+                  <p className="text-lg text-gray-600 font-medium">
+                    Word-Based Story Sequencing
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p className="text-gray-700 text-lg max-w-2xl mx-auto">
+              Arrange the story parts in the correct chronological order by
+              dragging them into position
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Main Activity Board */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           <WordSequencingBoard
             key={resetCounter}
             texts={storyData.texts}
             onSubmit={handleSubmitSequence}
             reshuffleTrigger={reshuffleTrigger}
           />
-        </div>
+        </motion.div>
       </div>
 
       {showFeedback && (
@@ -300,4 +330,3 @@ const WordStorySequencingPage = () => {
 };
 
 export default WordStorySequencingPage;
-
