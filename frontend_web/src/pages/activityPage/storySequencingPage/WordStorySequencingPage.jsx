@@ -17,6 +17,7 @@ const WordStorySequencingPage = () => {
   const [storyData, setStoryData] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [feedback, setFeedback] = useState("");
   const [attemptsLeft, setAttemptsLeft] = useState(4);
   const [reshuffleTrigger, setReshuffleTrigger] = useState(0);
   const [resetCounter, setResetCounter] = useState(0);
@@ -162,6 +163,7 @@ const WordStorySequencingPage = () => {
       );
 
       setIsCorrect(res.data.correct);
+      setFeedback(res.data.feedback || "");
       setShowFeedback(true);
 
       if (!res.data.correct) {
@@ -256,6 +258,7 @@ const WordStorySequencingPage = () => {
       {showFeedback && (
         <FeedbackModal
           isCorrect={isCorrect}
+          feedback={feedback}
           attemptsLeft={attemptsLeft}
           onTryAgain={attemptsLeft > 0 ? handleTryAgain : null}
           onContinue={handleContinue}
