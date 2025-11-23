@@ -1,34 +1,20 @@
-import React, { useEffect, useState } from "react";
-import {
-  DndContext,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-  DragOverlay,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import React, { useEffect, useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import StackTextCard from "./StackTextCard";
-import { ArrowUturnLeftIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
+import {
+  ArrowUturnLeftIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  InformationCircleIcon,
+} from "@heroicons/react/24/solid";
 import { motion, AnimatePresence } from "framer-motion";
 
 const WordSequencingBoard = ({ texts, onSubmit, reshuffleTrigger }) => {
   const [orderedTexts, setOrderedTexts] = useState([]);
-  const [activeId, setActiveId] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [draggedId, setDraggedId] = useState(null);
   const [showInstructions, setShowInstructions] = useState(false);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+  const cardRefs = useRef({});
 
   useEffect(() => {
     // Shuffle texts and assign unique IDs
@@ -42,26 +28,41 @@ const WordSequencingBoard = ({ texts, onSubmit, reshuffleTrigger }) => {
     setOrderedTexts(withUid);
   }, [texts, reshuffleTrigger]);
 
-  const handleDragStart = (event) => {
-    setActiveId(event.active.id);
-    setIsDragging(true);
+  const handleDragStart = (id) => {
+    setDraggedId(id);
   };
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    setIsDragging(false);
-    setActiveId(null);
+  const handleDragEnd = (id, info) => {
+    setDraggedId(null);
 
-    if (!over || active.id === over.id) {
+    // Find the dragged item
+    const draggedIndex = orderedTexts.findIndex((item) => item.uid === id);
+    if (draggedIndex === -1) return;
+
+    // Calculate new position based on drag distance
+    // Each card is approximately 100px tall (including spacing)
+    const cardHeight = 100;
+    const dragDistance = info.offset.y;
+
+    if (Math.abs(dragDistance) < cardHeight / 2) {
+      // Not enough movement, don't reorder
       return;
     }
 
-    setOrderedTexts((items) => {
-      const oldIndex = items.findIndex((item) => item.uid === active.id);
-      const newIndex = items.findIndex((item) => item.uid === over.id);
+    const direction = dragDistance > 0 ? 1 : -1;
+    const cardsMoved = Math.round(Math.abs(dragDistance) / cardHeight);
 
+    const newIndex = Math.max(
+      0,
+      Math.min(orderedTexts.length - 1, draggedIndex + direction * cardsMoved)
+    );
+
+    if (newIndex === draggedIndex) return;
+
+    // Reorder the array
+    setOrderedTexts((items) => {
       const newItems = [...items];
-      const [removed] = newItems.splice(oldIndex, 1);
+      const [removed] = newItems.splice(draggedIndex, 1);
       newItems.splice(newIndex, 0, removed);
 
       // Update currentIndex for all items
@@ -72,20 +73,16 @@ const WordSequencingBoard = ({ texts, onSubmit, reshuffleTrigger }) => {
     });
   };
 
-  const handleDragCancel = () => {
-    setIsDragging(false);
-    setActiveId(null);
-  };
-
   const handleClear = () => {
-    const shuffled = [...texts].sort(() => Math.random() - 0.5);
-    const withUid = shuffled.map((text, index) => ({
-      ...text,
-      uid: uuidv4(),
-      originalId: text.id,
-      currentIndex: index,
-    }));
-    setOrderedTexts(withUid);
+    // Shuffle the existing items by reordering them, keeping the same uids
+    // This prevents AnimatePresence from treating them as new items
+    setOrderedTexts((currentItems) => {
+      const shuffled = [...currentItems].sort(() => Math.random() - 0.5);
+      return shuffled.map((item, index) => ({
+        ...item,
+        currentIndex: index,
+      }));
+    });
   };
 
   const handleSubmit = () => {
@@ -93,127 +90,166 @@ const WordSequencingBoard = ({ texts, onSubmit, reshuffleTrigger }) => {
     onSubmit(ids);
   };
 
-  const activeItem = orderedTexts.find((item) => item.uid === activeId);
-
   return (
     <div className="w-full">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <div className="max-w-4xl mx-auto">
-          {/* Collapsible Instructions */}
-          <div className="mb-6">
-            <button
-              onClick={() => setShowInstructions(!showInstructions)}
-              className="w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200"
+      <div className="max-w-5xl mx-auto">
+        {/* Modern Instructions Panel */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <button
+            onClick={() => setShowInstructions(!showInstructions)}
+            className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <InformationCircleIcon className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-white font-semibold text-lg">
+                Instructions
+              </span>
+            </div>
+            <motion.div
+              animate={{ rotate: showInstructions ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <span className="text-blue-700 font-medium">Instructions</span>
-              {showInstructions ? (
-                <ChevronUpIcon className="w-5 h-5 text-blue-600" />
-              ) : (
-                <ChevronDownIcon className="w-5 h-5 text-blue-600" />
-              )}
-            </button>
-            
-            <AnimatePresence>
-              {showInstructions && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="space-y-3 text-sm text-gray-700">
-                      <p>
-                        <span className="font-semibold text-blue-700">1. Drag to Reorder:</span> Click and hold any story part, then drag it to the correct position.
-                      </p>
-                      <p>
-                        <span className="font-semibold text-blue-700">2. Arrange Chronologically:</span> Place the story parts in the order they appear in the story, from first to last.
-                      </p>
-                      <p>
-                        <span className="font-semibold text-blue-700">3. Submit When Ready:</span> Once you're confident with your arrangement, click Submit to check your answer.
-                      </p>
+              <ChevronUpIcon className="w-6 h-6 text-white" />
+            </motion.div>
+          </button>
+
+          <AnimatePresence>
+            {showInstructions && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-3 p-6 bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-blue-200 shadow-lg">
+                  <div className="space-y-4 text-gray-700">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                        1
+                      </div>
+                      <div>
+                        <p className="font-semibold text-blue-700 mb-1">
+                          Drag to Reorder
+                        </p>
+                        <p className="text-sm">
+                          Click and hold any story part, then drag it to the
+                          correct position in the sequence.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                        2
+                      </div>
+                      <div>
+                        <p className="font-semibold text-indigo-700 mb-1">
+                          Arrange Chronologically
+                        </p>
+                        <p className="text-sm">
+                          Place the story parts in the order they appear in the
+                          story, from first to last event.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                        3
+                      </div>
+                      <div>
+                        <p className="font-semibold text-purple-700 mb-1">
+                          Submit When Ready
+                        </p>
+                        <p className="text-sm">
+                          Once you're confident with your arrangement, click
+                          Submit to check your answer.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-          {/* Main Stack Area - Centered and Focused */}
-          <div className="bg-blue-50 rounded-2xl p-8 border-2 border-blue-200 mb-6 min-h-[600px]">
-            <div className="max-w-3xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-800">
+        {/* Main Stack Area - Modern Design */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white/80 backdrop-blur-lg rounded-3xl p-6 sm:p-8 lg:p-10 border-2 border-white/50 shadow-2xl mb-8 relative overflow-hidden"
+        >
+          {/* Decorative gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/50 pointer-events-none"></div>
+
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Arrange the Story Parts
                 </h3>
-                <span className="text-sm text-gray-500">
-                  {orderedTexts.length} parts
+                <p className="text-gray-500 text-sm sm:text-base mt-1">
+                  Drag and drop to reorder the sequence
+                </p>
+              </div>
+              <div className="px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full border border-blue-200">
+                <span className="text-sm font-semibold text-blue-700">
+                  {orderedTexts.length}{" "}
+                  {orderedTexts.length === 1 ? "part" : "parts"}
                 </span>
               </div>
+            </div>
 
-              <SortableContext
-                items={orderedTexts.map((item) => item.uid)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  <AnimatePresence>
-                    {orderedTexts.map((text, index) => (
-                      <StackTextCard
-                        key={text.uid}
-                        id={text.uid}
-                        text={text.textContent}
-                        index={index}
-                        isDragging={isDragging}
-                        activeId={activeId}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </SortableContext>
+            <div className="space-y-4 sm:space-y-5 overflow-hidden">
+              <AnimatePresence mode="popLayout">
+                {orderedTexts.map((text, index) => (
+                  <StackTextCard
+                    key={text.uid}
+                    id={text.uid}
+                    text={text.textContent}
+                    index={index}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                  />
+                ))}
+              </AnimatePresence>
             </div>
           </div>
+        </motion.div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleClear}
-              className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2 font-medium shadow-md"
-            >
-              <ArrowUturnLeftIcon className="w-5 h-5" />
-              Shuffle & Reset
-            </motion.button>
+        {/* Action Buttons - Modern Design */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleClear}
+            className="px-8 py-4 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-2xl transition-all flex items-center justify-center gap-3 font-semibold shadow-lg hover:shadow-xl text-base sm:text-lg"
+          >
+            <ArrowUturnLeftIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span>Shuffle & Reset</span>
+          </motion.button>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleSubmit}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 font-semibold shadow-md"
-            >
-              <CheckIcon className="w-5 h-5" />
-              Submit Answer
-            </motion.button>
-          </div>
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSubmit}
+            className="px-10 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-2xl transition-all flex items-center justify-center gap-3 font-bold shadow-lg hover:shadow-xl text-base sm:text-lg relative overflow-hidden group"
+          >
+            <span className="relative z-10 flex items-center gap-3">
+              <CheckIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span>Submit Answer</span>
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+          </motion.button>
         </div>
-
-        <DragOverlay>
-          {activeItem ? (
-            <div className="bg-white rounded-xl shadow-2xl p-5 border-2 border-blue-400 transform rotate-1 opacity-95 max-w-md">
-              <p className="text-gray-800 text-base font-medium leading-relaxed">
-                {activeItem.textContent}
-              </p>
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+      </div>
     </div>
   );
 };
