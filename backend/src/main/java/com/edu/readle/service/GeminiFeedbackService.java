@@ -56,7 +56,8 @@ public class GeminiFeedbackService {
             generationConfig.put("temperature", 0.7);
             generationConfig.put("topK", 40);
             generationConfig.put("topP", 0.95);
-            generationConfig.put("maxOutputTokens", 2500); // Increased to account for thinking tokens (499) + output tokens
+            generationConfig.put("maxOutputTokens", 2500); // Increased to account for thinking tokens (499) + output
+                                                           // tokens
             generationConfig.put("stopSequences", List.of());
             requestBody.put("generationConfig", generationConfig);
 

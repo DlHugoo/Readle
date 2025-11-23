@@ -18,6 +18,7 @@ const WordStorySequencingPage = () => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(4);
   const [reshuffleTrigger, setReshuffleTrigger] = useState(0);
   const [resetCounter, setResetCounter] = useState(0);
@@ -152,7 +153,8 @@ const WordStorySequencingPage = () => {
         return;
       }
 
-      const res = await axios.post(
+      // Step 1: Fast check - show result immediately
+      const checkRes = await axios.post(
         `/api/wssa/${storyData.wssaId}/check`,
         { attemptedSequence: sequenceIds },
         {
@@ -162,16 +164,18 @@ const WordStorySequencingPage = () => {
         }
       );
 
-      setIsCorrect(res.data.correct);
-      setFeedback(res.data.feedback || "");
-      setShowFeedback(true);
+      const correct = checkRes.data.correct;
+      setIsCorrect(correct);
+      setShowFeedback(true); // Show modal immediately
+      setFeedback(""); // Clear previous feedback
+      setFeedbackLoading(true); // Show loading indicator
 
-      if (!res.data.correct) {
+      if (!correct) {
         setAttemptsLeft((prev) => prev - 1);
         setReshuffleTrigger((prev) => prev + 1);
       }
 
-      if (res.data.correct && trackerId) {
+      if (correct && trackerId) {
         axios
           .put(
             `/api/progress/complete/${trackerId}`,
@@ -181,6 +185,31 @@ const WordStorySequencingPage = () => {
           .catch((err) =>
             console.error("Failed to mark book as completed:", err)
           );
+      }
+
+      // Step 2: Fetch feedback asynchronously (in background)
+      try {
+        const feedbackRes = await axios.post(
+          `/api/wssa/${storyData.wssaId}/feedback`,
+          { attemptedSequence: sequenceIds },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        
+        setFeedback(feedbackRes.data.feedback || "");
+      } catch (feedbackErr) {
+        console.error("Failed to fetch feedback:", feedbackErr);
+        // Set fallback feedback
+        setFeedback(
+          correct
+            ? "Excellent work! You've arranged the story parts correctly."
+            : "Good effort! Think about the order of events in the story."
+        );
+      } finally {
+        setFeedbackLoading(false);
       }
     } catch (err) {
       console.error("Failed to submit sequence:", err);
@@ -259,6 +288,7 @@ const WordStorySequencingPage = () => {
         <FeedbackModal
           isCorrect={isCorrect}
           feedback={feedback}
+          feedbackLoading={feedbackLoading}
           attemptsLeft={attemptsLeft}
           onTryAgain={attemptsLeft > 0 ? handleTryAgain : null}
           onContinue={handleContinue}
