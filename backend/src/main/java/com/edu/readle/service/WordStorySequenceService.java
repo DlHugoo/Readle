@@ -105,5 +105,51 @@ public class WordStorySequenceService {
 
         return new SequenceCheckResponseDTO(isCorrect, feedback);
     }
+
+    /**
+     * Generate feedback for a sequence attempt (without saving attempt again)
+     * This is called separately after the initial check to provide async feedback
+     */
+    public String generateFeedbackForSequence(Long wssaId, List<Long> attemptedSequence, UserEntity user) {
+        WordStorySequenceActivityEntity wssa = wssaRepo.findById(wssaId)
+                .orElseThrow(() -> new EntityNotFoundException("WSSA not found"));
+
+        // Get correct sequence
+        List<SequenceTextEntity> correctTexts = textRepo.findByWssaOrderByCorrectPosition(wssa);
+        List<Long> correctIds = correctTexts.stream()
+                .map(SequenceTextEntity::getTextID)
+                .toList();
+
+        boolean isCorrect = correctIds.equals(attemptedSequence);
+
+        // Get text content for feedback generation
+        List<String> correctSequence = correctTexts.stream()
+                .map(SequenceTextEntity::getTextContent)
+                .collect(Collectors.toList());
+
+        List<String> attemptedSequenceTexts = attemptedSequence.stream()
+                .map(id -> textRepo.findById(id)
+                        .map(SequenceTextEntity::getTextContent)
+                        .orElse(""))
+                .filter(text -> !text.isEmpty())
+                .collect(Collectors.toList());
+
+        // Generate feedback
+        if (isCorrect) {
+            return "Excellent work! You've arranged the story parts in the correct chronological order. Well done!";
+        } else {
+            try {
+                String bookTitle = wssa.getBook() != null ? wssa.getBook().getTitle() : null;
+                return geminiFeedbackService.generateFeedback(
+                    correctSequence,
+                    attemptedSequenceTexts,
+                    bookTitle
+                );
+            } catch (Exception e) {
+                System.err.println("Error generating Gemini feedback: " + e.getMessage());
+                return "Good effort! Think about the order of events in the story. What happens first, and what comes next?";
+            }
+        }
+    }
 }
 

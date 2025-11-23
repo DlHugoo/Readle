@@ -1,6 +1,5 @@
 package com.edu.readle.controller;
 
-import com.edu.readle.dto.SequenceCheckResponseDTO;
 import com.edu.readle.dto.WordStorySequenceDTO;
 import com.edu.readle.entity.*;
 import com.edu.readle.repository.*;
@@ -68,6 +67,7 @@ public class WordStorySequenceController {
 
     /**
      * 🔐 POST /api/wssa/{wssaId}/check — Only Students can submit answers
+     * Returns immediately with correctness result (fast response)
      */
     @PreAuthorize("hasAuthority('STUDENT')")
     @PostMapping("/{wssaId}/check")
@@ -84,23 +84,51 @@ public class WordStorySequenceController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         try {
-            SequenceCheckResponseDTO response = 
-                wordStorySequenceService.checkSequenceWithFeedback(wssaId, attempted, user);
+            // Fast check - returns immediately without waiting for Gemini
+            boolean isCorrect = wordStorySequenceService.checkSequence(wssaId, attempted, user);
             
             return ResponseEntity.ok(Map.of(
-                "correct", response.isCorrect(),
-                "feedback", response.getFeedback()
+                "correct", isCorrect
             ));
         } catch (Exception e) {
             e.printStackTrace();
-            // Fallback to simple check if feedback generation fails
-            boolean isCorrect = wordStorySequenceService.checkSequence(wssaId, attempted, user);
-            String fallbackFeedback = isCorrect 
-                ? "Excellent work! You've arranged the story parts correctly."
-                : "Good effort! Think about the order of events in the story.";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to check sequence"));
+        }
+    }
+
+    /**
+     * 🔐 POST /api/wssa/{wssaId}/feedback — Generate AI feedback asynchronously
+     * Called after correctness is shown to provide helpful tips
+     */
+    @PreAuthorize("hasAuthority('STUDENT')")
+    @PostMapping("/{wssaId}/feedback")
+    public ResponseEntity<?> getFeedback(@PathVariable Long wssaId,
+                                         @RequestBody Map<String, List<Long>> body,
+                                         Principal principal) {
+        List<Long> attempted = body.get("attemptedSequence");
+        if (attempted == null || attempted.isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "No sequence submitted"));
+        }
+
+        UserEntity user = userRepo.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        try {
+            // Generate feedback (this may take time due to Gemini API call)
+            String feedback = wordStorySequenceService.generateFeedbackForSequence(
+                wssaId, attempted, user
+            );
             
             return ResponseEntity.ok(Map.of(
-                "correct", isCorrect,
+                "feedback", feedback
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Return fallback feedback
+            String fallbackFeedback = "Good effort! Think about the order of events in the story. What happens first, and what comes next?";
+            return ResponseEntity.ok(Map.of(
                 "feedback", fallbackFeedback
             ));
         }
