@@ -8,6 +8,7 @@ import FeedbackModal from "./FeedbackModal";
 import { getAccessToken } from "../../../api/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import mascot from "../../../assets/mascot.png";
+import { motion } from "framer-motion";
 
 const WordStorySequencingPage = () => {
   const { bookId } = useParams();
@@ -228,54 +229,70 @@ const WordStorySequencingPage = () => {
 
   if (!storyData)
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <StudentNavbar />
-        <div className="flex justify-center items-center h-[60vh] text-gray-500 text-lg">
-          <div className="flex flex-col items-center gap-3">
-            <svg
-              className="animate-spin h-8 w-8 text-blue-500"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            <p>Loading word story sequencing activity...</p>
-          </div>
+        <div className="flex justify-center items-center h-[60vh]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin animate-reverse opacity-50"></div>
+            </div>
+            <p className="text-gray-600 text-lg font-medium">Loading activity...</p>
+          </motion.div>
         </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <StudentNavbar />
       
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Minimalist Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-gray-800">
-            Word Sequencing Activity
-          </h1>
-          <img 
-            src={mascot} 
-            alt="Mascot" 
-            className="w-16 h-16 object-contain"
-          />
-        </div>
+      {/* Animated Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
 
-        {/* Main Activity Board - Centered and Focused */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Modern Header with Gradient */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8 sm:mb-12"
+        >
+          <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-6 sm:p-8 border border-white/20">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                  Word Sequencing Activity
+                </h1>
+                <p className="text-gray-600 text-sm sm:text-base">
+                  Arrange the story parts in chronological order
+                </p>
+              </div>
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-lg opacity-50"></div>
+                <img 
+                  src={mascot} 
+                  alt="Mascot" 
+                  className="relative w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-lg"
+                />
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Main Activity Board */}
         <WordSequencingBoard
           key={resetCounter}
           texts={storyData.texts}
@@ -296,16 +313,20 @@ const WordStorySequencingPage = () => {
       )}
 
       {modal.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl"
+          >
             <div className="flex items-center justify-center mb-4">
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
                   modal.type === "error"
-                    ? "bg-red-100"
+                    ? "bg-red-100 text-red-600"
                     : modal.type === "success"
-                    ? "bg-green-100"
-                    : "bg-blue-100"
+                    ? "bg-green-100 text-green-600"
+                    : "bg-blue-100 text-blue-600"
                 }`}
               >
                 {modal.type === "error"
@@ -315,16 +336,43 @@ const WordStorySequencingPage = () => {
                   : "ℹ️"}
               </div>
             </div>
-            <p className="text-center text-gray-700 mb-4">{modal.message}</p>
+            <p className="text-center text-gray-700 mb-6 text-lg">{modal.message}</p>
             <button
               onClick={() => setModal({ open: false, message: "", type: "" })}
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               OK
             </button>
-          </div>
+          </motion.div>
         </div>
       )}
+
+      {/* Custom Animations */}
+      <style>{`
+        @keyframes blob {
+          0%, 100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+        .animate-reverse {
+          animation-direction: reverse;
+        }
+      `}</style>
     </div>
   );
 };
