@@ -1,19 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import StackTextCard from "./StackTextCard";
-import {
-  ArrowUturnLeftIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  InformationCircleIcon,
-} from "@heroicons/react/24/solid";
+import { ArrowUturnLeftIcon, CheckIcon } from "@heroicons/react/24/solid";
 import { motion, AnimatePresence } from "framer-motion";
 
 const WordSequencingBoard = ({ texts, onSubmit, reshuffleTrigger }) => {
   const [orderedTexts, setOrderedTexts] = useState([]);
   const [draggedId, setDraggedId] = useState(null);
-  const [showInstructions, setShowInstructions] = useState(false);
   const cardRefs = useRef({});
 
   useEffect(() => {
@@ -92,93 +85,7 @@ const WordSequencingBoard = ({ texts, onSubmit, reshuffleTrigger }) => {
 
   return (
     <div className="w-full">
-      <div className="max-w-5xl mx-auto">
-        {/* Modern Instructions Panel */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
-        >
-          <button
-            onClick={() => setShowInstructions(!showInstructions)}
-            className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <InformationCircleIcon className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-white font-semibold text-lg">
-                Instructions
-              </span>
-            </div>
-            <motion.div
-              animate={{ rotate: showInstructions ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ChevronUpIcon className="w-6 h-6 text-white" />
-            </motion.div>
-          </button>
-
-          <AnimatePresence>
-            {showInstructions && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-3 p-6 bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-blue-200 shadow-lg">
-                  <div className="space-y-4 text-gray-700">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                        1
-                      </div>
-                      <div>
-                        <p className="font-semibold text-blue-700 mb-1">
-                          Drag to Reorder
-                        </p>
-                        <p className="text-sm">
-                          Click and hold any story part, then drag it to the
-                          correct position in the sequence.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                        2
-                      </div>
-                      <div>
-                        <p className="font-semibold text-indigo-700 mb-1">
-                          Arrange Chronologically
-                        </p>
-                        <p className="text-sm">
-                          Place the story parts in the order they appear in the
-                          story, from first to last event.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                        3
-                      </div>
-                      <div>
-                        <p className="font-semibold text-purple-700 mb-1">
-                          Submit When Ready
-                        </p>
-                        <p className="text-sm">
-                          Once you're confident with your arrangement, click
-                          Submit to check your answer.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
+      <div className="max-w-7xl mx-auto">
         {/* Main Stack Area - Modern Design */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

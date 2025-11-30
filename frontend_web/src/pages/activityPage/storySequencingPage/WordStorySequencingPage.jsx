@@ -7,7 +7,7 @@ import WordSequencingBoard from "./WordSequencingBoard";
 import FeedbackModal from "./FeedbackModal";
 import { getAccessToken } from "../../../api/api";
 import { useAuth } from "../../../contexts/AuthContext";
-import mascot from "../../../assets/mascot.png";
+import wssaImage from "../../../assets/wssa2.png";
 import { motion } from "framer-motion";
 
 const WordStorySequencingPage = () => {
@@ -25,6 +25,7 @@ const WordStorySequencingPage = () => {
   const [resetCounter, setResetCounter] = useState(0);
   const [trackerId, setTrackerId] = useState(null);
   const [modal, setModal] = useState({ open: false, message: "", type: "" });
+  const [instructionsExpanded, setInstructionsExpanded] = useState(false);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -199,7 +200,7 @@ const WordStorySequencingPage = () => {
             },
           }
         );
-        
+
         setFeedback(feedbackRes.data.feedback || "");
       } catch (feedbackErr) {
         console.error("Failed to fetch feedback:", feedbackErr);
@@ -241,7 +242,9 @@ const WordStorySequencingPage = () => {
               <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               <div className="absolute inset-0 w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin animate-reverse opacity-50"></div>
             </div>
-            <p className="text-gray-600 text-lg font-medium">Loading activity...</p>
+            <p className="text-gray-600 text-lg font-medium">
+              Loading activity...
+            </p>
           </motion.div>
         </div>
       </div>
@@ -250,7 +253,7 @@ const WordStorySequencingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <StudentNavbar />
-      
+
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -259,35 +262,129 @@ const WordStorySequencingPage = () => {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* Modern Header with Gradient */}
+        {/* Modern Header with Gradient Blue Background */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="mb-8 sm:mb-12"
         >
-          <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-6 sm:p-8 border border-white/20">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex-1">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+          <div className="bg-gradient-to-b from-blue-300 via-blue-200 to-blue-100 rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-200/50">
+            <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8 lg:gap-10">
+              {/* Mascot on the left with subtle glow - Larger */}
+              <motion.div
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex-shrink-0"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-300/30 rounded-full blur-xl"></div>
+                  <img
+                    src={wssaImage}
+                    alt="Word Sequencing Activity Mascot"
+                    className="relative w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 object-contain drop-shadow-2xl"
+                  />
+                </div>
+              </motion.div>
+
+              {/* Title and Instructions on the right */}
+              <div className="flex-1 w-full space-y-4">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-blue-900 leading-tight">
                   Word Sequencing Activity
                 </h1>
-                <p className="text-gray-600 text-sm sm:text-base">
-                  Arrange the story parts in chronological order
-                </p>
+
+                {/* Collapsible Instructions */}
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl overflow-hidden border border-blue-200/50">
+                  <button
+                    onClick={() =>
+                      setInstructionsExpanded(!instructionsExpanded)
+                    }
+                    className="w-full px-4 py-3 flex items-center justify-between text-blue-900 hover:bg-white/40 transition-colors group"
+                  >
+                    <span className="font-semibold text-sm sm:text-base flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Instructions
+                    </span>
+                    <motion.svg
+                      animate={{ rotate: instructionsExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-5 h-5 text-blue-600 group-hover:text-blue-700"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </motion.svg>
+                  </button>
+
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      height: instructionsExpanded ? "auto" : 0,
+                      opacity: instructionsExpanded ? 1 : 0,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 pt-2 text-blue-800 text-sm sm:text-base">
+                      <ol className="space-y-3 list-none">
+                        {[
+                          {
+                            num: 1,
+                            bgColor: "bg-blue-500",
+                            textColor: "text-blue-700",
+                            title: "Drag to Reorder",
+                            desc: "Click and hold any story part, then drag it to the correct position in the sequence.",
+                          },
+                          {
+                            num: 2,
+                            bgColor: "bg-indigo-500",
+                            textColor: "text-indigo-700",
+                            title: "Arrange Chronologically",
+                            desc: "Place the story parts in the order they appear in the story, from first to last event.",
+                          },
+                          {
+                            num: 3,
+                            bgColor: "bg-purple-500",
+                            textColor: "text-purple-700",
+                            title: "Submit When Ready",
+                            desc: "Once you're confident with your arrangement, click Submit to check your answer.",
+                          },
+                        ].map((item) => (
+                          <motion.li
+                            key={item.num}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: item.num * 0.1 }}
+                            className="flex items-start gap-3"
+                          >
+                            <div
+                              className={`flex-shrink-0 w-10 h-10 ${item.bgColor} text-white rounded-xl flex items-center justify-center font-bold text-base shadow-md`}
+                            >
+                              {item.num}
+                            </div>
+                            <div className="flex-1 pt-1">
+                              <p
+                                className={`font-semibold ${item.textColor} mb-1 text-base`}
+                              >
+                                {item.title}
+                              </p>
+                              <p className="text-sm leading-relaxed">
+                                {item.desc}
+                              </p>
+                            </div>
+                          </motion.li>
+                        ))}
+                      </ol>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-lg opacity-50"></div>
-                <img 
-                  src={mascot} 
-                  alt="Mascot" 
-                  className="relative w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-lg"
-                />
-              </motion.div>
             </div>
           </div>
         </motion.div>
@@ -336,7 +433,9 @@ const WordStorySequencingPage = () => {
                   : "ℹ️"}
               </div>
             </div>
-            <p className="text-center text-gray-700 mb-6 text-lg">{modal.message}</p>
+            <p className="text-center text-gray-700 mb-6 text-lg">
+              {modal.message}
+            </p>
             <button
               onClick={() => setModal({ open: false, message: "", type: "" })}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
