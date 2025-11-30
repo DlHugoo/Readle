@@ -21,7 +21,7 @@ const StackTextCard = ({ id, text, index, onDragStart, onDragEnd }) => {
       }}
       whileDrag={{
         scale: 1.05,
-        boxShadow: "0px 10px 30px rgba(0,0,0,0.3)",
+        boxShadow: "none",
         zIndex: 50,
       }}
       initial={{ opacity: 0, y: -20 }}
@@ -30,8 +30,8 @@ const StackTextCard = ({ id, text, index, onDragStart, onDragEnd }) => {
         y: 0,
         scale: 1,
       }}
-      exit={{ 
-        opacity: 0, 
+      exit={{
+        opacity: 0,
         height: 0,
         marginBottom: 0,
         paddingTop: 0,
@@ -53,7 +53,7 @@ const StackTextCard = ({ id, text, index, onDragStart, onDragEnd }) => {
           border-2 transition-all duration-200
           ${
             isDragging
-              ? "border-blue-400 shadow-lg"
+              ? "border-blue-400 shadow-none"
               : "border-gray-200 hover:border-blue-200 hover:shadow-md"
           }
         `}
@@ -89,9 +89,7 @@ const StackTextCard = ({ id, text, index, onDragStart, onDragEnd }) => {
 
           {/* Text Content - Main Focus */}
           <div className="flex-1 min-w-0">
-            <p className="text-gray-800 text-base leading-relaxed">
-              {text}
-            </p>
+            <p className="text-gray-800 text-base leading-relaxed">{text}</p>
           </div>
         </div>
       </div>

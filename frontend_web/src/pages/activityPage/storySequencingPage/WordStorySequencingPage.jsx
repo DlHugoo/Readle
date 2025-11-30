@@ -7,7 +7,7 @@ import WordSequencingBoard from "./WordSequencingBoard";
 import FeedbackModal from "./FeedbackModal";
 import { getAccessToken } from "../../../api/api";
 import { useAuth } from "../../../contexts/AuthContext";
-import wssaImage from "../../../assets/wssa.png";
+import wssaImage from "../../../assets/wssa2.png";
 import { motion } from "framer-motion";
 
 const WordStorySequencingPage = () => {
@@ -269,24 +269,27 @@ const WordStorySequencingPage = () => {
           transition={{ duration: 0.5 }}
           className="mb-8 sm:mb-12"
         >
-          <div className="bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-200/50">
-            <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
-              {/* Mascot on the left */}
+          <div className="bg-gradient-to-b from-blue-300 via-blue-200 to-blue-100 rounded-3xl shadow-xl p-6 sm:p-8 border border-blue-200/50">
+            <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-8 lg:gap-10">
+              {/* Mascot on the left with subtle glow - Larger */}
               <motion.div
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, rotate: 2 }}
                 whileTap={{ scale: 0.95 }}
                 className="flex-shrink-0"
               >
-                <img
-                  src={wssaImage}
-                  alt="Word Sequencing Activity Mascot"
-                  className="w-24 h-24 sm:w-32 sm:h-32 object-contain drop-shadow-lg"
-                />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-300/30 rounded-full blur-xl"></div>
+                  <img
+                    src={wssaImage}
+                    alt="Word Sequencing Activity Mascot"
+                    className="relative w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 object-contain drop-shadow-2xl"
+                  />
+                </div>
               </motion.div>
 
               {/* Title and Instructions on the right */}
               <div className="flex-1 w-full space-y-4">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-900">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-blue-900 leading-tight">
                   Word Sequencing Activity
                 </h1>
 
@@ -296,15 +299,16 @@ const WordStorySequencingPage = () => {
                     onClick={() =>
                       setInstructionsExpanded(!instructionsExpanded)
                     }
-                    className="w-full px-4 py-3 flex items-center justify-between text-blue-900 hover:bg-white/40 transition-colors"
+                    className="w-full px-4 py-3 flex items-center justify-between text-blue-900 hover:bg-white/40 transition-colors group"
                   >
-                    <span className="font-semibold text-sm sm:text-base">
+                    <span className="font-semibold text-sm sm:text-base flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                       Instructions
                     </span>
                     <motion.svg
                       animate={{ rotate: instructionsExpanded ? 180 : 0 }}
                       transition={{ duration: 0.3 }}
-                      className="w-5 h-5"
+                      className="w-5 h-5 text-blue-600 group-hover:text-blue-700"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -329,48 +333,53 @@ const WordStorySequencingPage = () => {
                   >
                     <div className="px-4 pb-4 pt-2 text-blue-800 text-sm sm:text-base">
                       <ol className="space-y-3 list-none">
-                        <li className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">
-                            1
-                          </div>
-                          <div>
-                            <p className="font-semibold text-blue-700 mb-1">
-                              Drag to Reorder
-                            </p>
-                            <p className="text-sm">
-                              Click and hold any story part, then drag it to the
-                              correct position in the sequence.
-                            </p>
-                          </div>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">
-                            2
-                          </div>
-                          <div>
-                            <p className="font-semibold text-indigo-700 mb-1">
-                              Arrange Chronologically
-                            </p>
-                            <p className="text-sm">
-                              Place the story parts in the order they appear in
-                              the story, from first to last event.
-                            </p>
-                          </div>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">
-                            3
-                          </div>
-                          <div>
-                            <p className="font-semibold text-purple-700 mb-1">
-                              Submit When Ready
-                            </p>
-                            <p className="text-sm">
-                              Once you're confident with your arrangement, click
-                              Submit to check your answer.
-                            </p>
-                          </div>
-                        </li>
+                        {[
+                          {
+                            num: 1,
+                            bgColor: "bg-blue-500",
+                            textColor: "text-blue-700",
+                            title: "Drag to Reorder",
+                            desc: "Click and hold any story part, then drag it to the correct position in the sequence.",
+                          },
+                          {
+                            num: 2,
+                            bgColor: "bg-indigo-500",
+                            textColor: "text-indigo-700",
+                            title: "Arrange Chronologically",
+                            desc: "Place the story parts in the order they appear in the story, from first to last event.",
+                          },
+                          {
+                            num: 3,
+                            bgColor: "bg-purple-500",
+                            textColor: "text-purple-700",
+                            title: "Submit When Ready",
+                            desc: "Once you're confident with your arrangement, click Submit to check your answer.",
+                          },
+                        ].map((item) => (
+                          <motion.li
+                            key={item.num}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: item.num * 0.1 }}
+                            className="flex items-start gap-3"
+                          >
+                            <div
+                              className={`flex-shrink-0 w-10 h-10 ${item.bgColor} text-white rounded-xl flex items-center justify-center font-bold text-base shadow-md`}
+                            >
+                              {item.num}
+                            </div>
+                            <div className="flex-1 pt-1">
+                              <p
+                                className={`font-semibold ${item.textColor} mb-1 text-base`}
+                              >
+                                {item.title}
+                              </p>
+                              <p className="text-sm leading-relaxed">
+                                {item.desc}
+                              </p>
+                            </div>
+                          </motion.li>
+                        ))}
                       </ol>
                     </div>
                   </motion.div>
